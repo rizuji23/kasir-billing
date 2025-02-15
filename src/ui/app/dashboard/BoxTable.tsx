@@ -1,10 +1,14 @@
 import { Chip } from "@heroui/chip";
 import { Coins, Timer } from "lucide-react";
+import { useState } from "react";
+import DrawerTable from "./data/DrawerTable";
 
 export default function BoxTable() {
+    const [open, setOpen] = useState<boolean>(false);
+
     return (
         <>
-            <div className="w-full bg-muted h-fit rounded-md p-4 cursor-pointer select-none hover:bg-muted/50 duration-300 transition-colors">
+            <div className="w-full bg-muted h-fit rounded-md p-4 cursor-pointer select-none hover:bg-muted/50 duration-300 transition-colors" onClick={() => setOpen(true)}>
                 <div className="grid gap-3">
                     <div className="flex gap-3">
                         <Chip size="sm" color="success">Tersedia</Chip>
@@ -29,6 +33,7 @@ export default function BoxTable() {
                     </div>
                 </div>
             </div>
+            <DrawerTable open={open} setOpen={setOpen} />
         </>
     )
 }

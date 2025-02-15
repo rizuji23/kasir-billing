@@ -1,10 +1,11 @@
-import { Card, CardBody, CardFooter } from "@heroui/card";
+import { Card, CardBody } from "@heroui/card";
 import MainLayout from "../../components/MainLayout";
 import { Input } from "@heroui/input";
-import { Image } from "@heroui/image";
 import { Search } from "lucide-react";
 import { Divider } from "@heroui/divider";
 import BoxItem from "./BoxItem";
+import { Button } from "@heroui/button";
+import { Tab, Tabs } from "@heroui/tabs";
 
 export default function Menu() {
     const list: { title: string, img: string, price: string }[] = [
@@ -48,40 +49,98 @@ export default function Menu() {
             img: "/orange.jpeg",
             price: "Rp. 12.720",
         },
+        {
+            title: "Watermelon",
+            img: "/orange.jpeg",
+            price: "Rp. 12.720",
+        },
+        {
+            title: "Watermelon",
+            img: "/orange.jpeg",
+            price: "Rp. 12.720",
+        },
+        {
+            title: "Watermelon",
+            img: "/orange.jpeg",
+            price: "Rp. 12.720",
+        },
+        {
+            title: "Watermelon",
+            img: "/orange.jpeg",
+            price: "Rp. 12.720",
+        },
+        {
+            title: "Watermelon",
+            img: "/orange.jpeg",
+            price: "Rp. 12.720",
+        },
+        {
+            title: "Watermelon",
+            img: "/orange.jpeg",
+            price: "Rp. 12.720",
+        },
+        {
+            title: "Watermelon",
+            img: "/orange.jpeg",
+            price: "Rp. 12.720",
+        },
+        {
+            title: "Watermelon",
+            img: "/orange.jpeg",
+            price: "Rp. 12.720",
+        },
+        {
+            title: "Watermelon",
+            img: "/orange.jpeg",
+            price: "Rp. 12.720",
+        },
+        {
+            title: "Watermelon",
+            img: "/orange.jpeg",
+            price: "Rp. 12.720",
+        },
+        {
+            title: "Watermelon",
+            img: "/orange.jpeg",
+            price: "Rp. 12.720",
+        },
+        {
+            title: "Watermelon",
+            img: "/orange.jpeg",
+            price: "Rp. 12.720",
+        },
     ];
 
 
     return (
         <>
             <MainLayout>
-                <div className="flex flex-col gap-8">
+                <div className="flex flex-col gap-5">
                     <div className="flex justify-between">
-                        <h1 className="text-3xl font-bold">Menu</h1>
+                        <h1 className="text-2xl font-bold">Menu</h1>
                     </div>
                     <div className="grid grid-cols-3 gap-5">
                         <div className="col-span-2">
                             <div className="flex flex-col gap-3">
-                                <div className="max-w-[300px]">
+                                <div className="">
                                     <Input autoFocus startContent={<Search className="w-5 h-5" />} placeholder="Cari menu disini..." />
                                 </div>
-                                <div className="gap-4 grid grid-cols-2 sm:grid-cols-4">
+                                <Tabs variant="light">
+                                    <Tab key="all" title="Semua" />
+                                    <Tab key="makanan" title="Makanan" />
+                                    <Tab key="snack" title="Snack" />
+                                    <Tab key="minuman" title="Minuman" />
+                                </Tabs>
+                                <Divider />
+                                <div className="gap-4 grid grid-cols-2 sm:grid-cols-4 max-h-[80vh] overflow-y-auto pe-3">
                                     {list.map((item, index) => (
-                                        /* eslint-disable no-console */
                                         <Card key={index} isPressable shadow="sm" onPress={() => console.log("item pressed")}>
-                                            <CardBody className="overflow-visible p-0">
-                                                <Image
-                                                    alt={item.title}
-                                                    className="w-full object-cover h-[140px]"
-                                                    radius="lg"
-                                                    shadow="sm"
-                                                    src={item.img}
-                                                    width="100%"
-                                                />
+                                            <CardBody className="overflow-visible">
+                                                <div className="flex text-small justify-between">
+                                                    <b>{item.title}</b>
+                                                    <p className="text-default-500">{item.price}</p>
+                                                </div>
                                             </CardBody>
-                                            <CardFooter className="text-small justify-between">
-                                                <b>{item.title}</b>
-                                                <p className="text-default-500">{item.price}</p>
-                                            </CardFooter>
                                         </Card>
                                     ))}
                                 </div>
@@ -91,11 +150,8 @@ export default function Menu() {
                             <Card>
                                 <CardBody>
                                     <div className="grid gap-3">
-                                        <div>
-                                            <p className="!text-center font-bold text-lg">Detail Pesanan</p>
-                                        </div>
-                                        <Divider />
-                                        <div className="max-h-[400px] overflow-auto pe-3">
+
+                                        <div className="max-h-[300px] overflow-auto pe-3">
                                             <div className="grid gap-1">
                                                 {
                                                     Array.from({ length: 10 }).map((_, i) => {
@@ -104,8 +160,32 @@ export default function Menu() {
                                                 }
                                             </div>
                                         </div>
-                                        <div>
-
+                                        <div className="grid gap-3">
+                                            <div className="flex flex-col gap-1">
+                                                <h3 className="text-lg font-bold">Detail Pembayaran:</h3>
+                                                <p className="text-xs">Tanggal Pembelian: 20-05-2025 03:50:00</p>
+                                                <Divider className="my-2" />
+                                                <Input
+                                                    isRequired
+                                                    label="Uang Cash"
+                                                    name="uang_cash"
+                                                    errorMessage={"Silakan isi kolom ini."}
+                                                    placeholder="Masukan uang cash disini"
+                                                    type="text"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <h3>Kembalian:</h3>
+                                                <h1 className="text-xl font-bold">Rp. 10.000</h1>
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <h3>Total:</h3>
+                                                <h1 className="text-xl font-bold">Rp. 10.000</h1>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-3">
+                                            <Button>Pesan</Button>
+                                            <Button color="danger">Batalkan</Button>
                                         </div>
                                     </div>
                                 </CardBody>
