@@ -1,7 +1,9 @@
-import { Box, ChefHat, CirclePower, Cog, FileChartColumn, Home, UserRoundPen } from "lucide-react";
+import { Box, CirclePower, Cog, FileChartColumn, Home, ShoppingCart, UserRoundPen, Utensils } from "lucide-react";
 import logo from "../../assets/logo-login.png";
 import { Link, useLocation } from "react-router";
 import { cn } from "../../lib/utils";
+import { User } from "@heroui/user";
+import { Button } from "@heroui/button";
 
 const sidebar: { title: string, icon: React.ReactNode, href: string }[] = [
     {
@@ -10,8 +12,13 @@ const sidebar: { title: string, icon: React.ReactNode, href: string }[] = [
         href: "/dashboard"
     },
     {
+        title: "Order",
+        icon: <ShoppingCart className="w-5 h-5" />,
+        href: "/order"
+    },
+    {
         title: "Menu",
-        icon: <ChefHat className="w-5 h-5" />,
+        icon: <Utensils className="w-5 h-5" />,
         href: "/menu"
     },
     {
@@ -68,6 +75,19 @@ export default function SidebarComponent() {
                                 </Link>
                             })
                         }
+                    </div>
+                </div>
+                <div className="p-3 mt-5">
+                    <div className="w-full p-3 bg-muted rounded-md">
+                        <div className="flex flex-col gap-3">
+                            <div>
+                                <User
+                                    description="Kasir"
+                                    name="M Rizki Fauzi"
+                                />
+                            </div>
+                            <Button>Sign Out</Button>
+                        </div>
                     </div>
                 </div>
             </div>

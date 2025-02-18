@@ -2,13 +2,6 @@
     "appId": "com.rlstudio.kasir-billing",
     "files": ["dist-electron", "dist-react"],
     "icon": "./icon-desktop.png",
-    "mac": {
-        "target": "dmg"
-    },
-    "linux": {
-        "target": "AppImage",
-        "category": "Utility"
-    },
     "win": {
         "target": ["portable", "msi"]
     }

@@ -4,6 +4,7 @@ import AddMenu from "./sections/AddMenu";
 import CategoryMenu from "./sections/CategoryMenu";
 import VoucherSection from "./sections/Voucher";
 import ApiSection from "./sections/ApiSection";
+import AboutPage from "./sections/About";
 
 export default function SettingsPage() {
     return (
@@ -23,6 +24,7 @@ export default function SettingsPage() {
                         <ApiSection />
                     </Tab>
                     <Tab key="about" title="Tentang Aplikasi">
+                        <AboutPage />
                     </Tab>
                 </Tabs>
             </MainLayout>

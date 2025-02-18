@@ -2,10 +2,10 @@ import { Card, CardBody } from "@heroui/card";
 import MainLayout from "../../components/MainLayout";
 import { Divider } from "@heroui/divider";
 import { Input } from "@heroui/input";
-import { Radio, RadioGroup } from "@heroui/radio";
+import { Radio, RadioGroup, RadioProps } from "@heroui/radio";
 import { Button, cn } from "@heroui/react";
 
-export const CustomRadio = (props) => {
+export const CustomRadio = (props: RadioProps) => {
     const { children, ...otherProps } = props;
 
     return (

@@ -5,9 +5,12 @@ import { ChevronDown, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import BoxTable from "./BoxTable";
 import BoxInfo from "./BoxInfo";
+import { Chip } from "@heroui/chip";
+import { Divider } from "@heroui/divider";
 
 export default function DashboardPage() {
-    const [floor, setFloor] = useState<string>("floor_1")
+    const [floor, setFloor] = useState<string>("floor_1");
+
 
     return (
         <>
@@ -31,10 +34,19 @@ export default function DashboardPage() {
 
                         </div>
                         <div className="flex gap-3">
+                            <div className="self-center">
+                                <Chip size="lg" classNames={{
+                                    content: "font-bold"
+                                }}>01:00:20</Chip>
+                            </div>
+                            <div className="self-center">
+                                <Chip size="lg" color="success"><span>Shift: </span><span className="font-bold">Malam</span></Chip>
+                            </div>
+                            <Divider orientation="vertical" />
                             <Button isIconOnly color="primary">
-                                <RefreshCw />
+                                <RefreshCw className="w-5 h-5" />
                             </Button>
-                            <Button>
+                            <Button color="warning">
                                 Lanjutkan Timer
                             </Button>
                         </div>

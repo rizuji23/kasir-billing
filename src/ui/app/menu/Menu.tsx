@@ -6,6 +6,7 @@ import { Divider } from "@heroui/divider";
 import BoxItem from "./BoxItem";
 import { Button } from "@heroui/button";
 import { Tab, Tabs } from "@heroui/tabs";
+import BoxMenu from "./BoxMenu";
 
 export default function Menu() {
     const list: { title: string, img: string, price: string }[] = [
@@ -134,14 +135,7 @@ export default function Menu() {
                                 <Divider />
                                 <div className="gap-4 grid grid-cols-2 sm:grid-cols-4 max-h-[80vh] overflow-y-auto pe-3">
                                     {list.map((item, index) => (
-                                        <Card key={index} isPressable shadow="sm" onPress={() => console.log("item pressed")}>
-                                            <CardBody className="overflow-visible">
-                                                <div className="flex text-small justify-between">
-                                                    <b>{item.title}</b>
-                                                    <p className="text-default-500">{item.price}</p>
-                                                </div>
-                                            </CardBody>
-                                        </Card>
+                                        <BoxMenu key={index} item={item} />
                                     ))}
                                 </div>
                             </div>

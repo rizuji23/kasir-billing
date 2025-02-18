@@ -7,6 +7,7 @@ import ReportPage from './app/report/Report'
 import StockPage from './app/stock/Stock'
 import ManualLamp from './app/manual/ManualLamp'
 import SettingsPage from './app/settings/Settings'
+import OrderPage from './app/order/Order'
 
 function App() {
 
@@ -15,6 +16,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />}></Route>
         <Route path="/dashboard" element={<DashboardPage />}></Route>
+        <Route path="/order" element={<OrderPage />}></Route>
         <Route path="/menu" element={<Menu />}></Route>
         <Route path="/member" element={<MemberPage />}></Route>
         <Route path="/report" element={<ReportPage />}></Route>

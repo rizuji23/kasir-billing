@@ -54,7 +54,7 @@ export default function DrawerTable({ open, setOpen }: { open: boolean, setOpen:
                                             name="username"
                                             errorMessage={"Silakan isi kolom ini."}
                                             placeholder="Masukan durasi disini"
-                                            type="number"
+                                            type="text"
                                         />
                                         <Divider />
                                         <div className="grid gap-2">

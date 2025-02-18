@@ -1,6 +1,6 @@
 import { Popover, PopoverTrigger, PopoverContent, Input, Button } from "@heroui/react";
 import { Chip } from "@heroui/chip";
-import { SendHorizonal } from "lucide-react";
+import { MessageCircle, SendHorizonal } from "lucide-react";
 
 export default function ChatTray() {
     return (
@@ -9,7 +9,10 @@ export default function ChatTray() {
                 <PopoverTrigger>
                     <div className="p-3 w-[300px] bg-muted fixed right-5 bottom-0 rounded-t-md cursor-pointer">
                         <div className="flex justify-between">
-                            <p className="font-bold">Pesan</p>
+                            <div className="flex gap-3">
+                                <MessageCircle className={"w-5 h-5 self-center fill-white"} />
+                                <p className="font-bold">Pesan</p>
+                            </div>
                             <Chip size="sm" color="danger" className="self-center">5</Chip>
                         </div>
                     </div>
