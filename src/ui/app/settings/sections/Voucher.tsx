@@ -5,7 +5,7 @@ import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@herou
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { Input } from "@heroui/input";
 import { DateRangePicker } from "@heroui/date-picker";
-import { DateValue, Form, RangeValue } from "@heroui/react";
+import { Form } from "@heroui/react";
 import { getLocalTimeZone, parseDate } from "@internationalized/date";
 import { toast } from "sonner";
 import { IModalRow, IVoucher } from "../../../../electron/types";
@@ -13,6 +13,9 @@ import { IResponses } from "../../../../electron/lib/responses";
 import { TableColumn } from "react-data-table-component";
 import moment from "moment-timezone";
 import DataTableCustom from "../../../components/datatable/DataTableCustom";
+import type { RangeValue } from "@react-types/shared";
+import type { DateValue } from "@react-types/datepicker";
+
 
 function ModalVoucher({ open, setOpen, api }: { open: IModalRow<IVoucher>, setOpen: Dispatch<SetStateAction<IModalRow<IVoucher>>>, api: () => Promise<void> }) {
     const [expired, setExpired] = useState<RangeValue<DateValue> | null>(null);
@@ -34,10 +37,7 @@ function ModalVoucher({ open, setOpen, api }: { open: IModalRow<IVoucher>, setOp
                     end_date: expired.end.toDate(getLocalTimeZone()),
                 }
 
-                console.log(data)
-
                 let res;
-
                 if (!open.row) {
                     res = await window.api.add_voucher(data);
                 } else {

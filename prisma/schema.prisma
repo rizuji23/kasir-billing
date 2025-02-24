@@ -89,6 +89,11 @@ enum TypeStruk {
   CAFEQR
 }
 
+enum PowerLamp {
+  ON
+  OFF
+}
+
 // ======== MODELS ========
 model User {
   id         Int      @id @default(autoincrement())
@@ -109,9 +114,32 @@ model TableBilliard {
   duration   String
   status     TableStatus @default(AVAILABLE)
   type_play  TypePlay @default(NONE)
+  timer      DateTime?
+  number     String?
+  power       PowerLamp @default(OFF)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   bookings   Booking[]
+}
+
+model PriceBilling {
+  id               Int    @id @default(autoincrement())
+  id_price_billing String @unique
+  type_price_id    Int
+  type_price       PriceBillingType @relation(fields: [type_price_id], references: [id], onDelete: Cascade)
+  season           String
+  price            Int
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+}
+
+model PriceBillingType {
+  id Int @id @default(autoincrement())
+  id_price_billing_type String @unique
+  type_price String @unique
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  typePricing PriceBilling[]
 }
 
 model Members {

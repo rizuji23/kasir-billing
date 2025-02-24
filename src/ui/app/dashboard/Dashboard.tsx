@@ -5,11 +5,11 @@ import { ChevronDown, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import BoxTable from "./BoxTable";
 import BoxInfo from "./BoxInfo";
-import { Chip } from "@heroui/chip";
 import { Divider } from "@heroui/divider";
 import { IResponses } from "../../../electron/lib/responses";
 import { TableBilliard } from "../../../electron/types";
 import { toast } from "sonner";
+import HoursShift from "./HoursShift";
 
 export default function DashboardPage() {
     const [floor, setFloor] = useState<string>("floor_1");
@@ -54,17 +54,9 @@ export default function DashboardPage() {
                                     <DropdownItem value={"floor_2"} key="floor_2">Lantai 2</DropdownItem>
                                 </DropdownMenu>
                             </Dropdown>
-
                         </div>
                         <div className="flex gap-3">
-                            <div className="self-center">
-                                <Chip size="lg" classNames={{
-                                    content: "font-bold"
-                                }}>01:00:20</Chip>
-                            </div>
-                            <div className="self-center">
-                                <Chip size="lg" color="success"><span>Shift: </span><span className="font-bold">Malam</span></Chip>
-                            </div>
+                            <HoursShift />
                             <Divider orientation="vertical" />
                             <Button isIconOnly color="primary">
                                 <RefreshCw className="w-5 h-5" />

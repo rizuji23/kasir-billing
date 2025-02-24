@@ -1,7 +1,9 @@
+import { PriceBilling } from "@prisma/client";
 import { IResponses } from "./lib/responses";
 import {
   CategoryMenu,
   IMenu,
+  IPriceType,
   ITableBilliard,
   IVoucher,
 } from "./types/index.js";
@@ -32,13 +34,13 @@ declare global {
         cash: number,
         data: ICart[],
       ) => Promise<IResponses<{ cash: number; data: ICart[] }>>;
-      get_printer: () => Promise<IResponses<Array[]>>;
-      get_serialport: () => Promise<IResponses<Array[]>>;
+      get_printer: () => Promise<IResponses<unknown>>;
+      get_serialport: () => Promise<IResponses<unknown>>;
       list_member: () => Promise<IResponses<Array[]>>;
       add_member: (data: unknown) => Promise<IResponses<unknown[]>>;
       delete_member: (id: number) => Promise<IResponses<unknown[]>>;
       update_member: (
-        id: number,
+        id: string | null,
         data: unknown,
       ) => Promise<IResponses<unknown[]>>;
       get_type: (type_member: string) => Promise<IResponses<unknown>>;
@@ -59,6 +61,12 @@ declare global {
         id: number,
       ) => Promise<IResponses<IVoucher>>;
       delete_voucher: (id: number) => Promise<IResponses<IVoucher>>;
+      get_current_shift: () => Promise<IResponses<string>>;
+      get_price: (
+        type_pricing: string,
+        time: string,
+      ) => Promise<IResponses<PriceBilling>>;
+      get_price_type: () => Promise<IResponses<IPriceType[]>>;
     };
   }
 }

@@ -93,6 +93,9 @@ export interface TableBilliard {
   duration: string;
   status: TableStatus;
   type_play: TypePlay;
+  timer?: Date | null;
+  number?: string | null;
+  power?: "ON" | "OFF";
   created_at: Date;
   updated_at: Date;
   bookings: Booking[];
@@ -366,4 +369,12 @@ export interface IVoucher {
 export interface IModalRow<T> {
   open: boolean;
   row: T | null;
+}
+
+export interface IPriceType {
+  id: number;
+  id_price_billing_type: string;
+  type_price: string;
+  created_at: Date;
+  updated_at: Date;
 }

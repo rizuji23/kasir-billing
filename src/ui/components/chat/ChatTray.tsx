@@ -24,8 +24,8 @@ export default function ChatTray() {
                                 <div className="grid gap-3 w-full">
                                     {
                                         Array.from({ length: 10 }).map((_, i) => {
-                                            return <>
-                                                <div key={i} className="max-w-[200px] h-fit rounded-md bg-primary-500 p-2 text-white">
+                                            return <div key={i}>
+                                                <div className="max-w-[200px] h-fit rounded-md bg-primary-500 p-2 text-white">
                                                     <p>Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
                                                     <div className="mt-3">
                                                         <small className="font-extralight">23 Mei 2022 01:00 AM</small>
@@ -39,7 +39,7 @@ export default function ChatTray() {
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </>
+                                            </div>
                                         })
                                     }
                                 </div>

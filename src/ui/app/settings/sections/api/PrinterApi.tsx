@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { IPrinters, Settings } from "../../../../../electron/types";
 import { IResponses } from "../../../../../electron/lib/responses";
 import { Form } from "@heroui/form";
+import { RefreshCcw } from "lucide-react";
 
 interface IPrinterReturn {
     printers: IPrinters[],
@@ -20,7 +21,7 @@ export default function PrinterApi() {
     const getPrinters = async () => {
         try {
             setLoading(true)
-            const res: IResponses<IPrinterReturn> = await window.api.get_printer()
+            const res = await window.api.get_printer() as unknown as IResponses<IPrinterReturn>
             console.log(res)
             if (res.status && res.data?.printers) {
                 setPrinter(res.data.printers);
@@ -74,7 +75,8 @@ export default function PrinterApi() {
 
                         </div>
                     </CardBody>
-                    <CardFooter className="justify-end">
+                    <CardFooter className="justify-between">
+                        <Button color="success" onPress={() => getPrinters()} startContent={<RefreshCcw className="w-4 h-4" />}>Refresh</Button>
                         <Button isLoading={loading} type="submit">Simpan Perubahan</Button>
                     </CardFooter>
                 </Card>

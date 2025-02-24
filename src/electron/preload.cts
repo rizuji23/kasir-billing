@@ -24,7 +24,7 @@ contextBridge.exposeInMainWorld("api", {
   list_member: () => ipcRenderer.invoke("list_member"),
   add_member: (data: any) => ipcRenderer.invoke("add_member", data),
   delete_member: (id: number) => ipcRenderer.invoke("delete_member", id),
-  update_member: (id: number, data: any) =>
+  update_member: (id: string | null, data: any) =>
     ipcRenderer.invoke("update_member", id, data),
   save_printer: (id: string | null, label_settings: string, content: string) =>
     ipcRenderer.invoke("save_printer", id, label_settings, content),
@@ -35,4 +35,8 @@ contextBridge.exposeInMainWorld("api", {
   update_voucher: (data: any, id: number) =>
     ipcRenderer.invoke("update_voucher", data, id),
   delete_voucher: (id: number) => ipcRenderer.invoke("delete_voucher", id),
+  get_current_shift: () => ipcRenderer.invoke("get_current_shift"),
+  get_price: (type_pricing: string, time: string) =>
+    ipcRenderer.invoke("get_price", type_pricing, time),
+  get_price_type: () => ipcRenderer.invoke("get_price_type"),
 });

@@ -41,7 +41,7 @@ export default function BoxTable(props: TableBilliard) {
                     </div>
                 </div>
             </div>
-            <DrawerTable open={open} setOpen={setOpen} />
+            <DrawerTable open={open} setOpen={setOpen} table={props} />
         </>
     )
 }

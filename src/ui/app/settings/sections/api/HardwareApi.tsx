@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { SerialPortInfo, Settings } from "../../../../../electron/types";
 import { IResponses } from "../../../../../electron/lib/responses";
 import { Form } from "@heroui/form";
+import { RefreshCcw } from "lucide-react";
 
 interface IPortReturn {
     ports: SerialPortInfo[],
@@ -22,7 +23,7 @@ export default function HardwareApi() {
     const getPots = async () => {
         setLoading(true)
         try {
-            const res: IResponses<IPortReturn> = await window.api.get_serialport()
+            const res = await window.api.get_serialport() as unknown as IResponses<IPortReturn>
             console.log("res", res)
             setLoading(false)
             if (res.status && res.data) {
@@ -68,7 +69,7 @@ export default function HardwareApi() {
                             <Select label="COM Port" isRequired selectedKeys={[selected]} onChange={(e) => setSelected(e.target.value)} placeholder="Pilih COM Port disini" isLoading={loading}>
                                 {
                                     ports.map((item) => (
-                                        <SelectItem key={item.path} value={item.path}>{item.path}</SelectItem>
+                                        <SelectItem key={item.path} value={item.path}>{item.friendlyName}</SelectItem>
                                     ))
                                 }
 
@@ -83,7 +84,8 @@ export default function HardwareApi() {
                             </div>
                         </div>
                     </CardBody>
-                    <CardFooter className="justify-end">
+                    <CardFooter className="justify-between">
+                        <Button color="success" onPress={() => getPots()} startContent={<RefreshCcw className="w-4 h-4" />}>Refresh</Button>
                         <Button isLoading={loading} type="submit">Simpan Perubahan</Button>
                     </CardFooter>
                 </Card>
