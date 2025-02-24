@@ -2,15 +2,38 @@ import { Button } from "@heroui/button";
 import MainLayout from "../../components/MainLayout";
 import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/dropdown";
 import { ChevronDown, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BoxTable from "./BoxTable";
 import BoxInfo from "./BoxInfo";
 import { Chip } from "@heroui/chip";
 import { Divider } from "@heroui/divider";
+import { IResponses } from "../../../electron/lib/responses";
+import { TableBilliard } from "../../../electron/types";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
     const [floor, setFloor] = useState<string>("floor_1");
+    const [table_list, setTableList] = useState<TableBilliard[]>([]);
 
+    const getTables = async () => {
+        try {
+            const res: IResponses<TableBilliard[]> = await window.api.table_list();
+
+            if (res.status && res.data) {
+                setTableList(res.data);
+            } else {
+                toast.error(`Failed to fetch table list: ${res.detail_message}`);
+            }
+        } catch (err) {
+            toast.error(`Error fetching tables: ${err}`);
+        }
+    };
+
+    useEffect(() => {
+        if (floor === "floor_1") {
+            getTables();
+        }
+    }, [floor])
 
     return (
         <>
@@ -56,8 +79,8 @@ export default function DashboardPage() {
                         <div className="w-full">
                             <div className="grid grid-cols-5 gap-5">
                                 {
-                                    Array.from({ length: 10 }).map((_, i) => {
-                                        return <BoxTable key={i} />
+                                    table_list.map((el, i) => {
+                                        return <BoxTable key={i} {...el} />
                                     })
                                 }
                             </div>

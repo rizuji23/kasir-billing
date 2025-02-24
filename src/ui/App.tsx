@@ -1,5 +1,4 @@
 import { Route, Routes } from 'react-router'
-import Login from './app/Login'
 import DashboardPage from './app/dashboard/Dashboard'
 import Menu from './app/menu/Menu'
 import MemberPage from './app/member/Member'
@@ -14,8 +13,9 @@ function App() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Login />}></Route>
+        {/* <Route path="/" element={<Login />}></Route> */}
         <Route path="/dashboard" element={<DashboardPage />}></Route>
+        <Route path="/" element={<DashboardPage />}></Route>
         <Route path="/order" element={<OrderPage />}></Route>
         <Route path="/menu" element={<Menu />}></Route>
         <Route path="/member" element={<MemberPage />}></Route>

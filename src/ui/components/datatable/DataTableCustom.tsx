@@ -1,8 +1,15 @@
+import { Spinner } from "@heroui/react";
 import DataTable, { TableColumn, IDataTableProps } from "react-data-table-component";
 
 interface DataTableCustomProps<T> extends IDataTableProps<T> {
     columns: TableColumn<T>[];
     data: T[];
+}
+
+export function LoadingComponent() {
+    return <div className="flex justify-center my-5">
+        <Spinner />
+    </div>
 }
 
 export default function DataTableCustom<T>({ columns, data, ...props }: DataTableCustomProps<T>) {
@@ -45,6 +52,7 @@ export default function DataTableCustom<T>({ columns, data, ...props }: DataTabl
                 }}
                 className="rounded-md"
                 noDataComponent={<h3 className="font-bold text-lg p-6 text-white">Data Kosong</h3>}
+                progressComponent={<LoadingComponent />}
             />
         </div>
     );

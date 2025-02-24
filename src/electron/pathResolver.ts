@@ -1,6 +1,6 @@
 import path from "path";
-import { isDev } from "./utils.js";
 import { app } from "electron";
+import { isDev } from "./utils.js";
 
 export function getPreloadPath() {
   return path.join(
@@ -8,4 +8,12 @@ export function getPreloadPath() {
     isDev() ? "." : "..",
     "/dist-electron/preload.cjs",
   );
+}
+
+export function getUIPath() {
+  return path.join(app.getAppPath(), "/dist-react/index.html");
+}
+
+export function getAssetPath() {
+  return path.join(app.getAppPath(), isDev() ? "." : "..", "/src/assets");
 }

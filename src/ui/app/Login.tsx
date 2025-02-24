@@ -4,14 +4,29 @@ import { Form } from "@heroui/form";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import logo from "../assets/logo-login.png"
+import { toast } from "sonner";
 import { useNavigate } from "react-router";
 
 export default function Login() {
-    const navigate = useNavigate();
+    const navigation = useNavigate();
 
-    const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        navigate("/dashboard")
+        const data = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
+
+        try {
+            const res = await window.api.login(data.username, data.password);
+            console.log("res", res.status);
+
+            if (res.status) {
+                navigation("/dashboard")
+            } else {
+                toast.error(res.detail_message || "Login failed");
+            }
+        } catch (err) {
+            toast.error("Login failed due to an error");
+            console.error(err);
+        }
     };
 
     return (

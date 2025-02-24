@@ -1,8 +1,32 @@
 import { Alert } from "@heroui/alert";
 import { Card, CardBody } from "@heroui/card";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 
 export default function BoxInfo() {
+    const [total, setTotal] = useState<{ all: number, used: number }>({ all: 0, used: 0 });
+
+    const getTotal = async () => {
+        try {
+            const total_billing = await window.api.total_booking();
+
+            if (total_billing.status && total_billing.data) {
+                setTotal({
+                    all: total_billing.data.total_all,
+                    used: total_billing.data?.total_used
+                })
+            }
+
+        } catch (err) {
+            toast.error(`Terjadi kesalahan : ${err}`);
+        }
+    }
+
+    useEffect(() => {
+        getTotal();
+    }, []);
+
     return (
         <>
             <div className="w-[400px]">
@@ -11,7 +35,7 @@ export default function BoxInfo() {
                         <div className="flex flex-col gap-3">
                             <div className="p-3 bg-muted hover:bg-muted/50 duration-300 transition-all rounded-md text-center cursor-pointer">
                                 <h3 className="font-semibold">Total Booking Aktif Lantai 1</h3>
-                                <h1 className="text-3xl font-bold text-primary-500 mt-2">1/12</h1>
+                                <h1 className="text-3xl font-bold text-primary-500 mt-2">{total.used}/{total.all}</h1>
                             </div>
                             <div className="p-3 bg-muted hover:bg-muted/50 duration-300 transition-all rounded-md text-center cursor-pointer">
                                 <h3 className="font-semibold">Total Booking Aktif Lantai 2</h3>

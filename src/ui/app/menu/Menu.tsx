@@ -1,116 +1,69 @@
-import { Card, CardBody } from "@heroui/card";
 import MainLayout from "../../components/MainLayout";
 import { Input } from "@heroui/input";
 import { Search } from "lucide-react";
 import { Divider } from "@heroui/divider";
-import BoxItem from "./BoxItem";
-import { Button } from "@heroui/button";
 import { Tab, Tabs } from "@heroui/tabs";
 import BoxMenu from "./BoxMenu";
+import { useEffect, useState } from "react";
+import { CategoryMenu, IMenu } from "../../../electron/types";
+import { IResponses } from "../../../electron/lib/responses";
+import { toast } from "sonner";
+import { LoadingComponent } from "../../components/datatable/DataTableCustom";
+import NotFound from "../../components/NotFound";
+import DetailPayment from "./DetailPayment";
+import { Skeleton } from "@heroui/react";
+import useCart from "../../hooks/useCart";
 
 export default function Menu() {
-    const list: { title: string, img: string, price: string }[] = [
-        {
-            title: "Orange",
-            img: "/orange.jpeg",
-            price: "Rp. 5.550",
-        },
-        {
-            title: "Tangerine",
-            img: "/orange.jpeg",
-            price: "Rp. 3.300",
-        },
-        {
-            title: "Raspberry",
-            img: "/orange.jpeg",
-            price: "Rp. 10.400",
-        },
-        {
-            title: "Lemon",
-            img: "/orange.jpeg",
-            price: "Rp. 5.230",
-        },
-        {
-            title: "Avocado",
-            img: "/orange.jpeg",
-            price: "Rp. 15.170",
-        },
-        {
-            title: "Lemon 2",
-            img: "/orange.jpeg",
-            price: "Rp. 8.300",
-        },
-        {
-            title: "Banana",
-            img: "/orange.jpeg",
-            price: "Rp. 7.650",
-        },
-        {
-            title: "Watermelon",
-            img: "/orange.jpeg",
-            price: "Rp. 12.720",
-        },
-        {
-            title: "Watermelon",
-            img: "/orange.jpeg",
-            price: "Rp. 12.720",
-        },
-        {
-            title: "Watermelon",
-            img: "/orange.jpeg",
-            price: "Rp. 12.720",
-        },
-        {
-            title: "Watermelon",
-            img: "/orange.jpeg",
-            price: "Rp. 12.720",
-        },
-        {
-            title: "Watermelon",
-            img: "/orange.jpeg",
-            price: "Rp. 12.720",
-        },
-        {
-            title: "Watermelon",
-            img: "/orange.jpeg",
-            price: "Rp. 12.720",
-        },
-        {
-            title: "Watermelon",
-            img: "/orange.jpeg",
-            price: "Rp. 12.720",
-        },
-        {
-            title: "Watermelon",
-            img: "/orange.jpeg",
-            price: "Rp. 12.720",
-        },
-        {
-            title: "Watermelon",
-            img: "/orange.jpeg",
-            price: "Rp. 12.720",
-        },
-        {
-            title: "Watermelon",
-            img: "/orange.jpeg",
-            price: "Rp. 12.720",
-        },
-        {
-            title: "Watermelon",
-            img: "/orange.jpeg",
-            price: "Rp. 12.720",
-        },
-        {
-            title: "Watermelon",
-            img: "/orange.jpeg",
-            price: "Rp. 12.720",
-        },
-        {
-            title: "Watermelon",
-            img: "/orange.jpeg",
-            price: "Rp. 12.720",
-        },
-    ];
+    const [list_menu, setListMenu] = useState<IMenu[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [list_category, setListCategory] = useState<CategoryMenu[]>([]);
+    const [category, setCategory] = useState<string>("all");
+    const [searchTerm, setSearchTerm] = useState<string>("");
+
+    const cart = useCart();
+
+    const getCategory = async () => {
+        setLoading(true)
+        try {
+            const res = await window.api.list_category()
+
+            if (res.status && res.data) {
+                setListCategory(res.data);
+                setLoading(false)
+            } else {
+                toast.error(`Failed to fetch category list: ${res.detail_message}`);
+            }
+        } catch (err) {
+            setLoading(false)
+            toast.error(`Error fetching category: ${err}`);
+        }
+    }
+
+    const getMenu = async (category: string) => {
+        setLoading(true)
+        try {
+            const res: IResponses<IMenu[]> = await window.api.menu_list(category);
+            if (res.status && res.data) {
+                setLoading(false)
+                setListMenu(res.data);
+            } else {
+                toast.error(`Gagal mengambil daftar menu: ${res.detail_message}`);
+            }
+        } catch (err) {
+            setLoading(false)
+            toast.error(`Terjadi kesalahan saat mengambil menu: ${err}`);
+        }
+    }
+
+    const filteredData = list_menu.filter(item =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    useEffect(() => {
+        getMenu(category);
+        getCategory();
+    }, [category]);
 
 
     return (
@@ -124,66 +77,38 @@ export default function Menu() {
                         <div className="col-span-2">
                             <div className="flex flex-col gap-3">
                                 <div className="">
-                                    <Input autoFocus startContent={<Search className="w-5 h-5" />} placeholder="Cari menu disini..." />
+                                    <Input autoFocus onChange={(e) => setSearchTerm(e.target.value)} value={searchTerm} startContent={<Search className="w-5 h-5" />} placeholder="Cari menu disini..." />
                                 </div>
-                                <Tabs variant="light">
-                                    <Tab key="all" title="Semua" />
-                                    <Tab key="makanan" title="Makanan" />
-                                    <Tab key="snack" title="Snack" />
-                                    <Tab key="minuman" title="Minuman" />
-                                </Tabs>
+                                {
+                                    loading ? <div className="flex gap-3">
+                                        {
+                                            Array.from({ length: 5 }).map((_, i) => {
+                                                return <Skeleton className="w-[80px] h-8 rounded-md" key={i} />
+                                            })
+                                        }
+                                    </div> : <Tabs variant="light" selectedKey={category} onSelectionChange={(e) => setCategory(e.toString())}>
+                                        <Tab key="all" title="Semua" className="capitalize" />
+                                        {
+                                            list_category.map((el) => {
+                                                return <Tab key={el.id} title={el.name} className="capitalize" />
+                                            })
+                                        }
+                                    </Tabs>
+                                }
                                 <Divider />
-                                <div className="gap-4 grid grid-cols-2 sm:grid-cols-4 max-h-[80vh] overflow-y-auto pe-3">
-                                    {list.map((item, index) => (
-                                        <BoxMenu key={index} item={item} />
-                                    ))}
-                                </div>
+                                {loading ? <LoadingComponent /> :
+                                    filteredData.length !== 0 ? <div className="gap-4 grid grid-cols-2 sm:grid-cols-4 max-h-[80vh] overflow-y-auto pe-3">
+                                        {
+                                            filteredData.map((item, index) => (
+                                                <BoxMenu key={index} item={item} cart={cart} />
+                                            ))
+                                        }
+                                    </div>
+                                        : <NotFound title="Menu Tidak Ditemukan" />}
                             </div>
                         </div>
                         <div>
-                            <Card>
-                                <CardBody>
-                                    <div className="grid gap-3">
-
-                                        <div className="max-h-[300px] overflow-auto pe-3">
-                                            <div className="grid gap-1">
-                                                {
-                                                    Array.from({ length: 10 }).map((_, i) => {
-                                                        return <BoxItem key={i} />
-                                                    })
-                                                }
-                                            </div>
-                                        </div>
-                                        <div className="grid gap-3">
-                                            <div className="flex flex-col gap-1">
-                                                <h3 className="text-lg font-bold">Detail Pembayaran:</h3>
-                                                <p className="text-xs">Tanggal Pembelian: 20-05-2025 03:50:00</p>
-                                                <Divider className="my-2" />
-                                                <Input
-                                                    isRequired
-                                                    label="Uang Cash"
-                                                    name="uang_cash"
-                                                    errorMessage={"Silakan isi kolom ini."}
-                                                    placeholder="Masukan uang cash disini"
-                                                    type="text"
-                                                />
-                                            </div>
-                                            <div className="flex flex-col gap-1">
-                                                <h3>Kembalian:</h3>
-                                                <h1 className="text-xl font-bold">Rp. 10.000</h1>
-                                            </div>
-                                            <div className="flex flex-col gap-1">
-                                                <h3>Total:</h3>
-                                                <h1 className="text-xl font-bold">Rp. 10.000</h1>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col gap-3">
-                                            <Button>Pesan</Button>
-                                            <Button color="danger">Batalkan</Button>
-                                        </div>
-                                    </div>
-                                </CardBody>
-                            </Card>
+                            <DetailPayment cart={cart} />
                         </div>
                     </div>
                 </div>
