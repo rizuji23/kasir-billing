@@ -4,7 +4,6 @@ import { Drawer, DrawerContent, DrawerFooter, } from "@heroui/drawer";
 import { Input } from "@heroui/input";
 import { Radio, RadioGroup } from "@heroui/radio";
 import { Select, SelectItem } from "@heroui/select";
-import { BadgePercent, Coins, Timer } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
 import { TableBilliard } from "../../../../electron/types";
 import useBooking from "../../../hooks/useBooking";
@@ -13,14 +12,18 @@ import { convertRupiah } from "../../../lib/utils";
 import { Form } from "@heroui/form";
 
 export default function DrawerTable({ open, setOpen, table }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, table: TableBilliard }) {
-    const booking = useBooking({ open, setOpen })
+    const booking = useBooking({ open, setOpen, table })
 
+    const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        return await booking.checkOut();
+    }
 
     return (
         <>
             <Drawer isOpen={open} onOpenChange={setOpen} size="2xl">
                 <DrawerContent>
-                    <Form className="!block " validationBehavior="native">
+                    <Form className="!block " validationBehavior="native" onSubmit={onSubmit}>
                         <div className="grid gap-4 p-6">
                             <div className="flex flex-col gap-3">
                                 <h3 className="font-bold">Booking Detail ({table.name})</h3>
@@ -44,6 +47,11 @@ export default function DrawerTable({ open, setOpen, table }: { open: boolean, s
                                             placeholder="Masukan nama lengkap disini"
                                             type="text"
                                             autoFocus
+                                            onChange={(e) => booking.setDataBooking((prevState) => ({
+                                                ...prevState,
+                                                name: e.target.value
+                                            }))}
+                                            value={booking.data_booking.name}
                                         />
                                     </div>
                                 </div>
@@ -70,6 +78,7 @@ export default function DrawerTable({ open, setOpen, table }: { open: boolean, s
                                         errorMessage={"Silakan isi kolom ini."}
                                         placeholder="Masukan durasi disini"
                                         type="number"
+                                        value={booking.data_booking.duration}
                                         isDisabled={booking.data_booking.type_play === "LOSS"}
                                         onChange={(e) => {
                                             booking.setDataBooking((prevState) => ({
@@ -100,18 +109,22 @@ export default function DrawerTable({ open, setOpen, table }: { open: boolean, s
                                         )
                                     }
                                     <Divider />
-                                    <Select
-                                        label="Lampu Blink"
-                                        placeholder="Pilih jawaban..."
-                                        onChange={(e) => booking.setDataBooking((prevState) => ({
-                                            ...prevState,
-                                            blink: e.target.value
-                                        }))}
-                                        selectedKeys={[booking.data_booking.blink]}
-                                    >
-                                        <SelectItem key={"iya"}>Iya</SelectItem>
-                                        <SelectItem key={"tidak"}>Tidak</SelectItem>
-                                    </Select>
+                                    {
+                                        booking.data_booking.type_play !== "LOSS" && (
+                                            <Select
+                                                label="Lampu Blink"
+                                                placeholder="Pilih jawaban..."
+                                                onChange={(e) => booking.setDataBooking((prevState) => ({
+                                                    ...prevState,
+                                                    blink: e.target.value
+                                                }))}
+                                                selectedKeys={[booking.data_booking.blink]}
+                                            >
+                                                <SelectItem key={"iya"}>Iya</SelectItem>
+                                                <SelectItem key={"tidak"}>Tidak</SelectItem>
+                                            </Select>
+                                        )
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -119,16 +132,22 @@ export default function DrawerTable({ open, setOpen, table }: { open: boolean, s
                             <div className="flex flex-col gap-3 w-full">
                                 <div className="grid gap-2">
                                     <div className="p-3 border-2 rounded-md grid gap-1">
-                                        <div className="flex gap-3">
-                                            <p className="text-sm font-bold">Waktu Mulai: {booking.item_price.length !== 0 ? moment(booking.item_price[0].start_duration).format("HH:mm:ss") : "00:00:00"}</p>
-                                        </div>
-                                        <div className="flex gap-3">
-                                            <p className="text-sm font-bold">Waktu Berakhir: {booking.item_price.length !== 0 ? moment(booking.item_price[booking.item_price.length - 1].end_duration).format("HH:mm:ss") : "00:00:00"}</p>
-                                        </div>
-                                        <div className="flex gap-3">
-                                            <p className="text-sm font-bold">Durasi: {booking.item_price.length} Jam</p>
-                                        </div>
-                                        <Divider className="my-3" />
+                                        {
+                                            booking.data_booking.type_play !== "LOSS" && (
+                                                <>
+                                                    <div className="flex gap-3">
+                                                        <p className="text-sm font-bold">Waktu Mulai: {booking.item_price.length !== 0 ? moment(booking.item_price[0].start_duration).format("HH:mm:ss") : "00:00:00"}</p>
+                                                    </div>
+                                                    <div className="flex gap-3">
+                                                        <p className="text-sm font-bold">Waktu Berakhir: {booking.item_price.length !== 0 ? moment(booking.item_price[booking.item_price.length - 1].end_duration).format("HH:mm:ss") : "00:00:00"}</p>
+                                                    </div>
+                                                    <div className="flex gap-3">
+                                                        <p className="text-sm font-bold">Durasi: {booking.item_price.length} Jam</p>
+                                                    </div>
+                                                    <Divider className="my-3" />
+                                                </>
+                                            )
+                                        }
                                         <div className="flex gap-3">
                                             <p className="text-sm font-bold">Total: Rp. {convertRupiah(booking.subtotal.toString())}</p>
                                         </div>

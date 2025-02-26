@@ -1,6 +1,71 @@
-import { ipcMain } from "electron";
+import { BrowserWindow, ipcMain } from "electron";
 import { prisma } from "../database.js";
 import Responses from "../lib/responses.js";
+import { sendMessageToMachine } from "./machine.js";
+
+export async function initialStartLamp() {
+  try {
+    const table_on = await prisma.tableBilliard.findMany({
+      where: {
+        power: "ON",
+      },
+    });
+
+    if (table_on.length !== 0) {
+      const get_only_number = table_on.map((el) => Number(el.number));
+      console.log(get_only_number);
+      await sendMessageToMachine(`on [${get_only_number.toString()}]`);
+    }
+  } catch (err) {
+    console.log(err);
+    return false;
+  }
+}
+
+export const formatTime = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+    2,
+    "0",
+  )}:${String(secs).padStart(2, "0")}`;
+};
+
+export const updateTimers = async (mainWindow: BrowserWindow) => {
+  setInterval(async () => {
+    const tables = await prisma.tableBilliard.findMany({
+      include: { bookings: true },
+    });
+
+    const now = new Date();
+    const updatedTables = await Promise.all(
+      tables.map(async (table) => {
+        let remainingTime = "00:00:00";
+
+        if (table.timer) {
+          const secondsRemaining = Math.max(
+            0,
+            Math.floor((table.timer.getTime() - now.getTime()) / 1000),
+          );
+
+          remainingTime = formatTime(secondsRemaining);
+
+          if (secondsRemaining <= 0) {
+            await prisma.tableBilliard.update({
+              where: { id: table.id },
+              data: { status: "AVAILABLE", timer: null },
+            });
+          }
+        }
+
+        return { ...table, remainingTime };
+      }),
+    );
+
+    mainWindow.webContents.send("update_table_list", updatedTables);
+  }, 1000);
+};
 
 export default function TableModule() {
   async function getCurrentShift() {
@@ -54,15 +119,26 @@ export default function TableModule() {
   }
 
   ipcMain.handle("table_list", async () => {
-    const table = await prisma.tableBilliard.findMany({
-      include: {
-        bookings: true,
-      },
+    const tables = await prisma.tableBilliard.findMany({
+      include: { bookings: true },
     });
-    return Responses({
-      code: 200,
-      data: table,
+
+    const now = new Date();
+    const tablesWithFormattedTime = tables.map((table) => {
+      let remainingTime = "00:00:00";
+
+      if (table.timer) {
+        const secondsRemaining = Math.max(
+          0,
+          Math.floor((table.timer.getTime() - now.getTime()) / 1000),
+        );
+        remainingTime = formatTime(secondsRemaining);
+      }
+
+      return { ...table, remainingTime };
     });
+
+    return { code: 200, data: tablesWithFormattedTime };
   });
 
   ipcMain.handle("total_booking", async () => {

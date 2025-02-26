@@ -2,38 +2,18 @@ import { Button } from "@heroui/button";
 import MainLayout from "../../components/MainLayout";
 import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/dropdown";
 import { ChevronDown, RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import BoxTable from "./BoxTable";
 import BoxInfo from "./BoxInfo";
 import { Divider } from "@heroui/divider";
-import { IResponses } from "../../../electron/lib/responses";
-import { TableBilliard } from "../../../electron/types";
-import { toast } from "sonner";
 import HoursShift from "./HoursShift";
+import { useTableBilliard } from "../../components/context/TableContext";
+import { Spinner } from "@heroui/react";
 
 export default function DashboardPage() {
     const [floor, setFloor] = useState<string>("floor_1");
-    const [table_list, setTableList] = useState<TableBilliard[]>([]);
 
-    const getTables = async () => {
-        try {
-            const res: IResponses<TableBilliard[]> = await window.api.table_list();
-
-            if (res.status && res.data) {
-                setTableList(res.data);
-            } else {
-                toast.error(`Failed to fetch table list: ${res.detail_message}`);
-            }
-        } catch (err) {
-            toast.error(`Error fetching tables: ${err}`);
-        }
-    };
-
-    useEffect(() => {
-        if (floor === "floor_1") {
-            getTables();
-        }
-    }, [floor])
+    const tableList = useTableBilliard();
 
     return (
         <>
@@ -69,13 +49,20 @@ export default function DashboardPage() {
 
                     <div className="flex gap-5">
                         <div className="w-full">
-                            <div className="grid grid-cols-5 gap-5">
-                                {
-                                    table_list.map((el, i) => {
-                                        return <BoxTable key={i} {...el} />
-                                    })
-                                }
-                            </div>
+
+                            {
+                                tableList.loading ? <div className="flex justify-center h-[20vh]">
+                                    <Spinner size="lg" />
+                                </div> : <div className="grid grid-cols-5 gap-5">
+                                    {
+                                        tableList.tableList.map((el, i) => {
+                                            return <BoxTable key={i} {...el} />
+                                        })
+                                    }
+                                </div>
+
+                            }
+
                         </div>
 
                         <BoxInfo />

@@ -73,6 +73,12 @@ export enum TypePlay {
   NONE = "NONE",
 }
 
+export enum StatusMachine {
+  CONNECTED = "CONNECTED",
+  RECONNECTED = "RECONNECTED",
+  DISCONNECTED = "DISCONNECTED",
+}
+
 // ======== INTERFACES ========
 export interface User {
   id: number;
@@ -99,6 +105,7 @@ export interface TableBilliard {
   created_at: Date;
   updated_at: Date;
   bookings: Booking[];
+  remainingTime?: string;
 }
 
 export interface Members {
@@ -347,9 +354,16 @@ export interface SerialPortInfo {
   vendorId?: string;
 }
 
+export enum ILogsStatus {
+  WARNING = "WARNING",
+  LOG = "LOG",
+  ERROR = "ERROR",
+}
+
 export interface ILogs {
   id: number;
   activity: string;
+  status: ILogsStatus;
   created_at: Date;
   updated_at: Date;
 }
@@ -375,6 +389,14 @@ export interface IPriceType {
   id: number;
   id_price_billing_type: string;
   type_price: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface IMachine {
+  id: number;
+  id_machine: string;
+  status: StatusMachine;
   created_at: Date;
   updated_at: Date;
 }

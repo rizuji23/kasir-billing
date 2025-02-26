@@ -2,10 +2,25 @@ import { Alert } from "@heroui/alert";
 import { Card, CardBody } from "@heroui/card";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { IMachine } from "../../../electron/types";
 
 
 export default function BoxInfo() {
     const [total, setTotal] = useState<{ all: number, used: number }>({ all: 0, used: 0 });
+    const [status_machine, setStatusMachine] = useState<IMachine | undefined>(undefined);
+
+    const getStatusMachine = async () => {
+        try {
+            const res = await window.api.get_status_machine();
+
+            if (res.status && res.data) {
+                setStatusMachine(res.data);
+            }
+
+        } catch (err) {
+            toast.error(`Terjadi kesalahan : ${err}`);
+        }
+    }
 
     const getTotal = async () => {
         try {
@@ -25,6 +40,10 @@ export default function BoxInfo() {
 
     useEffect(() => {
         getTotal();
+        getStatusMachine();
+        setInterval(() => {
+            getStatusMachine();
+        }, 5000);
     }, []);
 
     return (
@@ -44,9 +63,12 @@ export default function BoxInfo() {
                             <div className="rounded-md px-1 flex flex-col gap-2">
                                 <h3 className="font-semibold">Informasi:</h3>
                                 <div className="grid gap-3 max-h-[240px] overflow-auto px-1">
-                                    <Alert color="success" variant="solid" title={"Server Local Terkoneksi"} />
-                                    <Alert color="success" variant="solid" title={"Server Cloud Terkoneksi"} />
-                                    <Alert color="danger" variant="solid" title={"Box Tidak Tersambung!"} />
+                                    {
+                                        status_machine?.status === undefined ? <Alert color="danger" variant="solid" title={"Box Tidak Dikenal!"} /> : status_machine.status === "CONNECTED" ? <Alert color="success" variant="solid" title={"Box Tersambung!"} /> : status_machine.status === "RECONNECTED" ? <Alert color="warning" variant="solid" title={"Box Sedang Reconnecting!"} /> : <Alert color="danger" variant="solid" title={"Box Tidak Tersambung!"} />
+                                    }
+                                    <Alert color="success" variant="bordered" title={"Server Local Terkoneksi"} />
+                                    <Alert color="success" variant="bordered" title={"Server Cloud Terkoneksi"} />
+
                                 </div>
                             </div>
                         </div>

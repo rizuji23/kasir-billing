@@ -1,14 +1,16 @@
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import { IPriceType } from "../../electron/types";
+import { IPriceType, TableBilliard } from "../../electron/types";
 import { toast } from "sonner";
 import moment from "moment-timezone";
+import { useTableBilliard } from "../components/context/TableContext";
 
 interface IDataBookingInput {
     type_play: string,
     name: string,
     type_price: string,
     duration: string,
-    blink: string
+    blink: string,
+    id_table: string
 }
 
 interface IItemDuration {
@@ -26,17 +28,21 @@ export interface UseBookingResult {
     handleItemPrice: (duration: string) => Promise<void>,
     voucher: string,
     setVoucher: Dispatch<SetStateAction<string>>,
-    subtotal: number
+    subtotal: number,
+    checkOut: () => Promise<void>
 }
 
-export default function useBooking({ open, setOpen }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>> }): UseBookingResult {
+export default function useBooking({ open, setOpen, table }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, table: TableBilliard }): UseBookingResult {
     const [data_booking, setDataBooking] = useState<IDataBookingInput>({
         type_play: "REGULAR",
         name: "",
         type_price: "REGULAR",
         duration: "0",
-        blink: "tidak"
+        blink: "tidak",
+        id_table: "",
     })
+
+    const tableList = useTableBilliard();
 
     const [type_price, setTypePrice] = useState<IPriceType[]>([]);
     const [item_price, setItemPrice] = useState<IItemDuration[]>([]);
@@ -54,6 +60,16 @@ export default function useBooking({ open, setOpen }: { open: boolean, setOpen: 
         } catch (err) {
             toast.error(`Kesalahan dalam pemeriksaan: ${err}`);
         }
+    }
+
+    const clearState = () => {
+        setDataBooking((prevState) => ({
+            ...prevState,
+            duration: "",
+        }))
+        setItemPrice([]);
+        setSubtotal(0);
+        setDurationBilling(0);
     }
 
     const handleItemPrice = async (duration: string) => {
@@ -76,14 +92,10 @@ export default function useBooking({ open, setOpen }: { open: boolean, setOpen: 
             if (price) {
                 newPrices.push({
                     price,
-                    duration: i + 1, // Ensure correct iteration count
+                    duration: i + 1,
                     start_duration: startSlot.toDate(),
                     end_duration: endSlot.toDate(),
                 });
-
-                console.log(`Iteration: ${i + 1}, Start: ${startSlot.format("HH:mm:ss")}, End: ${endSlot.format("HH:mm:ss")}, Price: ${price}`);
-            } else {
-                console.warn(`⚠️ Missing Price for ${startSlot.format("HH:mm:ss")}`);
             }
         }
 
@@ -107,6 +119,59 @@ export default function useBooking({ open, setOpen }: { open: boolean, setOpen: 
         }
     };
 
+    const checkOut = async () => {
+        try {
+            const durations = Number(duration_billing);
+            if (item_price.length === 0) {
+                toast.error("Silahkan untuk isi terlebih dahulu durasi.");
+            }
+
+            if (!durations || isNaN(durations) || durations <= 0) {
+                toast.error("Durasi tidak boleh kosong atau minus.");
+            }
+
+            const data = {
+                item_price: item_price,
+                subtotal: subtotal,
+                data_booking: data_booking
+            }
+
+            console.log(data)
+
+            if (data_booking.type_play === "REGULAR") {
+                const res = await window.api.booking_regular(data);
+
+                if (res.status) {
+                    toast.success(`Booking pada ${table.name} berhasil dilakukan`)
+                    setOpen(false);
+                    tableList.getTables();
+                } else {
+                    toast.error(`Booking pada ${table.name} gagal dilakukan`);
+                }
+            }
+        } catch (err) {
+            toast.error(`Kesalahan dalam pemeriksaan: ${err}`);
+        }
+    }
+
+    const lossChange = async () => {
+        const startTime = moment().tz("Asia/Jakarta");
+        const endSlot = startTime.clone().add(15, "minutes");
+
+        const price = await getPrice(endSlot);
+
+        if (price) {
+            setItemPrice([{
+                price,
+                duration: 1,
+                start_duration: startTime.toDate(),
+                end_duration: endSlot.toDate(),
+            }]);
+            setSubtotal(price);
+            setDurationBilling(1);
+        }
+    }
+
     useEffect(() => {
         if (open) {
             handleItemPrice(duration_billing.toString());
@@ -116,8 +181,22 @@ export default function useBooking({ open, setOpen }: { open: boolean, setOpen: 
     useEffect(() => {
         if (open === true) {
             getTypePrice();
+            setDataBooking((prevState) => ({
+                ...prevState,
+                id_table: table.id_table
+            }))
         }
-    }, [open])
+    }, [open]);
 
-    return { data_booking, setDataBooking, type_price, item_price, handleItemPrice, voucher, setVoucher, subtotal }
+    useEffect(() => {
+        if (open === true) {
+            if (data_booking.type_play === "LOSS") {
+                lossChange();
+            } else {
+                clearState();
+            }
+        }
+    }, [open, data_booking.type_play])
+
+    return { data_booking, setDataBooking, type_price, item_price, handleItemPrice, voucher, setVoucher, subtotal, checkOut }
 }

@@ -7,15 +7,55 @@ import { useEffect, useState } from "react";
 import { TableBilliard } from "../../../electron/types";
 import { IResponses } from "../../../electron/lib/responses";
 import { toast } from "sonner";
+import { Chip } from "@heroui/chip";
 
-function BoxLamp({ name, number }: { name: string, number: string }) {
+interface ExtendsTableBilliard extends TableBilliard {
+    getTables: () => Promise<void>,
+}
+
+function BoxLamp(props: ExtendsTableBilliard) {
+    const handleOn = async () => {
+        try {
+            if (confirm("Apakah anda yakin?")) {
+                const res = await window.api.send_on({ id_table: props.id_table, number: props.number || "" });
+
+                if (res.status) {
+                    props.getTables();
+                    toast.success(`Table ${props.name} Berhasil dinyalakan`);
+                }
+            }
+
+        } catch (err) {
+            toast.error(`Error lamp table: ${err}`);
+        }
+    }
+
+    const handleOff = async () => {
+        try {
+            if (confirm("Apakah anda yakin?")) {
+                const res = await window.api.send_off({ id_table: props.id_table, number: props.number || "" });
+
+                if (res.status) {
+                    props.getTables();
+                    toast.success(`Table ${props.name} Berhasil dimatikan`);
+                }
+            }
+
+        } catch (err) {
+            toast.error(`Error lamp table: ${err}`);
+        }
+    }
+
     return <Card>
         <CardBody>
-            <div className="grid gap-3">
-                <h3 className="font-bold text-lg">{name}</h3>
+            <div className="grid gap-2">
+                <div>
+                    <h3 className="font-bold text-lg">{props.name}</h3>
+                    <small>Status: <Chip color={props.power === "ON" ? "success" : "danger"} size="sm">{props.power}</Chip></small>
+                </div>
                 <div className="grid gap-3 grid-cols-2">
-                    <Button startContent={<Power className="w-4 h-4" />}>Turn On</Button>
-                    <Button startContent={<PowerOff className="w-4 h-4" />} color="danger">Turn Off</Button>
+                    <Button onPress={handleOn} startContent={<Power className="w-4 h-4" />}>Turn On</Button>
+                    <Button onPress={handleOff} startContent={<PowerOff className="w-4 h-4" />} color="danger">Turn Off</Button>
                 </div>
             </div>
         </CardBody>
@@ -39,6 +79,22 @@ export default function ManualLamp() {
         }
     };
 
+    const handleOnOffAll = async (status: string) => {
+        try {
+            if (confirm("Apakah anda yakin?")) {
+                const res = await window.api.on_off_all(status);
+
+                if (res.status) {
+                    getTables();
+                    toast.success(`Semua Table Berhasil ${status === "ON_ALL" ? "Dinyalakan" : "Dimatikan"}`);
+                }
+            }
+
+        } catch (err) {
+            toast.error(`Error lamp table: ${err}`);
+        }
+    }
+
     useEffect(() => {
         getTables();
     }, [])
@@ -54,13 +110,23 @@ export default function ManualLamp() {
                     <div className="grid grid-cols-5 gap-4">
                         {
                             table_list.map((el, i) => {
-                                return <BoxLamp key={i} {...el} />
+                                return <BoxLamp key={i} {...el} getTables={getTables} />
                             })
                         }
                     </div>
                     <Divider />
                     <div className="max-w-[300px]">
-                        <BoxLamp name="Semua Table" />
+                        <Card>
+                            <CardBody>
+                                <div className="grid gap-3">
+                                    <h3 className="font-bold text-lg">{"Semua Table"}</h3>
+                                    <div className="grid gap-3 grid-cols-2">
+                                        <Button onPress={() => handleOnOffAll("ON_ALL")} startContent={<Power className="w-4 h-4" />}>Turn On</Button>
+                                        <Button onPress={() => handleOnOffAll("OFF_ALL")} startContent={<PowerOff className="w-4 h-4" />} color="danger">Turn Off</Button>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
                     </div>
                 </div>
             </MainLayout>

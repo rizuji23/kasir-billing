@@ -21,6 +21,7 @@
     "seed:member_price": "set DATABASE_URL=file:C:\\Users\\Fauzi\\AppData\\Roaming\\kasir-billing\\kasir.sqlite && node prisma/seed_price_member.js",
     "seed:shift": "set DATABASE_URL=file:C:\\Users\\Fauzi\\AppData\\Roaming\\kasir-billing\\kasir.sqlite && node prisma/seed_shift.js",
     "seed:price_billing": "set DATABASE_URL=file:C:\\Users\\Fauzi\\AppData\\Roaming\\kasir-billing\\kasir.sqlite && node prisma/seed_price_billing.js",
+    "seed:machine": "set DATABASE_URL=file:C:\\Users\\Fauzi\\AppData\\Roaming\\kasir-billing\\kasir.sqlite && node prisma/seed_machine.js",
     "db:reset": "set DATABASE_URL=file:C:\\Users\\Fauzi\\AppData\\Roaming\\kasir-billing\\kasir.sqlite && npx prisma migrate reset",
     "db:generate": "set DATABASE_URL=file:C:\\Users\\Fauzi\\AppData\\Roaming\\kasir-billing\\kasir.sqlite && npx prisma generate"
   },

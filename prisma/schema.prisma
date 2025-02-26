@@ -94,6 +94,18 @@ enum PowerLamp {
   OFF
 }
 
+enum StatusMachine {
+  CONNECTED
+  RECONNECTED
+  DISCONNECTED
+}
+
+enum LoggingStatus {
+  ERROR
+  WARNING
+  LOG
+}
+
 // ======== MODELS ========
 model User {
   id         Int      @id @default(autoincrement())
@@ -117,9 +129,18 @@ model TableBilliard {
   timer      DateTime?
   number     String?
   power       PowerLamp @default(OFF)
+  blink       Boolean @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   bookings   Booking[]
+}
+
+model Machine {
+  id Int @id @default(autoincrement())
+  id_machine String @unique
+  status StatusMachine @default(DISCONNECTED)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 model PriceBilling {
@@ -164,8 +185,8 @@ model Members {
 model Booking {
   id           Int         @id @default(autoincrement())
   id_booking   String      @unique
-  memberId     Int
-  member       Members     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId     Int?
+  member       Members?     @relation(fields: [memberId], references: [id], onDelete: Cascade)
   name         String
   tableId      Int
   table        TableBilliard @relation(fields: [tableId], references: [id], onDelete: Cascade)
@@ -360,6 +381,7 @@ model OrderInMenu {
 model LogsData {
   id Int @id @default(autoincrement())
   activity String
+  status LoggingStatus @default(LOG)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }

@@ -2,11 +2,14 @@ import { PriceBilling } from "@prisma/client";
 import { IResponses } from "./lib/responses";
 import {
   CategoryMenu,
+  ILogs,
+  IMachine,
   IMenu,
   IPriceType,
   ITableBilliard,
   IVoucher,
 } from "./types/index.js";
+import { IBookingCheckout } from "./module/booking.ts";
 
 declare global {
   interface Window {
@@ -16,6 +19,8 @@ declare global {
         password: string,
       ) => Promise<IResponses<string>>;
       table_list: () => Promise<IResponses<ITableBilliard[]>>;
+      onTableUpdate: (callback: (data: TableBilliard[]) => void) => void;
+      removeTableUpdateListener: () => void;
       menu_list: (filter: string) => Promise<IResponses<IMenu[]>>;
       add_menu: (data: IMenu) => Promise<IResponses<IMenu>>;
       list_category: () => Promise<IResponses<CategoryMenu[]>>;
@@ -67,6 +72,18 @@ declare global {
         time: string,
       ) => Promise<IResponses<PriceBilling>>;
       get_price_type: () => Promise<IResponses<IPriceType[]>>;
+      get_status_machine: () => Promise<IResponses<IMachine | undefined>>;
+      send_on: (data: {
+        id_table: string;
+        number: string;
+      }) => Promise<IResponses<ITableBilliard>>;
+      send_off: (data: {
+        id_table: string;
+        number: string;
+      }) => Promise<IResponses<ITableBilliard>>;
+      on_off_all: (status: string) => Promise<IResponses<ITableBilliard>>;
+      get_logging: () => Promise<IResponses<ILogs[]>>;
+      booking_regular: (data: IBookingCheckout) => Promise<IResponses<unknown>>;
     };
   }
 }

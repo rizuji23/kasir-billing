@@ -4,6 +4,12 @@ contextBridge.exposeInMainWorld("api", {
   login: (username: any, password: any) =>
     ipcRenderer.invoke("login", username, password),
   table_list: () => ipcRenderer.invoke("table_list"),
+  onTableUpdate: (callback: (data: any) => void) => {
+    ipcRenderer.on("update_table_list", (_: any, data: any) => callback(data));
+  },
+  removeTableUpdateListener: () => {
+    ipcRenderer.removeAllListeners("update_table_list");
+  },
   menu_list: (filter: string) => ipcRenderer.invoke("menu_list", filter),
   add_menu: (data: any) => ipcRenderer.invoke("add_menu", data),
   list_category: () => ipcRenderer.invoke("list_category"),
@@ -39,4 +45,13 @@ contextBridge.exposeInMainWorld("api", {
   get_price: (type_pricing: string, time: string) =>
     ipcRenderer.invoke("get_price", type_pricing, time),
   get_price_type: () => ipcRenderer.invoke("get_price_type"),
+  get_status_machine: () => ipcRenderer.invoke("get_status_machine"),
+  send_on: (data: { id_table: string; number: string }) =>
+    ipcRenderer.invoke("send_on", data),
+  send_off: (data: { id_table: string; number: string }) =>
+    ipcRenderer.invoke("send_off", data),
+  on_off_all: (status: string) => ipcRenderer.invoke("on_off_all", status),
+  get_logging: () => ipcRenderer.invoke("get_logging"),
+  booking_regular: (data: unknown) =>
+    ipcRenderer.invoke("booking_regular", data),
 });
