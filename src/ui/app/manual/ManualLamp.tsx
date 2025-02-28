@@ -67,7 +67,7 @@ export default function ManualLamp() {
 
     const getTables = async () => {
         try {
-            const res: IResponses<TableBilliard[]> = await window.api.table_list();
+            const res: IResponses<TableBilliard[]> = await window.api.table_list_only();
 
             if (res.status && res.data) {
                 setTableList(res.data);

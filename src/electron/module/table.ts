@@ -35,7 +35,14 @@ export const formatTime = (seconds: number): string => {
 export const updateTimers = async (mainWindow: BrowserWindow) => {
   setInterval(async () => {
     const tables = await prisma.tableBilliard.findMany({
-      include: { bookings: true },
+      include: {
+        bookings: {
+          take: 1,
+          orderBy: {
+            created_at: "desc",
+          },
+        },
+      },
     });
 
     const now = new Date();
@@ -51,11 +58,30 @@ export const updateTimers = async (mainWindow: BrowserWindow) => {
 
           remainingTime = formatTime(secondsRemaining);
 
-          if (secondsRemaining <= 0) {
+          if (secondsRemaining <= 0 && table.status !== "EXPIRE") {
+            // Only update if not already "EXPIRE"
             await prisma.tableBilliard.update({
               where: { id: table.id },
-              data: { status: "AVAILABLE", timer: null },
+              data: { status: "EXPIRE", timer: null, power: "OFF" },
             });
+            setTimeout(async () => {
+              await sendMessageToMachine(`off ${table.number}`);
+            }, 100 * Number(table.number));
+          } else if (
+            secondsRemaining <= 900 &&
+            table.status !== "MOSTLYEXPIRE"
+          ) {
+            // Only update if not already "MOSTLYEXPIRE"
+            await prisma.tableBilliard.update({
+              where: { id: table.id },
+              data: { status: "MOSTLYEXPIRE" },
+            });
+
+            if (table.blink) {
+              setTimeout(async () => {
+                await sendMessageToMachine(`blink ${table.number}`);
+              }, 100 * Number(table.number));
+            }
           }
         }
 
@@ -118,9 +144,25 @@ export default function TableModule() {
     return activeShift;
   }
 
+  ipcMain.handle("table_list_only", async () => {
+    const tables = await await prisma.tableBilliard.findMany();
+
+    return Responses({
+      code: 200,
+      data: tables,
+    });
+  });
+
   ipcMain.handle("table_list", async () => {
     const tables = await prisma.tableBilliard.findMany({
-      include: { bookings: true },
+      include: {
+        bookings: {
+          take: 1,
+          orderBy: {
+            created_at: "desc",
+          },
+        },
+      },
     });
 
     const now = new Date();
@@ -146,7 +188,11 @@ export default function TableModule() {
       const total_all = await prisma.tableBilliard.count();
       const total_used = await prisma.tableBilliard.count({
         where: {
-          status: "USED",
+          NOT: [
+            {
+              status: "AVAILABLE",
+            },
+          ],
         },
       });
 

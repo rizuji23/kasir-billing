@@ -1,6 +1,7 @@
-import { PriceBilling } from "@prisma/client";
+import { PriceBilling, TableBilliard } from "@prisma/client";
 import { IResponses } from "./lib/responses";
 import {
+  Booking,
   CategoryMenu,
   ILogs,
   IMachine,
@@ -19,6 +20,7 @@ declare global {
         password: string,
       ) => Promise<IResponses<string>>;
       table_list: () => Promise<IResponses<ITableBilliard[]>>;
+      table_list_only: () => Promise<IResponses<ITableBilliard[]>>;
       onTableUpdate: (callback: (data: TableBilliard[]) => void) => void;
       removeTableUpdateListener: () => void;
       menu_list: (filter: string) => Promise<IResponses<IMenu[]>>;
@@ -84,6 +86,22 @@ declare global {
       on_off_all: (status: string) => Promise<IResponses<ITableBilliard>>;
       get_logging: () => Promise<IResponses<ILogs[]>>;
       booking_regular: (data: IBookingCheckout) => Promise<IResponses<unknown>>;
+      list_menu_table: (id_table: string) => Promise<IResponses<unknown>>;
+      checkout_menu_table: (data: unknown) => Promise<IResponses<unknown>>;
+      menu_table_qty: (
+        id_order: number,
+        type_qty: string,
+      ) => Promise<IResponses<unknown>>;
+      detail_booking: (id_table: string) => Promise<
+        IResponses<{
+          table: ITableBilliard;
+          booking: Booking;
+        }>
+      >;
+      change_name: (data: {
+        id_booking: string;
+        name: string;
+      }) => Promise<IResponses<Booking>>;
     };
   }
 }

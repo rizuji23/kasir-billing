@@ -1,8 +1,16 @@
 import { ipcMain } from "electron";
-import { ICart, IMenu } from "../types/index.js";
+import { ICart, IMenu, IOrderCafeNew } from "../types/index.js";
 import { prisma } from "../database.js";
 import Responses from "../lib/responses.js";
 import generateShortUUID from "../lib/random.js";
+
+interface ICheckoutMenuTable {
+  id_menu: number;
+  price: number;
+  qty: string;
+  total: number;
+  id_booking: string;
+}
 
 export default function MenuModule() {
   ipcMain.handle("add_menu", async (_, data: IMenu) => {
@@ -213,4 +221,234 @@ export default function MenuModule() {
       return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
     }
   });
+
+  ipcMain.handle("list_menu_table", async (_, id_table: string) => {
+    try {
+      const table = await prisma.tableBilliard.findFirst({
+        where: {
+          id_table: id_table,
+        },
+        include: {
+          bookings: {
+            include: {
+              order_cafe: {
+                include: {
+                  menucafe: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return Responses({
+        code: 200,
+        data: table,
+      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        return Responses({
+          code: 500,
+          detail_message: `Terjadi Kesalahan: ${err.message}`,
+        });
+      }
+      return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+    }
+  });
+
+  ipcMain.handle("checkout_menu_table", async (_, data: ICheckoutMenuTable) => {
+    try {
+      const [booking, menu_cafe] = await Promise.all([
+        prisma.booking.findFirst({
+          where: {
+            id_booking: data.id_booking,
+          },
+        }),
+        prisma.menuCafe.findFirst({
+          where: {
+            id: data.id_menu,
+          },
+        }),
+      ]);
+
+      if (!booking) {
+        return Responses({
+          code: 404,
+          detail_message: "Booking tidak ditemukan",
+        });
+      }
+
+      if (!menu_cafe) {
+        return Responses({
+          code: 404,
+          detail_message: "Menu Cafe tidak ditemukan",
+        });
+      }
+
+      const order = await prisma.orderCafe.findFirst({
+        where: {
+          menu_cafe: menu_cafe.id,
+          bookingId: booking.id,
+        },
+      });
+
+      const createManyOrderItem = async (
+        order_new: IOrderCafeNew,
+        qty: number,
+      ) => {
+        if (qty <= 0) return;
+
+        const newOrderItem = Array.from({ length: qty }, () => {
+          return {
+            id_order_cafe_item: generateShortUUID(),
+            orderId: order_new.id,
+            menu_cafe: menu_cafe.id,
+            price: menu_cafe.price,
+          };
+        });
+
+        await prisma.orderCafeItem.createMany({
+          data: newOrderItem,
+        });
+      };
+
+      const newSubtotal = menu_cafe.price * Number(data.qty || "0");
+
+      if (!order) {
+        const new_order = await prisma.orderCafe.create({
+          data: {
+            id_order: generateShortUUID(),
+            id_order_cafe: `ORD-${generateShortUUID()}`,
+            menu_cafe: menu_cafe.id,
+            subtotal: newSubtotal,
+            total: newSubtotal,
+            cash: 0,
+            change: 0,
+            status: "NOPAID",
+            qty: Number(data.qty || "0"),
+            bookingId: booking.id,
+          },
+        });
+
+        await createManyOrderItem(new_order, Number(data.qty || "0"));
+      } else {
+        // await prisma.orderCafeItem.deleteMany({
+        //   where: { menu_cafe: menu_cafe.id, orderId: order.id },
+        // });
+
+        const oldQty = Number(order.qty || "0");
+        const newQty = Number(data.qty || "0");
+        const qtyDiff = newQty - oldQty;
+        const qtyNew = qtyDiff + oldQty;
+        const qtyResult = oldQty + qtyNew;
+
+        const totalNew = menu_cafe.price * qtyResult;
+
+        const update_order_item = await prisma.orderCafe.update({
+          where: { id: order.id },
+          data: {
+            subtotal: totalNew,
+            total: totalNew,
+            qty: qtyResult,
+          },
+        });
+
+        await createManyOrderItem(update_order_item, newQty);
+      }
+
+      return Responses({
+        code: 201,
+        detail_message: "Pesanan berhasil dibuat",
+      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        return Responses({
+          code: 500,
+          detail_message: `Terjadi Kesalahan: ${err.message}`,
+        });
+      }
+      return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+    }
+  });
+
+  ipcMain.handle(
+    "menu_table_qty",
+    async (_, id_order: number, type_qty: string) => {
+      try {
+        const order = await prisma.orderCafe.findFirst({
+          where: {
+            id: id_order,
+          },
+          include: {
+            menucafe: true,
+          },
+        });
+
+        if (!order) {
+          return Responses({
+            code: 404,
+            detail_message: "Order tidak ditemukan",
+          });
+        }
+
+        const newQty = type_qty === "plus" ? order.qty + 1 : order.qty - 1;
+        const newTotal = order.menucafe.price * newQty;
+
+        const update_order_item = await prisma.orderCafe.update({
+          where: { id: order.id },
+          data: {
+            subtotal: newTotal,
+            total: newTotal,
+            qty: newQty,
+          },
+        });
+
+        if (type_qty === "plus") {
+          await prisma.orderCafeItem.create({
+            data: {
+              id_order_cafe_item: generateShortUUID(),
+              orderId: update_order_item.id,
+              menu_cafe: order.menucafe.id,
+              price: order.menucafe.price,
+            },
+          });
+        } else {
+          const qtyDiff = newQty - order.qty;
+          console.log("QTYDIFF", qtyDiff);
+
+          const itemsToDelete = await prisma.orderCafeItem.findMany({
+            where: {
+              menu_cafe: order.menucafe.id,
+              orderId: order.id,
+            },
+            select: { id_order_cafe_item: true },
+            take: Math.abs(qtyDiff),
+          });
+
+          if (itemsToDelete.length > 0) {
+            await prisma.orderCafeItem.deleteMany({
+              where: {
+                id_order_cafe_item: {
+                  in: itemsToDelete.map((item) => item.id_order_cafe_item),
+                },
+              },
+            });
+          }
+        }
+
+        return Responses({
+          code: 201,
+          detail_message: "Pesanan berhasil ditambah",
+        });
+      } catch (err) {
+        if (err instanceof Error) {
+          return Responses({
+            code: 500,
+            detail_message: `Terjadi Kesalahan: ${err.message}`,
+          });
+        }
+        return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+      }
+    },
+  );
 }

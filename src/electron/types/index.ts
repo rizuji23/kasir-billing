@@ -3,6 +3,8 @@ export enum TableStatus {
   ACTIVE = "ACTIVE",
   USED = "USED",
   AVAILABLE = "AVAILABLE",
+  MOSTLYEXPIRE = "MOSTLYEXPIRE",
+  EXPIRE = "EXPIRE",
 }
 
 export enum TypeMember {
@@ -102,6 +104,7 @@ export interface TableBilliard {
   timer?: Date | null;
   number?: string | null;
   power?: "ON" | "OFF";
+  blink?: boolean;
   created_at: Date;
   updated_at: Date;
   bookings: Booking[];
@@ -139,9 +142,9 @@ export interface Booking {
   status: StatusBooking;
   created_at: Date;
   updated_at: Date;
-  detail_booking: DetailBooking[];
-  order_cafe: OrderCafe[];
-  split_bill: SplitBill[];
+  detail_booking?: DetailBooking[];
+  order_cafe?: OrderCafe[];
+  split_bill?: SplitBill[];
 }
 
 export interface DetailBooking {
@@ -226,6 +229,35 @@ export interface MenuCafe {
   orderinmenu: OrderInMenu[];
 }
 
+export interface OrderCafeItem {
+  id: number;
+  id_order_cafe_item: string;
+  orderId: number;
+  orderCafe: OrderCafe;
+  menu_cafe: number;
+  menucafe: MenuCafe;
+  price: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface IOrderCafeNew {
+  id: number;
+  id_order: string;
+  id_order_cafe: string;
+  menu_cafe: number;
+  subtotal: number;
+  qty: number;
+  total: number;
+  cash: number;
+  change: number;
+  bookingId: number | null;
+  status: string;
+  userId: number | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface OrderCafe {
   id: number;
   id_order_cafe: string;
@@ -234,6 +266,7 @@ export interface OrderCafe {
   total: number;
   cash: number;
   change: number;
+  qty: number;
   bookingId: number;
   booking: Booking;
   status: StatusTransaction;
@@ -241,6 +274,7 @@ export interface OrderCafe {
   user_in: User;
   created_at: Date;
   updated_at: Date;
+  orderCafeItem: OrderCafeItem[];
 }
 
 export interface Settings {

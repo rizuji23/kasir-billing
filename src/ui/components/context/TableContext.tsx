@@ -43,9 +43,9 @@ export const TableBilliardProvider = ({ children }: { children: React.ReactNode 
         }
     }, []);
 
-    useEffect(() => {
-        console.log("Table List", tableList)
-    }, [tableList])
+    // useEffect(() => {
+    //     console.log("Table List", tableList)
+    // }, [tableList])
 
     return (
         <TableBilliardContext.Provider value={{ tableList, getTables, loading }}>

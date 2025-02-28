@@ -1,11 +1,10 @@
 import { Button } from "@heroui/button";
 import MainLayout from "../../components/MainLayout";
 import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/dropdown";
-import { ChevronDown, RefreshCw } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import BoxTable from "./BoxTable";
 import BoxInfo from "./BoxInfo";
-import { Divider } from "@heroui/divider";
 import HoursShift from "./HoursShift";
 import { useTableBilliard } from "../../components/context/TableContext";
 import { Spinner } from "@heroui/react";
@@ -37,19 +36,11 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex gap-3">
                             <HoursShift />
-                            <Divider orientation="vertical" />
-                            <Button isIconOnly color="primary">
-                                <RefreshCw className="w-5 h-5" />
-                            </Button>
-                            <Button color="warning">
-                                Lanjutkan Timer
-                            </Button>
                         </div>
                     </div>
 
                     <div className="flex gap-5">
                         <div className="w-full">
-
                             {
                                 tableList.loading ? <div className="flex justify-center h-[20vh]">
                                     <Spinner size="lg" />
@@ -60,9 +51,7 @@ export default function DashboardPage() {
                                         })
                                     }
                                 </div>
-
                             }
-
                         </div>
 
                         <BoxInfo />

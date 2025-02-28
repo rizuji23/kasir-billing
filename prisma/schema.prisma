@@ -13,6 +13,8 @@ enum TableStatus {
   ACTIVE
   USED
   AVAILABLE
+  MOSTLYEXPIRE
+  EXPIRE
 }
 
 enum TypeMember {
@@ -262,6 +264,7 @@ model MenuCafe {
   ordercafe         OrderCafe[]
   split_bill_detail SplitBillDetail[]
   orderinmenu       OrderInMenu[]
+  order_cafe_item OrderCafeItem[]
 }
 
 model OrderCafe {
@@ -283,6 +286,19 @@ model OrderCafe {
   created_at  DateTime             @default(now())
   updated_at  DateTime             @updatedAt
   orderId     Struk[]
+  orderCafeItem OrderCafeItem[]
+}
+
+model OrderCafeItem {
+  id Int @id @default(autoincrement())
+  id_order_cafe_item String @unique
+  orderId Int
+  orderCafe OrderCafe @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menu_cafe   Int
+  menucafe    MenuCafe             @relation(fields: [menu_cafe], references: [id], onDelete: Cascade)
+  price Int @default(0)
+  created_at  DateTime             @default(now())
+  updated_at  DateTime             @updatedAt
 }
 
 model Settings {

@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld("api", {
   login: (username: any, password: any) =>
     ipcRenderer.invoke("login", username, password),
   table_list: () => ipcRenderer.invoke("table_list"),
+  table_list_only: () => ipcRenderer.invoke("table_list_only"),
   onTableUpdate: (callback: (data: any) => void) => {
     ipcRenderer.on("update_table_list", (_: any, data: any) => callback(data));
   },
@@ -54,4 +55,14 @@ contextBridge.exposeInMainWorld("api", {
   get_logging: () => ipcRenderer.invoke("get_logging"),
   booking_regular: (data: unknown) =>
     ipcRenderer.invoke("booking_regular", data),
+  list_menu_table: (id_table: string) =>
+    ipcRenderer.invoke("list_menu_table", id_table),
+  checkout_menu_table: (data: unknown) =>
+    ipcRenderer.invoke("checkout_menu_table", data),
+  menu_table_qty: (id_order: number, type_qty: string) =>
+    ipcRenderer.invoke("menu_table_qty", id_order, type_qty),
+  detail_booking: (id_table: string) =>
+    ipcRenderer.invoke("detail_booking", id_table),
+  change_name: (data: { id_booking: string; name: string }) =>
+    ipcRenderer.invoke("change_name", data),
 });

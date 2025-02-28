@@ -10,7 +10,8 @@ interface IDataBookingInput {
     type_price: string,
     duration: string,
     blink: string,
-    id_table: string
+    id_table: string,
+    id_booking?: string,
 }
 
 interface IItemDuration {
@@ -32,7 +33,7 @@ export interface UseBookingResult {
     checkOut: () => Promise<void>
 }
 
-export default function useBooking({ open, setOpen, table }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, table: TableBilliard }): UseBookingResult {
+export default function useBooking({ open, setOpen, table, add_duration = false }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, table: TableBilliard, add_duration?: boolean }): UseBookingResult {
     const [data_booking, setDataBooking] = useState<IDataBookingInput>({
         type_play: "REGULAR",
         name: "",
@@ -40,6 +41,7 @@ export default function useBooking({ open, setOpen, table }: { open: boolean, se
         duration: "0",
         blink: "tidak",
         id_table: "",
+        id_booking: "",
     })
 
     const tableList = useTableBilliard();
@@ -139,12 +141,13 @@ export default function useBooking({ open, setOpen, table }: { open: boolean, se
             console.log(data)
 
             if (data_booking.type_play === "REGULAR") {
-                const res = await window.api.booking_regular(data);
+                const res = await window.api.booking_regular({ ...data, add_duration: add_duration });
 
                 if (res.status) {
                     toast.success(`Booking pada ${table.name} berhasil dilakukan`)
                     setOpen(false);
                     tableList.getTables();
+                    clearState();
                 } else {
                     toast.error(`Booking pada ${table.name} gagal dilakukan`);
                 }

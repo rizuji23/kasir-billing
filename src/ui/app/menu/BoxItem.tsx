@@ -1,10 +1,10 @@
 import { Button } from "@heroui/button";
 import { Divider } from "@heroui/divider";
-import { Minus, Plus, Trash } from "lucide-react";
+import { Trash } from "lucide-react";
 import { ICart } from "../../../electron/types";
 import { UseCartResult } from "../../hooks/useCart";
 import { convertRupiah } from "../../lib/utils";
-import { Input } from "@heroui/input";
+import InputQty from "../../components/InputQty";
 
 export default function BoxItem({ item, cart }: { item: ICart, cart: UseCartResult }) {
     return (
@@ -19,34 +19,8 @@ export default function BoxItem({ item, cart }: { item: ICart, cart: UseCartResu
                     </div>
                 </div>
                 <div className="flex gap-3 self-center">
-                    <Input
-                        size="sm"
-                        className="max-w-[100px]"
-                        classNames={{ inputWrapper: "!px-0 !text-center", input: "!text-center" }}
-                        value={item.qty}
+                    <InputQty onPressMinus={() => cart.updateQuantity(item.id, "decrease")} onPressPlus={() => cart.updateQuantity(item.id, "increase")} value={item.qty} />
 
-                        startContent={
-                            <Button
-                                size="sm"
-                                color="success"
-                                isIconOnly
-                                onPress={() => cart.updateQuantity(item.id, "decrease")}
-                            >
-                                <Minus className="w-4 h-4" />
-                            </Button>
-                        }
-                        endContent={
-                            <Button
-                                size="sm"
-                                color="success"
-                                isIconOnly
-                                onPress={() => cart.updateQuantity(item.id, "increase")}
-                            >
-                                <Plus className="w-4 h-4" />
-                            </Button>
-                        }
-                        readOnly
-                    />
                     <Button isIconOnly size="sm" onPress={() => cart.removeFromCart(item.id)} color="danger"><Trash className="w-5 h-5" /></Button>
                 </div>
             </div>
