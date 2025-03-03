@@ -8,6 +8,7 @@ import ManualLamp from './app/manual/ManualLamp'
 import SettingsPage from './app/settings/Settings'
 import OrderPage from './app/order/Order'
 import { TableBilliardProvider } from './components/context/TableContext'
+import StrukView from './app/struk/Struk'
 
 function App() {
 
@@ -26,6 +27,7 @@ function App() {
           <Route path="/stock" element={<StockPage />}></Route>
           <Route path="/manual" element={<ManualLamp />}></Route>
           <Route path="/settings" element={<SettingsPage />}></Route>
+          <Route path="/struk" element={<StrukView />}></Route>
 
         </Routes>
       </TableBilliardProvider>

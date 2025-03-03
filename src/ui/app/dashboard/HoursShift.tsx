@@ -32,6 +32,7 @@ export default function HoursShift() {
                     <span>Shift: </span><span className="font-bold">{shift}</span>
                 </Chip>
             </div>
+            <button onClick={() => window.api.test_struk()}>Test Struk</button>
         </>
     );
 }

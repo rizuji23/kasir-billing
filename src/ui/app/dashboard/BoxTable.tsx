@@ -31,13 +31,13 @@ export default function BoxTable(props: TableBilliard) {
                         <h3 className="text-xl font-bold">{props.name}</h3>
                         <div className="mt-3">
                             <p className="text-sm">Nama Pemesan:</p>
-                            <p className="text-sm font-bold">{Array.isArray(props.bookings) ? props.bookings.length > 0 ? props.bookings[0].name : "-" : "-"}</p>
+                            <p className="text-sm font-bold">{props.status !== "AVAILABLE" ? Array.isArray(props.bookings) ? props.bookings.length > 0 ? props.bookings[0].name : "-" : "-" : "-"}</p>
                         </div>
                     </div>
                     <div className="flex flex-col gap-2 pb-3">
                         <div className="flex gap-2">
                             <Coins className="w-4 h-4 self-center" />
-                            <span className="font-medium">Rp. {Array.isArray(props.bookings) ? props.bookings.length > 0 ? convertRupiah(props.bookings[0].total_price.toString()) : "0" : "0"}</span>
+                            <span className="font-medium">Rp. {props.status !== "AVAILABLE" ? Array.isArray(props.bookings) ? props.bookings.length > 0 ? convertRupiah(props.bookings[0].total_price.toString()) : "0" : "0" : "0"}</span>
                         </div>
                         <div className="flex gap-2">
                             <Timer className="w-4 h-4 self-center" />
@@ -47,18 +47,18 @@ export default function BoxTable(props: TableBilliard) {
 
                 </div>
                 {
-                    props.bookings.length !== 0 && (
+                    props.status !== "AVAILABLE" ? props.bookings.length !== 0 && (
                         <div className="flex gap-3 p-2">
                             {
                                 props.status === "EXPIRE" || props.status === "MOSTLYEXPIRE" ? <Button onPress={() => setOpenDuration(true)} className="flex-1" size="sm">Tambah Durasi</Button> : <></>
                             }
                             <Button onPress={() => setOpenCafe(true)} className="flex-1" color="warning" size="sm">Cafe</Button>
                         </div>
-                    )
+                    ) : <></>
                 }
             </div>
             {
-                props.bookings.length === 0 ? <DrawerTable open={open} setOpen={setOpen} table={props} /> : <DrawerBookingTable open={open} setOpen={setOpen} table={props} />
+                props.status === "AVAILABLE" ? <DrawerTable open={open} setOpen={setOpen} table={props} /> : <DrawerBookingTable open={open} setOpen={setOpen} table={props} />
             }
             <DrawerAddDuration open={open_duration} setOpen={setOpenDuration} table={props} />
             <DrawerCafeTable open={open_cafe} setOpen={setOpenCafe} table={props} />

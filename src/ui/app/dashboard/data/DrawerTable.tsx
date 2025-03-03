@@ -66,7 +66,7 @@ export default function DrawerTable({ open, setOpen, table }: { open: boolean, s
                                     }))}>
                                         {
                                             booking.type_price.map((el) => {
-                                                return <SelectItem key={el.type_price}>{el.type_price}</SelectItem>
+                                                return <SelectItem value={el.type_price} key={el.type_price}>{el.type_price}</SelectItem>
                                             })
                                         }
 

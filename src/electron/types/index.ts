@@ -1,3 +1,5 @@
+import { Key } from "react";
+
 // ======== ENUMS ========
 export enum TableStatus {
   ACTIVE = "ACTIVE",
@@ -55,7 +57,7 @@ export enum TypeActivity {
   ADDMEMBER = "ADDMEMBER",
 }
 
-export enum PaymentMethod {
+export enum Casier {
   CASH = "CASH",
   QRIS = "QRIS",
   GOPAY = "GOPAY",
@@ -79,6 +81,18 @@ export enum StatusMachine {
   CONNECTED = "CONNECTED",
   RECONNECTED = "RECONNECTED",
   DISCONNECTED = "DISCONNECTED",
+}
+
+export enum CasierCasier {
+  CASH = "CASH",
+  TRANSFER = "TRANSFER",
+  QRIS = "QRIS",
+}
+
+export enum TypeStruk {
+  CAFEONLY = "CAFEONLY",
+  TABLE = "TABLE",
+  CAFEQR = "CAFEQR",
 }
 
 // ======== INTERFACES ========
@@ -142,6 +156,7 @@ export interface Booking {
   status: StatusBooking;
   created_at: Date;
   updated_at: Date;
+  type_play: TypePlay;
   detail_booking?: DetailBooking[];
   order_cafe?: OrderCafe[];
   split_bill?: SplitBill[];
@@ -345,7 +360,7 @@ export interface OrderIn {
   name: string;
   noTableId: number;
   table: TableNumber;
-  payment_method: PaymentMethod;
+  payment_method: Casier;
   sub_total: number;
   total: number;
   nominal: number;
@@ -433,4 +448,71 @@ export interface IMachine {
   status: StatusMachine;
   created_at: Date;
   updated_at: Date;
+}
+
+export interface IPaymentSplitBill {
+  selected_billing: Key[];
+  selected_cafe: Key[];
+  name: string;
+}
+
+export type PaymentMethodCasierType = "CASH" | "TRANSFER" | "QRIS";
+
+export interface IPaymentData {
+  id_table: string;
+  id_booking: string;
+  total: {
+    total_billing: number;
+    total_cafe: number;
+    total_all: number;
+  } | null;
+  payment_cash: string;
+  change: number;
+  payment_method: "CASH" | "TRANSFER" | "QRIS" | string;
+  is_split_bill: boolean;
+  splitbill?: IPaymentSplitBill | null;
+}
+
+export interface Struk {
+  id: number;
+  id_struk: string;
+  id_order?: number;
+  id_order_in?: number;
+  orderInId?: OrderIn;
+  orderId?: OrderCafe[];
+  id_booking?: number;
+  bookingId?: Booking;
+  name: string;
+  total: number;
+  total_cafe?: number;
+  total_billing?: number;
+  cash: number;
+  change: number;
+  payment_method: PaymentMethodCasierType;
+  is_split_bill: boolean;
+  type_struk: TypeStruk;
+  status: StatusTransaction;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface PriceBilling {
+  id: number;
+  id_price_billing: string;
+  type_price_id: number;
+  type_price: PriceBillingType;
+  season: string;
+  price: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface PriceBillingType {
+  id: number;
+  id_price_billing_type: string;
+  type_price: string;
+  created_at: Date;
+  updated_at: Date;
+  typePricing: PriceBilling[];
+  bookingId: Booking[];
 }

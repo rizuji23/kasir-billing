@@ -2,8 +2,19 @@ import { ipcMain } from "electron";
 import { prisma } from "../database.js";
 import generateShortUUID from "../lib/random.js";
 import Responses from "../lib/responses.js";
-import { Booking, TypePlay } from "../types/index.js";
+import {
+  Booking,
+  IPaymentData,
+  PaymentMethodCasierType,
+  StatusTransaction,
+  Struk,
+  TableBilliard,
+  TypePlay,
+  TypeStruk,
+} from "../types/index.js";
 import { sendMessageToMachine } from "./machine.js";
+import { StrukWindow } from "./struk.js";
+import { getPriceByShift } from "./table.js";
 
 export interface IItemPrice {
   price: number;
@@ -29,18 +40,32 @@ export interface IBookingCheckout {
   add_duration: boolean;
 }
 
-async function checkoutBookingRegular(data: IBookingCheckout) {
+async function checkoutBookingLossRegular(data: IBookingCheckout) {
   try {
-    const tables = await prisma.tableBilliard.findFirst({
-      where: {
-        id_table: data.data_booking.id_table,
-      },
-    });
+    const [tables, type_price] = await Promise.all([
+      prisma.tableBilliard.findFirst({
+        where: {
+          id_table: data.data_booking.id_table,
+        },
+      }),
+      prisma.priceBillingType.findFirst({
+        where: {
+          type_price: data.data_booking.type_price,
+        },
+      }),
+    ]);
 
     if (!tables) {
       return Responses({
         code: 404,
         detail_message: "Table tidak ditemukan",
+      });
+    }
+
+    if (!type_price) {
+      return Responses({
+        code: 404,
+        detail_message: "Price Billing Type tidak ditemukan",
       });
     }
 
@@ -101,6 +126,8 @@ async function checkoutBookingRegular(data: IBookingCheckout) {
         data: {
           duration: Number(data.data_booking.duration) + data_booking.duration,
           total_price: data.subtotal + data_booking.total_price,
+          type_play: data.data_booking.type_play as unknown as TypePlay,
+          idPriceType: type_price.id,
         },
       });
       await saveManyBooking(booking as unknown as Booking);
@@ -112,9 +139,55 @@ async function checkoutBookingRegular(data: IBookingCheckout) {
           tableId: tables.id,
           duration: Number(data.data_booking.duration),
           total_price: data.subtotal,
+          type_play: data.data_booking.type_play as unknown as TypePlay,
+          idPriceType: type_price.id,
         },
       });
-      await saveManyBooking(booking as unknown as Booking);
+
+      if (data.data_booking.type_play !== "LOSS") {
+        await saveManyBooking(booking as unknown as Booking);
+      } else {
+        const time = new Date();
+        const formattedTime = time
+          .toLocaleTimeString("id-ID", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+          })
+          .replace(/\./g, ":"); // Replace dots with colons
+
+        console.log("formattedTime", formattedTime);
+        const price = await getPriceByShift(
+          type_price.type_price,
+          formattedTime,
+        );
+
+        const timeZone = "Asia/Jakarta";
+        const now = new Date(new Date().toLocaleString("en-US", { timeZone }));
+        const startSlot = new Date(now.getTime());
+        const endSlot = new Date(
+          startSlot.getTime() + 1 * 60 * 60 * 1000 + 15 * 60 * 1000,
+        );
+
+        if (!price) {
+          return Responses({
+            code: 404,
+            detail_message: "Harga billing tidak ditemukan",
+          });
+        }
+
+        await prisma.detailBooking.create({
+          data: {
+            bookingId: booking.id,
+            price: price.price,
+            duration: 1,
+            status: "NOPAID",
+            start_duration: startSlot,
+            end_duration: endSlot,
+          },
+        });
+      }
     }
 
     console.log("tables.id_table", tables.id_table);
@@ -133,10 +206,74 @@ async function checkoutBookingRegular(data: IBookingCheckout) {
   }
 }
 
+async function checkoutTableDone(table: TableBilliard) {
+  try {
+    await prisma.tableBilliard.update({
+      where: {
+        id: table.id,
+      },
+      data: {
+        duration: "0",
+        status: "AVAILABLE",
+        type_play: "NONE",
+        timer: null,
+        power: "OFF",
+        blink: false,
+      },
+    });
+
+    await sendMessageToMachine(`off ${table.number}`);
+    return true;
+  } catch (err) {
+    return err;
+  }
+}
+
+async function createUpdateStruk(
+  types: "update" | "create",
+  booking_update: Booking,
+  struk: number | null,
+  data: IPaymentData,
+): Promise<unknown> {
+  try {
+    const data_new = {
+      name: booking_update.name,
+      total: data.total?.total_all || 0,
+      total_billing: data.total?.total_billing || 0,
+      total_cafe: data.total?.total_cafe || 0,
+      cash: Number(data.payment_cash || "0"),
+      change: data.change,
+      payment_method: data.payment_method as unknown as PaymentMethodCasierType,
+      is_split_bill: false,
+      type_struk: "TABLE" as TypeStruk,
+      status: "PAID" as StatusTransaction,
+    };
+
+    if (types === "create") {
+      return await prisma.struk.create({
+        data: {
+          id_struk: `STR-${generateShortUUID()}`,
+          id_booking: booking_update.id,
+          ...data_new,
+        },
+      });
+    } else {
+      return await prisma.struk.update({
+        where: {
+          id: struk || undefined,
+        },
+        data: data_new,
+      });
+    }
+  } catch (err) {
+    return err;
+  }
+}
+
 export default function BookingModule() {
   ipcMain.handle("booking_regular", async (_, data: IBookingCheckout) => {
     try {
-      const res = await checkoutBookingRegular(data);
+      const res = await checkoutBookingLossRegular(data);
       return res;
     } catch (err) {
       if (err instanceof Error) {
@@ -200,6 +337,7 @@ export default function BookingModule() {
         },
         include: {
           detail_booking: true,
+          price_type: true,
           order_cafe: {
             include: {
               orderCafeItem: true,
@@ -209,6 +347,9 @@ export default function BookingModule() {
               created_at: "desc",
             },
           },
+        },
+        orderBy: {
+          created_at: "desc",
         },
       });
 
@@ -227,6 +368,145 @@ export default function BookingModule() {
         },
       });
     } catch (err) {
+      if (err instanceof Error) {
+        return Responses({
+          code: 500,
+          detail_message: `Terjadi Kesalahan: ${err.message}`,
+        });
+      }
+      return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+    }
+  });
+
+  ipcMain.handle("payment_booking", async (_, data: IPaymentData) => {
+    try {
+      console.log("Data", data);
+      const [booking, table] = await Promise.all([
+        prisma.booking.findFirst({
+          where: {
+            id_booking: data.id_booking,
+          },
+        }),
+        prisma.tableBilliard.findFirst({
+          where: {
+            id_table: data.id_table,
+          },
+        }),
+      ]);
+
+      if (!booking) {
+        return Responses({
+          code: 404,
+          detail_message: "Booking tidak ditemukan",
+        });
+      }
+
+      if (!table) {
+        return Responses({
+          code: 404,
+          detail_message: "Table tidak ditemukan",
+        });
+      }
+
+      const struk = await prisma.struk.findFirst({
+        where: {
+          id_booking: booking.id,
+          is_split_bill: false,
+        },
+      });
+
+      // if struk is empty
+      if (data.is_split_bill === false) {
+        console.log("SPLIT", false);
+        // update booking first
+        const booking_update = await prisma.booking.update({
+          where: {
+            id: booking.id,
+          },
+          data: {
+            payment_method:
+              data.payment_method as unknown as PaymentMethodCasierType,
+            status: "PAID",
+          },
+        });
+
+        // update all booking detail
+        await Promise.all([
+          // update order cafe
+          prisma.detailBooking.updateMany({
+            where: {
+              bookingId: booking.id,
+            },
+            data: {
+              status: "PAID",
+            },
+          }),
+          prisma.orderCafe.updateMany({
+            where: {
+              bookingId: booking.id,
+            },
+            data: {
+              payment_method:
+                data.payment_method as unknown as PaymentMethodCasierType,
+              status: "PAID",
+            },
+          }),
+        ]);
+
+        if (!struk) {
+          // create new struk
+          const struk_create = await createUpdateStruk(
+            "create",
+            booking_update as unknown as Booking,
+            null,
+            data,
+          );
+
+          if (!struk_create) {
+            return Responses({
+              code: 500,
+              detail_message: "Error saat membuat struk",
+            });
+          }
+
+          await StrukWindow((struk_create as unknown as Struk).id_struk);
+        } else {
+          // update struk
+          const struk_update = await createUpdateStruk(
+            "create",
+            booking_update as unknown as Booking,
+            struk.id,
+            data,
+          );
+
+          if (!struk_update) {
+            return Responses({
+              code: 500,
+              detail_message: "Error saat update struk",
+            });
+          }
+
+          await StrukWindow((struk_update as unknown as Struk).id_struk);
+        }
+
+        const check_out_table = await checkoutTableDone(
+          table as unknown as TableBilliard,
+        );
+
+        if (!check_out_table) {
+          return Responses({
+            code: 500,
+            detail_message: "Error saat mematikan table",
+          });
+        }
+      }
+
+      return Responses({
+        code: 201,
+        data: null,
+      });
+    } catch (err) {
+      console.log("err", err);
       if (err instanceof Error) {
         return Responses({
           code: 500,

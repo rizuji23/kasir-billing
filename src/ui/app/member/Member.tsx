@@ -12,6 +12,7 @@ import DataTableCustom from "../../components/datatable/DataTableCustom";
 import { IResponses } from "../../../electron/lib/responses";
 import { convertRupiah } from "../../lib/utils";
 import { Trash } from "lucide-react";
+import { useLocation } from "react-router";
 
 export const CustomRadio = (props: RadioProps) => {
     const { children, ...otherProps } = props;
@@ -33,6 +34,7 @@ export const CustomRadio = (props: RadioProps) => {
 };
 
 export default function MemberPage() {
+    const localtion = useLocation();
     const columns: TableColumn<Members>[] = [
         {
             name: "Nama Lengkap",
@@ -155,6 +157,8 @@ export default function MemberPage() {
 
     useEffect(() => {
         getMembers();
+        console.log("Path: ", localtion.pathname);
+        console.log("Hash: ", localtion.hash)
     }, []);
 
     useEffect(() => {

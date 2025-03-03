@@ -2,6 +2,7 @@ import { BrowserWindow, ipcMain } from "electron";
 import { prisma } from "../database.js";
 import Responses from "../lib/responses.js";
 import { sendMessageToMachine } from "./machine.js";
+import { PriceBilling } from "../types/index.js";
 
 export async function initialStartLamp() {
   try {
@@ -41,6 +42,14 @@ export const updateTimers = async (mainWindow: BrowserWindow) => {
           orderBy: {
             created_at: "desc",
           },
+          include: {
+            detail_booking: {
+              orderBy: {
+                end_duration: "desc",
+              },
+            },
+            price_type: true,
+          },
         },
       },
     });
@@ -50,7 +59,8 @@ export const updateTimers = async (mainWindow: BrowserWindow) => {
       tables.map(async (table) => {
         let remainingTime = "00:00:00";
 
-        if (table.timer) {
+        if (table.type_play === "REGULAR" && table.timer) {
+          // Countdown mode for REGULAR play
           const secondsRemaining = Math.max(
             0,
             Math.floor((table.timer.getTime() - now.getTime()) / 1000),
@@ -59,7 +69,6 @@ export const updateTimers = async (mainWindow: BrowserWindow) => {
           remainingTime = formatTime(secondsRemaining);
 
           if (secondsRemaining <= 0 && table.status !== "EXPIRE") {
-            // Only update if not already "EXPIRE"
             await prisma.tableBilliard.update({
               where: { id: table.id },
               data: { status: "EXPIRE", timer: null, power: "OFF" },
@@ -71,7 +80,6 @@ export const updateTimers = async (mainWindow: BrowserWindow) => {
             secondsRemaining <= 900 &&
             table.status !== "MOSTLYEXPIRE"
           ) {
-            // Only update if not already "MOSTLYEXPIRE"
             await prisma.tableBilliard.update({
               where: { id: table.id },
               data: { status: "MOSTLYEXPIRE" },
@@ -83,6 +91,55 @@ export const updateTimers = async (mainWindow: BrowserWindow) => {
               }, 100 * Number(table.number));
             }
           }
+        } else if (
+          table.type_play === "LOSS" &&
+          table.status === "USED" &&
+          table.bookings.length > 0
+        ) {
+          // Count forward mode for LOSS play (starting from created_at)
+          const startTime = new Date(table.bookings[0].created_at);
+          const secondsElapsed = Math.floor(
+            (now.getTime() - startTime.getTime()) / 1000,
+          );
+          remainingTime = formatTime(secondsElapsed);
+
+          // Check if 1 hour 15 minutes (4500 seconds) has passed since the last detailBilling entry
+          const lastBilling = table.bookings[0].detail_booking[0]; // Last detailBilling entry
+          const lastBillingTime = lastBilling
+            ? new Date(lastBilling.end_duration)
+            : startTime;
+          console.log(
+            "LOSS If",
+            (now.getTime() - lastBillingTime.getTime()) / 1000,
+          );
+          if ((now.getTime() - lastBillingTime.getTime()) / 1000 >= 60) {
+            const formattedTime = now
+              .toLocaleTimeString("id-ID", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              })
+              .replace(/\./g, ":"); // Replace dots with colons
+
+            const price = await getPriceByShift(
+              table.bookings[0].price_type?.type_price || "",
+              formattedTime,
+            );
+            console.log(price);
+            // Save a new billing entry
+            // if (price) {
+            //   await prisma.detailBooking.create({
+            //     data: {
+            //       bookingId: table.bookings[0].id,
+            //       start_duration: lastBillingTime,
+            //       end_duration: now,
+            //       duration: 1,
+            //       price: price.price,
+            //     },
+            //   });
+            // }
+          }
         }
 
         return { ...table, remainingTime };
@@ -93,38 +150,73 @@ export const updateTimers = async (mainWindow: BrowserWindow) => {
   }, 1000);
 };
 
+async function getCurrentShiftByTime(timeString: string) {
+  const now = new Date();
+  if (timeString) {
+    const [hours, minutes, seconds] = timeString.split(":").map(Number);
+    now.setHours(hours, minutes, seconds || 0);
+  }
+
+  const currentTime = now.getHours() * 60 + now.getMinutes();
+  const shifts = await prisma.shift.findMany();
+
+  const activeShift = shifts.find((shift) => {
+    const start = new Date(shift.start_hours);
+    const end = new Date(shift.end_hours);
+
+    const startMinutes = start.getHours() * 60 + start.getMinutes();
+    const endMinutes = end.getHours() * 60 + end.getMinutes();
+
+    if (startMinutes < endMinutes) {
+      return currentTime >= startMinutes && currentTime < endMinutes;
+    } else {
+      return currentTime >= startMinutes || currentTime < endMinutes;
+    }
+  });
+
+  return activeShift;
+}
+
+export const getPriceByShift = async (
+  type_price: string,
+  time: string,
+): Promise<PriceBilling | null> => {
+  try {
+    const activeShift = await getCurrentShiftByTime(time);
+
+    if (!activeShift?.shift) {
+      console.log("ERROR Shift");
+      return null;
+    }
+
+    const type_pricing = await prisma.priceBillingType.findFirst({
+      where: { type_price },
+    });
+
+    if (!type_pricing) {
+      console.log("ERROR type_pricing");
+      return null;
+    }
+
+    const price = await prisma.priceBilling.findFirst({
+      where: {
+        type_price_id: type_pricing.id,
+        season: activeShift.shift, // Fetch price for the correct shift
+      },
+    });
+
+    return price as unknown as PriceBilling;
+  } catch (err) {
+    console.log("err", err);
+    return null;
+  }
+};
+
 export default function TableModule() {
   async function getCurrentShift() {
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
 
-    const shifts = await prisma.shift.findMany();
-
-    const activeShift = shifts.find((shift) => {
-      const start = new Date(shift.start_hours);
-      const end = new Date(shift.end_hours);
-
-      const startMinutes = start.getHours() * 60 + start.getMinutes();
-      const endMinutes = end.getHours() * 60 + end.getMinutes();
-
-      if (startMinutes < endMinutes) {
-        return currentTime >= startMinutes && currentTime < endMinutes;
-      } else {
-        return currentTime >= startMinutes || currentTime < endMinutes;
-      }
-    });
-
-    return activeShift;
-  }
-
-  async function getCurrentShiftByTime(timeString: string) {
-    const now = new Date();
-    if (timeString) {
-      const [hours, minutes, seconds] = timeString.split(":").map(Number);
-      now.setHours(hours, minutes, seconds || 0);
-    }
-
-    const currentTime = now.getHours() * 60 + now.getMinutes();
     const shifts = await prisma.shift.findMany();
 
     const activeShift = shifts.find((shift) => {
@@ -244,32 +336,7 @@ export default function TableModule() {
 
   ipcMain.handle("get_price", async (_, type_price: string, time: string) => {
     try {
-      const activeShift = await getCurrentShiftByTime(time);
-
-      if (!activeShift?.shift) {
-        return Responses({
-          code: 400,
-          detail_message: "Shift Tidak Ditemukan.",
-        });
-      }
-
-      const type_pricing = await prisma.priceBillingType.findFirst({
-        where: { type_price },
-      });
-
-      if (!type_pricing) {
-        return Responses({
-          code: 404,
-          detail_message: "Tipe harga tidak ditemukan",
-        });
-      }
-
-      const price = await prisma.priceBilling.findFirst({
-        where: {
-          type_price_id: type_pricing.id,
-          season: activeShift.shift, // Fetch price for the correct shift
-        },
-      });
+      const price = await getPriceByShift(type_price, time);
 
       return Responses({ code: 200, data: price });
     } catch (err) {

@@ -8,9 +8,11 @@ import { UseCartResult } from "../../hooks/useCart"
 import cart_empty from "../../assets/cart_empty.png"
 import { convertRupiah, convertToInteger } from "../../lib/utils"
 import { useState } from "react"
+import { Radio, RadioGroup } from "@heroui/radio"
 
 export default function DetailPayment({ cart }: { cart: UseCartResult }) {
     const [cash, setCash] = useState<string>("");
+    const [payment_method, setPaymentMethod] = useState<"CASH" | "TRANSFER" | "QRIS" | string>("CASH");
 
     const total = cart.getTotal();
     const change = Math.max(0, Number(cash) - total);
@@ -42,11 +44,11 @@ export default function DetailPayment({ cart }: { cart: UseCartResult }) {
                                 <p className="text-xs">Tanggal Pembelian: {moment().tz("Asia/Jakarta").format("DD/MM/YYYY hh:mm A")}</p>
                                 <Input
                                     isRequired
-                                    label="Uang Cash"
+                                    label="Jumlah Pembayaran"
                                     name="uang_cash"
                                     className=" mt-5"
                                     errorMessage={cash === "" ? "Silakan isi kolom ini." : ""}
-                                    placeholder="Masukan uang cash disini"
+                                    placeholder="Masukan jumlah pembayaran disini..."
                                     type="text"
                                     value={convertRupiah(cash)}
                                     onValueChange={(e) => {
@@ -54,7 +56,11 @@ export default function DetailPayment({ cart }: { cart: UseCartResult }) {
                                         setCash(rawValue);
                                     }}
                                 />
-
+                                <RadioGroup value={payment_method} onValueChange={(e) => setPaymentMethod(e)} orientation="horizontal" isRequired className="mt-2" label="Cara Pembayaran">
+                                    <Radio classNames={{ label: "text-sm" }} value={"CASH"}>Cash</Radio>
+                                    <Radio classNames={{ label: "text-sm" }} value={"TRANSFER"}>Transfer</Radio>
+                                    <Radio classNames={{ label: "text-sm" }} value={"QRIS"}>QRIS</Radio>
+                                </RadioGroup>
                             </div>
                             <div className="flex flex-col gap-1">
                                 <h3>Total:</h3>
@@ -77,7 +83,7 @@ export default function DetailPayment({ cart }: { cart: UseCartResult }) {
                                     alert("Silakan isi uang cash terlebih dahulu");
                                     return;
                                 } else if (confirm("Apakah anda yakin ingin memesan?")) {
-                                    cart.checkout(convertToInteger(cash));
+                                    cart.checkout(convertToInteger(cash), payment_method);
                                     setCash("");
                                     return;
                                 }

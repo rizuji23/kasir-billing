@@ -108,6 +108,12 @@ enum LoggingStatus {
   LOG
 }
 
+enum PaymentMethodCasier {
+  CASH
+  TRANSFER
+  QRIS
+}
+
 // ======== MODELS ========
 model User {
   id         Int      @id @default(autoincrement())
@@ -163,6 +169,7 @@ model PriceBillingType {
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
   typePricing PriceBilling[]
+  bookingId Booking[]
 }
 
 model Members {
@@ -194,7 +201,11 @@ model Booking {
   table        TableBilliard @relation(fields: [tableId], references: [id], onDelete: Cascade)
   duration     Int
   total_price  Int
+  payment_method PaymentMethodCasier @default(CASH)
   status       StatusBooking @default(NOPAID)
+  type_play  TypePlay @default(REGULAR)
+  idPriceType Int?
+  price_type   PriceBillingType? @relation(fields: [idPriceType], references: [id], onDelete: Cascade)
   created_at   DateTime    @default(now())
   updated_at   DateTime    @updatedAt
   detail_booking DetailBooking[]
@@ -273,6 +284,8 @@ model OrderCafe {
   id_order_cafe String
   menu_cafe   Int
   menucafe    MenuCafe             @relation(fields: [menu_cafe], references: [id], onDelete: Cascade)
+  id_struk    Int?
+  strukId Struk? @relation(fields: [id_struk], references: [id])
   subtotal    Int
   qty         Int
   total       Int
@@ -280,12 +293,12 @@ model OrderCafe {
   change      Int
   bookingId   Int?                 // Make bookingId nullable
   booking     Booking?             @relation(fields: [bookingId], references: [id], onDelete: Cascade) // Make relation optional
+  payment_method PaymentMethodCasier @default(CASH)
   status      StatusTransaction    @default(NOPAID)
   userId      Int?
   user_in     User?                 @relation(fields: [userId], references: [id])
   created_at  DateTime             @default(now())
   updated_at  DateTime             @updatedAt
-  orderId     Struk[]
   orderCafeItem OrderCafeItem[]
 }
 
@@ -328,6 +341,7 @@ model SplitBill {
   name              String
   total             Int
   type_bill         TypeBill       @default(SPLITBILL)
+  payment_method PaymentMethodCasier @default(CASH)
   userId            Int
   user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   created_at        DateTime       @default(now())
@@ -405,20 +419,23 @@ model LogsData {
 model Struk {
   id Int @id @default(autoincrement())
   id_struk String
-  id_order Int?
   id_order_in Int?
   orderInId OrderIn? @relation(fields: [id_order_in], references: [id])
-  orderId OrderCafe? @relation(fields: [id_order], references: [id])
   id_booking Int?
   bookingId Booking? @relation(fields: [id_booking], references: [id])
   name String
   total Int
+  total_cafe Int?
+  total_billing Int?
   cash Int
   change Int
+  payment_method PaymentMethodCasier @default(CASH)
+  is_split_bill Boolean @default(false)
   type_struk TypeStruk
   status StatusTransaction @default(NOPAID)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  orderId OrderCafe[]
 }
 
 model Voucher {

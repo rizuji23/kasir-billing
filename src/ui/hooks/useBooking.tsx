@@ -94,7 +94,7 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
             if (price) {
                 newPrices.push({
                     price,
-                    duration: i + 1,
+                    duration: 1,
                     start_duration: startSlot.toDate(),
                     end_duration: endSlot.toDate(),
                 });
@@ -124,12 +124,14 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
     const checkOut = async () => {
         try {
             const durations = Number(duration_billing);
-            if (item_price.length === 0) {
-                toast.error("Silahkan untuk isi terlebih dahulu durasi.");
-            }
+            if (data_booking.type_play === "REGULAR") {
+                if (item_price.length === 0) {
+                    toast.error("Silahkan untuk isi terlebih dahulu durasi.");
+                }
 
-            if (!durations || isNaN(durations) || durations <= 0) {
-                toast.error("Durasi tidak boleh kosong atau minus.");
+                if (!durations || isNaN(durations) || durations <= 0) {
+                    toast.error("Durasi tidak boleh kosong atau minus.");
+                }
             }
 
             const data = {
@@ -140,17 +142,15 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
 
             console.log(data)
 
-            if (data_booking.type_play === "REGULAR") {
-                const res = await window.api.booking_regular({ ...data, add_duration: add_duration });
-
-                if (res.status) {
-                    toast.success(`Booking pada ${table.name} berhasil dilakukan`)
-                    setOpen(false);
-                    tableList.getTables();
-                    clearState();
-                } else {
-                    toast.error(`Booking pada ${table.name} gagal dilakukan`);
-                }
+            const res = await window.api.booking_regular({ ...data, add_duration: add_duration });
+            console.log("res.status", res)
+            if (res.status) {
+                toast.success(`Booking pada ${table.name} berhasil dilakukan`)
+                setOpen(false);
+                tableList.getTables();
+                clearState();
+            } else {
+                toast.error(`Booking pada ${table.name} gagal dilakukan`);
             }
         } catch (err) {
             toast.error(`Kesalahan dalam pemeriksaan: ${err}`);

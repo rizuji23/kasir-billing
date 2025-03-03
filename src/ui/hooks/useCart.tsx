@@ -10,7 +10,7 @@ export interface UseCartResult {
     getTotal: () => number;
     getChange: (cash: number) => number;
     cancelOrder: () => void;
-    checkout: (cash: number) => void;
+    checkout: (cash: number, payment_method: string) => void;
     loading: boolean;
 }
 
@@ -68,11 +68,11 @@ export default function useCart(): UseCartResult {
         return cash - getTotal();
     };
 
-    const checkout = async (cash: number) => {
+    const checkout = async (cash: number, payment_method: "CASH" | "TRANSFER" | "QRIS" | string) => {
         setLoading(true);
 
         try {
-            const res = await window.api.checkout_menu(cash, cart);
+            const res = await window.api.checkout_menu(cash, cart, payment_method);
             setLoading(false)
             if (res.status && res.data) {
                 cancelOrder()

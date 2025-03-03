@@ -1,8 +1,14 @@
 import { ipcMain } from "electron";
-import { ICart, IMenu, IOrderCafeNew } from "../types/index.js";
+import {
+  ICart,
+  IMenu,
+  IOrderCafeNew,
+  PaymentMethodCasierType,
+} from "../types/index.js";
 import { prisma } from "../database.js";
 import Responses from "../lib/responses.js";
 import generateShortUUID from "../lib/random.js";
+import { StrukWindow } from "./struk.js";
 
 interface ICheckoutMenuTable {
   id_menu: number;
@@ -165,62 +171,63 @@ export default function MenuModule() {
     }
   });
 
-  ipcMain.handle("checkout_menu", async (_, cash: number, data: ICart[]) => {
-    try {
-      const total = data.reduce((acc, item) => acc + item.subtotal, 0);
-      const id_order = generateShortUUID();
+  ipcMain.handle(
+    "checkout_menu",
+    async (_, cash: number, data: ICart[], payment_method: string) => {
+      try {
+        const total = data.reduce((acc, item) => acc + item.subtotal, 0);
+        const id_order = generateShortUUID();
 
-      const order_cafe = await prisma.orderCafe.createMany({
-        data: data.map((item) => ({
-          id_order,
-          id_order_cafe: `ORD-${generateShortUUID()}`,
-          menu_cafe: item.id,
-          subtotal: item.subtotal,
-          total,
-          cash,
-          change: cash - total,
-          status: "PAID",
-          qty: Number(item.qty),
-        })),
-      });
-
-      const find_order = await prisma.orderCafe.findMany({
-        where: {
-          id_order,
-        },
-        include: {
-          menucafe: true,
-        },
-      });
-
-      await prisma.struk.create({
-        data: {
-          id_struk: `STK-${generateShortUUID()}`,
-          id_order: find_order[0].id,
-          name: "Cafe",
-          total,
-          cash,
-          change: cash - total,
-          status: "PAID",
-          type_struk: "CAFEONLY",
-        },
-      });
-
-      return Responses({
-        code: 201,
-        data: order_cafe,
-        detail_message: "Pesanan berhasil dibuat",
-      });
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        return Responses({
-          code: 500,
-          detail_message: `Terjadi Kesalahan: ${err.message}`,
+        const struk = await prisma.struk.create({
+          data: {
+            id_struk: `STK-${generateShortUUID()}`,
+            name: "Cafe",
+            total,
+            total_cafe: total,
+            cash,
+            change: cash - total,
+            status: "PAID",
+            payment_method:
+              payment_method as unknown as PaymentMethodCasierType,
+            type_struk: "CAFEONLY",
+          },
         });
+
+        const order_cafe = await prisma.orderCafe.createMany({
+          data: data.map((item) => ({
+            id_order,
+            id_order_cafe: `ORD-${generateShortUUID()}`,
+            menu_cafe: item.id,
+            subtotal: item.subtotal,
+            total,
+            cash,
+            change: cash - total,
+            payment_method:
+              payment_method as unknown as PaymentMethodCasierType,
+            status: "PAID",
+            qty: Number(item.qty),
+            id_struk: struk.id,
+          })),
+        });
+
+        await StrukWindow(struk.id_struk);
+
+        return Responses({
+          code: 201,
+          data: order_cafe,
+          detail_message: "Pesanan berhasil dibuat",
+        });
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          return Responses({
+            code: 500,
+            detail_message: `Terjadi Kesalahan: ${err.message}`,
+          });
+        }
+        return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
       }
-      return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
-    }
-  });
+    },
+  );
 
   ipcMain.handle("list_menu_table", async (_, id_table: string) => {
     try {
@@ -230,6 +237,10 @@ export default function MenuModule() {
         },
         include: {
           bookings: {
+            take: 1,
+            orderBy: {
+              created_at: "desc",
+            },
             include: {
               order_cafe: {
                 include: {

@@ -26,6 +26,7 @@ import MachineModule, {
 import { onMachineStatus } from "./lib/utils.js";
 import LoggingModule from "./module/logging.js";
 import BookingModule from "./module/booking.js";
+import StrukModule from "./module/struk.js";
 
 let mainWindow: BrowserWindow | null = null;
 let serialport: SerialPort | null = null;
@@ -120,6 +121,7 @@ VoucherModule();
 MachineModule();
 LoggingModule();
 BookingModule();
+StrukModule();
 
 ipcMain.handle("get_printer", async (_, id: number | null) => {
   const printers = await mainWindow?.webContents.getPrintersAsync();

@@ -11,7 +11,6 @@ import { Spinner } from "@heroui/react";
 
 export default function DashboardPage() {
     const [floor, setFloor] = useState<string>("floor_1");
-
     const tableList = useTableBilliard();
 
     return (

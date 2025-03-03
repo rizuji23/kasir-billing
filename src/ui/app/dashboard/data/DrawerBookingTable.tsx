@@ -1,16 +1,15 @@
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { Booking, TableBilliard } from "../../../../electron/types";
 import { Drawer, DrawerContent } from "@heroui/drawer";
-import { Form } from "@heroui/form";
 import { Divider } from "@heroui/divider";
-import { Select as HeroSelect, Select, SelectItem } from "@heroui/select";
+import { Select, SelectItem } from "@heroui/select";
 import { Button } from "@heroui/button";
 import { ArrowBigDown, Banknote, Check, Printer, RefreshCcw, X } from "lucide-react";
 import { toast } from "sonner";
 import NotFound from "../../../components/NotFound";
 import moment from "moment-timezone";
 import { Input } from "@heroui/input";
-import { Checkbox, Chip, Popover, PopoverContent, PopoverTrigger } from "@heroui/react";
+import { Chip, Popover, PopoverContent, PopoverTrigger, Radio, RadioGroup } from "@heroui/react";
 import { convertRupiah } from "../../../lib/utils";
 import {
     Table,
@@ -20,6 +19,7 @@ import {
     TableRow,
     TableCell
 } from "@heroui/table";
+import usePaymentTable from "../../../hooks/usePaymentTable";
 
 
 export default function DrawerBookingTable({ open, setOpen, table }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, table: TableBilliard }) {
@@ -65,11 +65,13 @@ export default function DrawerBookingTable({ open, setOpen, table }: { open: boo
         }
     }, [open]);
 
+    const payment = usePaymentTable({ getDetailBookingTable, detail, open, setOpen, table });
+
     return (
         <Drawer isOpen={open} onOpenChange={setOpen} size="full">
-            <DrawerContent>
+            <DrawerContent className="h-screen overflow-y-hidden">
                 {
-                    !detail ? <NotFound /> : <Form className="!block " validationBehavior="native">
+                    !detail ? <NotFound /> :
                         <div className="grid gap-4 p-6">
                             <div className="flex flex-col gap-3">
                                 <h3 className="font-bold">Detail Pembayaran ({table.name})</h3>
@@ -100,140 +102,169 @@ export default function DrawerBookingTable({ open, setOpen, table }: { open: boo
                                         <div className="grid gap-2">
                                             <span className="text-sm font-semibold">Informasi Pemesan:</span>
                                             <div className="p-3 bg-default-100 rounded-md grid gap-2">
-                                                <div className="">
-                                                    <small>Nama Pemesan:</small>
-                                                    <div className="flex gap-3">
-                                                        <p className="text-sm font-bold">{editName ? <Input variant="bordered" className="w-[200px]" value={name} onChange={(e) => setName(e.target.value)} /> : name}</p>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <small>Nama Pemesan:</small>
+                                                        <div className="flex gap-3">
+                                                            <p className="text-sm font-bold">{editName ? <Input variant="bordered" className="w-[200px]" value={name} onChange={(e) => setName(e.target.value)} /> : name}</p>
 
-                                                        {
-                                                            editName ? <div className="flex gap-2 self-center">
-                                                                <Button isIconOnly size="sm" color="success" onPress={handleChangeName}><Check className="w-4 h-4" /></Button>
-                                                                <Button isIconOnly size="sm" onPress={() => {
-                                                                    setEditName(false)
-                                                                    setName(detail.booking.name);
-                                                                }} color="danger"><X className="w-4 h-4" /></Button>
-                                                            </div> : <>
-                                                                <span className="text-sm font-bold self-center">|</span><button className="font-normal text-sm text-blue-500 hover:underline" onClick={() => setEditName(true)} type="button">Edit</button>
-                                                            </>
-                                                        }
+                                                            {
+                                                                editName ? <div className="flex gap-2 self-center">
+                                                                    <Button isIconOnly size="sm" color="success" onPress={handleChangeName}><Check className="w-4 h-4" /></Button>
+                                                                    <Button isIconOnly size="sm" onPress={() => {
+                                                                        setEditName(false)
+                                                                        setName(detail.booking.name);
+                                                                    }} color="danger"><X className="w-4 h-4" /></Button>
+                                                                </div> : <>
+                                                                    <span className="text-sm font-bold self-center">|</span><button className="font-normal text-sm text-blue-500 hover:underline" onClick={() => setEditName(true)} type="button">Edit</button>
+                                                                </>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <small>Tipe Mode:</small>
+                                                        <p className="text-sm font-bold">{detail.table.type_play}</p>
+                                                    </div>
+                                                    <div>
+                                                        <small>Blink:</small>
+                                                        <p className="text-sm font-bold">{detail.table.blink === true ? "Iya" : "Tidak"}</p>
+                                                    </div>
+                                                    <div>
+                                                        <small>Waktu Order:</small>
+                                                        <p className="text-sm font-bold">{moment(detail.booking.created_at).format("DD/MM/YYYY HH:mm:ss")}</p>
                                                     </div>
                                                 </div>
-                                                <div className="">
-                                                    <small>Tipe Mode:</small>
-                                                    <p className="text-sm font-bold">{detail.table.type_play}</p>
-                                                </div>
-                                                <div className="">
-                                                    <small>Blink:</small>
-                                                    <p className="text-sm font-bold">{detail.table.blink === true ? "Iya" : "Tidak"}</p>
-                                                </div>
-                                                <div className="">
-                                                    <small>Waktu Order:</small>
-                                                    <p className="text-sm font-bold">{moment(detail.booking.created_at).format("DD/MM/YYYY HH:mm:ss")}</p>
-                                                </div>
+
+
                                             </div>
                                         </div>
                                         <div className="grid gap-2">
-                                            <span className="text-sm font-semibold">Informasi Pesanan:</span>
+                                            <span className="text-sm font-semibold">Pembayaran:</span>
                                             <div className="p-3 bg-default-100 rounded-md grid gap-2">
-                                                <div className="">
+                                                <div className="grid grid-cols-2">
+                                                    <div>
+                                                        <small>Total Harga Billing</small>
+                                                        <p className="text-sm font-bold">Rp. {convertRupiah(payment.total?.total_billing.toString() || "0")}</p>
+                                                    </div>
+                                                    <div>
+                                                        <small>Total Harga Menu</small>
+                                                        <p className="text-sm font-bold">Rp. {convertRupiah(payment.total?.total_cafe.toString() || "0")}</p>
+                                                    </div>
+                                                </div>
+                                                <div>
                                                     <small>Total Durasi</small>
-                                                    <p className="text-sm font-bold">{detail.booking.duration} Jam</p>
-                                                </div>
-                                                <div className="">
-                                                    <small>Total Harga Menu</small>
-                                                    <p className="text-sm font-bold">Rp. </p>
-                                                </div>
-                                                <div className="">
-                                                    <small>Total Harga Billing</small>
-                                                    <p className="text-sm font-bold">Rp. {convertRupiah(detail.booking.total_price.toString() || "0")}</p>
+                                                    <p className="text-sm font-bold">{payment.duration} Jam</p>
                                                 </div>
                                                 <Divider />
-                                                <div className="">
+                                                <div>
                                                     <small>Total Semua</small>
-                                                    <p className=" font-bold">Rp. </p>
+                                                    <p className=" font-bold">Rp. {convertRupiah(payment.total?.total_all.toString() || "0")}</p>
                                                 </div>
                                                 <Divider />
-                                                <div className="">
-                                                    <small>Uang Cash</small>
-                                                    <Input variant="bordered" autoFocus startContent={"Rp. "} />
+                                                {
+                                                    payment.is_split_bill && (
+                                                        <div>
+                                                            <small>Nama <small className="text-danger-500">*</small></small>
+                                                            <Input isRequired placeholder="Masukan nama pelanggan disini..." variant="bordered" autoFocus onChange={(e) => payment.setNameSplit(e.target.value)} value={payment.name_split} />
+                                                        </div>
+                                                    )
+                                                }
+                                                <div>
+                                                    <small>Jumlah Pembayaran <small className="text-danger-500">*</small></small>
+                                                    <Input variant="bordered" placeholder="Masukan jumlah pembayaran disini..." isRequired value={convertRupiah(payment.payment_cash)}
+                                                        onValueChange={(e) => payment.handlePaymentChange(e)} classNames={{ input: "font-bold" }} autoFocus startContent={<span className="font-bold">Rp. </span>} />
+                                                </div>
+                                                <div>
+                                                    <small>Cara Pembayaran <small className="text-danger-500">*</small></small>
+                                                    <RadioGroup orientation="horizontal" isRequired className="mt-2" value={payment.payment_method} onValueChange={(e) => payment.setPaymentMethod(e)}>
+                                                        <Radio classNames={{ label: "text-sm" }} value={"CASH"}>Cash</Radio>
+                                                        <Radio classNames={{ label: "text-sm" }} value={"TRANSFER"}>Transfer</Radio>
+                                                        <Radio classNames={{ label: "text-sm" }} value={"QRIS"}>QRIS</Radio>
+                                                    </RadioGroup>
                                                 </div>
                                                 <Divider />
-                                                <div className="">
+                                                <div>
                                                     <small>Kembalian</small>
-                                                    <p className=" font-bold">Rp. </p>
+                                                    <p className=" font-bold">Rp. {convertRupiah(payment.change.toString() || "0")}</p>
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="flex gap-3 justify-end">
-                                            <Button variant="bordered" color="danger" onPress={() => setOpen(false)}>Kembali</Button>
-                                            <Button color="success" startContent={<Banknote className="w-4 h-4" />}>Bayar Sekarang</Button>
+                                            <Button variant="bordered" color="danger" type="button" onPress={() => setOpen(false)}>Kembali</Button>
+                                            <Button color="success" type="button" onPress={payment.checkOut} isLoading={payment.loading} startContent={<Banknote className="w-4 h-4" />}>{payment.is_split_bill ? "Bayar Split Bill" : "Bayar Sekarang"}</Button>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="p-3 border-3 rounded-md flex flex-col gap-3 h-fit">
-                                    <div className="flex flex-col gap-3">
-                                        <h3 className="font-bold">Detail Pesanan</h3>
-                                        <Divider />
-                                        <div className="grid gap-2">
-                                            <p className="font-bold text-sm">List Billing: </p>
-                                            <div className="grid gap-3 mt-3">
-                                                <Table aria-label="Example static collection table" selectionMode="multiple">
-                                                    <TableHeader>
-                                                        <TableColumn>Jam Mulai</TableColumn>
-                                                        <TableColumn>Jam Berakhir</TableColumn>
-                                                        <TableColumn>Harga</TableColumn>
-                                                        <TableColumn>Status</TableColumn>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {
-                                                            Array.isArray(detail.booking.detail_booking) && detail.booking.detail_booking.length !== 0 ? detail.booking.detail_booking.map((el) => {
-                                                                return <TableRow key={el.id}>
-                                                                    <TableCell>{moment(el.start_duration).format("HH:mm:ss")}</TableCell>
-                                                                    <TableCell>{moment(el.end_duration).format("HH:mm:ss")}</TableCell>
-                                                                    <TableCell>Rp. {convertRupiah(el.price.toString() || "0")}</TableCell>
-                                                                    <TableCell>
-                                                                        <Chip color={el.status === "PAID" ? "success" : "danger"} size="sm">{el.status === "PAID" ? "Sudah Dibayar" : "Belum Dibayar"}</Chip>
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            }) : <></>
-                                                        }
-                                                    </TableBody>
-                                                </Table>
+                                <div className="h-screen overflow-x-auto pb-24">
+                                    <div className="p-3 border-3 rounded-md flex flex-col gap-3 h-fit">
+                                        <div className="flex flex-col gap-3">
+                                            <h3 className="font-bold">Detail Pesanan</h3>
+                                            <Divider />
+                                            <div className="grid gap-2">
+                                                <p className="font-bold text-sm">List Billing: </p>
+                                                <div className="grid gap-3 mt-3">
+                                                    <Table aria-label="Example static collection table" selectionMode="multiple" onSelectionChange={payment.setSelectedBooking} selectedKeys={payment.selected_booking}>
+                                                        <TableHeader>
+                                                            <TableColumn>Jam Mulai</TableColumn>
+                                                            <TableColumn>Jam Berakhir</TableColumn>
+                                                            <TableColumn>Harga</TableColumn>
+                                                            <TableColumn>Status</TableColumn>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {
+                                                                payment.list_booking.length !== 0 ? payment.list_booking.map((el) => {
+                                                                    return <TableRow key={el.id}>
+                                                                        <TableCell>{moment(el.start_duration).format("HH:mm:ss")}</TableCell>
+                                                                        <TableCell>{moment(el.end_duration).format("HH:mm:ss")}</TableCell>
+                                                                        <TableCell>Rp. {convertRupiah(el.price.toString() || "0")}</TableCell>
+                                                                        <TableCell>
+                                                                            <Chip color={el.status === "PAID" ? "success" : "danger"} size="sm">{el.status === "PAID" ? "Sudah Dibayar" : "Belum Dibayar"}</Chip>
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                }) : <></>
+                                                            }
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <p className="font-bold text-sm">List Menu: </p>
-                                            <div className="grid gap-3 mt-3">
-                                                <Table aria-label="Example static collection table" selectionMode="multiple">
-                                                    <TableHeader>
-                                                        <TableColumn>Menu</TableColumn>
-                                                        <TableColumn>Qty</TableColumn>
-                                                        <TableColumn>Subtotal</TableColumn>
-                                                        <TableColumn>Status</TableColumn>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {
-                                                            Array.isArray(detail.booking.order_cafe) && detail.booking.order_cafe.length !== 0 ? detail.booking.order_cafe.map((el) => {
-                                                                return <TableRow key={el.id}>
-                                                                    <TableCell>{el.menucafe.name}</TableCell>
-                                                                    <TableCell>{el.qty}</TableCell>
-                                                                    <TableCell>Rp. {convertRupiah(el.total.toString() || "0")}</TableCell>
-                                                                    <TableCell>
-                                                                        <Chip color={el.status === "PAID" ? "success" : "danger"} size="sm">{el.status === "PAID" ? "Sudah Dibayar" : "Belum Dibayar"}</Chip>
-                                                                    </TableCell>
-                                                                </TableRow>
-                                                            }) : <></>
-                                                        }
+                                            <div className="grid gap-2">
+                                                <p className="font-bold text-sm">List Menu: </p>
+                                                <div className="grid gap-3 mt-3">
+                                                    <Table aria-label="Example static collection table" selectionMode="multiple" onSelectionChange={payment.setSelectedCafe} selectedKeys={payment.selected_cafe}>
+                                                        <TableHeader>
+                                                            <TableColumn>Menu</TableColumn>
+                                                            <TableColumn className="text-center">Qty</TableColumn>
+                                                            <TableColumn>Subtotal</TableColumn>
+                                                            <TableColumn>Status</TableColumn>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {
+                                                                payment.list_cafe.length !== 0 ? payment.list_cafe.map((el) => {
+                                                                    return <TableRow key={el.id}>
+                                                                        <TableCell>
+                                                                            <div className="flex flex-col">
+                                                                                <p className="font-semibold">{el.menucafe.name}</p>
+                                                                                <small>Rp. {convertRupiah(el.menucafe.price.toString() || "0")}</small>
+                                                                            </div>
+                                                                        </TableCell>
+                                                                        <TableCell className="text-center">{el.qty}</TableCell>
+                                                                        <TableCell>Rp. {convertRupiah(el.total.toString() || "0")}</TableCell>
+                                                                        <TableCell>
+                                                                            <Chip color={el.status === "PAID" ? "success" : "danger"} size="sm">{el.status === "PAID" ? "Sudah Dibayar" : "Belum Dibayar"}</Chip>
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                }) : <></>
+                                                            }
 
-                                                    </TableBody>
-                                                </Table>
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </Form>
                 }
 
             </DrawerContent>

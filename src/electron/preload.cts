@@ -11,6 +11,12 @@ contextBridge.exposeInMainWorld("api", {
   removeTableUpdateListener: () => {
     ipcRenderer.removeAllListeners("update_table_list");
   },
+  onPrintStruk: (callback: (data: any) => void) => {
+    ipcRenderer.on("print_struk", (_: any, data: any) => callback(data));
+  },
+  removePrintStruk: () => {
+    ipcRenderer.removeAllListeners("print_struk");
+  },
   menu_list: (filter: string) => ipcRenderer.invoke("menu_list", filter),
   add_menu: (data: any) => ipcRenderer.invoke("add_menu", data),
   list_category: () => ipcRenderer.invoke("list_category"),
@@ -22,8 +28,8 @@ contextBridge.exposeInMainWorld("api", {
   update_menu: (id: number, data: any) =>
     ipcRenderer.invoke("update_menu", id, data),
   total_booking: () => ipcRenderer.invoke("total_booking"),
-  checkout_menu: (cash: number, data: any[]) =>
-    ipcRenderer.invoke("checkout_menu", cash, data),
+  checkout_menu: (cash: number, data: any[], payment_method: string) =>
+    ipcRenderer.invoke("checkout_menu", cash, data, payment_method),
   get_printer: () => ipcRenderer.invoke("get_printer"),
   get_serialport: () => ipcRenderer.invoke("get_serialport"),
   get_type: (type_member: string) =>
@@ -65,4 +71,7 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("detail_booking", id_table),
   change_name: (data: { id_booking: string; name: string }) =>
     ipcRenderer.invoke("change_name", data),
+  payment_booking: (data: unknown) =>
+    ipcRenderer.invoke("payment_booking", data),
+  test_struk: () => ipcRenderer.invoke("test_struk"),
 });
