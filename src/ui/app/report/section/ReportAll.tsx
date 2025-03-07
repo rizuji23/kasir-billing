@@ -1,109 +1,127 @@
 import { Card, CardBody } from "@heroui/card";
 import { Coins, Moon, Sun, Utensils } from "lucide-react";
 import ReportTitle from "./ReportTitle";
+import moment from "moment-timezone";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { LoadingComponent } from "../../../components/datatable/DataTableCustom";
+import { convertRupiah } from "../../../lib/utils";
+
+interface SummaryReportType {
+    total: number;
+    total_billing: number;
+    total_cafe: number;
+    total_pagi: number;
+    total_malam: number;
+    period: string
+}
 
 export default function ReportAll() {
+    const [loading, setLoading] = useState<boolean>(true);
+    const [selected, setSelected] = useState<string>("today");
+    const [total, setTotal] = useState<SummaryReportType | null>(null);
+
+    const getDataSummary = async (filter: string = "today") => {
+        setLoading(true);
+        try {
+            const res = await window.api.summary_report({ period: filter });
+            setLoading(false);
+
+            if (res.status && res.data) {
+                console.log("res.data", res.data)
+                setTotal(res.data);
+            }
+
+        } catch (err) {
+            setLoading(false);
+            toast.error(`Error fetching tables: ${err}`);
+        }
+    }
+
+    useEffect(() => {
+        getDataSummary(selected)
+    }, [selected]);
+
     return (
         <>
-            <div className="grid gap-3">
-                <ReportTitle title="Total Transaksi" />
-                <div className="grid grid-cols-2 gap-5">
-                    <Card isPressable isHoverable>
-                        <CardBody className="p-5">
-                            <div className="flex justify-between">
-                                <div className="flex flex-col gap-4">
-                                    <div className="grid gap-2">
-                                        <h3 className="text-xl font-bold">Total Billing Billiard</h3>
-                                        <h3 className="text-xl font-bold">Rp. 100.000</h3>
+            <div className="grid gap-5">
+                {
+                    loading ? <LoadingComponent /> : <>
+                        <ReportTitle title={`Total Transaksi (${total?.period || ""})`} setSelected={setSelected} />
+                        <Card>
+                            <CardBody className="p-5">
+                                <div className="flex justify-between">
+                                    <div className="flex flex-col gap-4">
+                                        <div className="grid gap-2">
+                                            <h3 className="text-xl font-bold">Total Semua</h3>
+                                            <h3 className="text-xl font-bold">Rp. {convertRupiah(total?.total.toString() || "0")}</h3>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>20/05/2025</b></p>
+                                    <Coins />
                                 </div>
-                                <Coins />
-                            </div>
-                        </CardBody>
-                    </Card>
-                    <Card isPressable isHoverable>
-                        <CardBody className="p-5">
-                            <div className="flex justify-between">
-                                <div className="flex flex-col gap-4">
-                                    <div className="grid gap-2">
-                                        <h3 className="text-xl font-bold">Total Cafe</h3>
-                                        <h3 className="text-xl font-bold">Rp. 100.000</h3>
+                            </CardBody>
+                        </Card>
+                        <div className="grid grid-cols-2 gap-5">
+                            <Card>
+                                <CardBody className="p-5">
+                                    <div className="flex justify-between">
+                                        <div className="flex flex-col gap-4">
+                                            <div className="grid gap-2">
+                                                <h3 className="text-xl font-bold">Total Billing Billiard</h3>
+                                                <h3 className="text-xl font-bold">Rp. {convertRupiah(total?.total_billing.toString() || "0")}</h3>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+                                        </div>
+                                        <Coins />
                                     </div>
-                                    <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>20/05/2025</b></p>
-                                </div>
-                                <Utensils />
-                            </div>
-                        </CardBody>
-                    </Card>
-                    <Card isPressable isHoverable>
-                        <CardBody className="p-5">
-                            <div className="flex justify-between">
-                                <div className="flex flex-col gap-4">
-                                    <div className="grid gap-2">
-                                        <h3 className="text-xl font-bold">Total Shift Pagi</h3>
-                                        <h3 className="text-xl font-bold">Rp. 100.000</h3>
+                                </CardBody>
+                            </Card>
+                            <Card>
+                                <CardBody className="p-5">
+                                    <div className="flex justify-between">
+                                        <div className="flex flex-col gap-4">
+                                            <div className="grid gap-2">
+                                                <h3 className="text-xl font-bold">Total Cafe</h3>
+                                                <h3 className="text-xl font-bold">Rp. {convertRupiah(total?.total_cafe.toString() || "0")}</h3>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+                                        </div>
+                                        <Utensils />
                                     </div>
-                                    <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>20/05/2025</b></p>
-                                </div>
-                                <Sun />
-                            </div>
-                        </CardBody>
-                    </Card>
-                    <Card isPressable isHoverable>
-                        <CardBody className="p-5">
-                            <div className="flex justify-between">
-                                <div className="flex flex-col gap-4">
-                                    <div className="grid gap-2">
-                                        <h3 className="text-xl font-bold">Total Shift Malam</h3>
-                                        <h3 className="text-xl font-bold">Rp. 100.000</h3>
+                                </CardBody>
+                            </Card>
+                            <Card>
+                                <CardBody className="p-5">
+                                    <div className="flex justify-between">
+                                        <div className="flex flex-col gap-4">
+                                            <div className="grid gap-2">
+                                                <h3 className="text-xl font-bold">Total Shift Pagi</h3>
+                                                <h3 className="text-xl font-bold">Rp. {convertRupiah(total?.total_pagi.toString() || "0")}</h3>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+                                        </div>
+                                        <Sun />
                                     </div>
-                                    <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>20/05/2025</b></p>
-                                </div>
-                                <Moon />
-                            </div>
-                        </CardBody>
-                    </Card>
-                    <Card>
-                        <CardBody className="p-5">
-                            <div className="flex flex-col gap-4">
-                                <div className="grid gap-5">
-                                    <h3 className="text-xl font-bold">Meja Terpopuler</h3>
-                                    <div className="w-full max-h-[300px] grid gap-3">
-                                        {
-                                            Array.from({ length: 5 }).map((_, i) => {
-                                                return <div key={i} className="flex justify-between p-3 bg-muted rounded-md">
-                                                    <h5 className="font-medium">Table {i}</h5>
-                                                    <span className="font-bold">1{i * 7} Kali</span>
-                                                </div>
-                                            })
-                                        }
+                                </CardBody>
+                            </Card>
+                            <Card>
+                                <CardBody className="p-5">
+                                    <div className="flex justify-between">
+                                        <div className="flex flex-col gap-4">
+                                            <div className="grid gap-2">
+                                                <h3 className="text-xl font-bold">Total Shift Malam</h3>
+                                                <h3 className="text-xl font-bold">Rp. {convertRupiah(total?.total_malam.toString() || "0")}</h3>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+                                        </div>
+                                        <Moon />
                                     </div>
-                                </div>
-                            </div>
-                        </CardBody>
-                    </Card>
-                    <Card>
-                        <CardBody className="p-5">
-                            <div className="flex flex-col gap-4">
-                                <div className="grid gap-5">
-                                    <h3 className="text-xl font-bold">Menu Terpopuler</h3>
-                                    <div className="w-full max-h-[300px] grid gap-3">
-                                        {
-                                            Array.from({ length: 5 }).map((_, i) => {
-                                                return <div key={i} className="flex justify-between p-3 bg-muted rounded-md">
-                                                    <h5 className="font-medium">Nasi Goreng</h5>
-                                                    <span className="font-bold">1{i * 5} Transaksi</span>
-                                                </div>
-                                            })
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        </CardBody>
-                    </Card>
-                </div>
-
+                                </CardBody>
+                            </Card>
+                        </div>
+                    </>
+                }
             </div>
         </>
     )

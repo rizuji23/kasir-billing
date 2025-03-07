@@ -3,6 +3,8 @@ import { prisma } from "../database.js";
 import Responses from "../lib/responses.js";
 import { sendMessageToMachine } from "./machine.js";
 import { PriceBilling } from "../types/index.js";
+import WebSocket, { WebSocketServer } from "ws";
+import { getLocalIPAddress } from "./networks/network_scan.js";
 
 export async function initialStartLamp() {
   try {
@@ -33,8 +35,19 @@ export const formatTime = (seconds: number): string => {
   )}:${String(secs).padStart(2, "0")}`;
 };
 
-export const updateTimers = async (mainWindow: BrowserWindow) => {
+export const updateTimers = async (
+  mainWindow: BrowserWindow,
+  wss: WebSocketServer,
+) => {
   setInterval(async () => {
+    const broadcast = (data: unknown) => {
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(data));
+        }
+      });
+    };
+
     const tables = await prisma.tableBilliard.findMany({
       include: {
         bookings: {
@@ -59,6 +72,17 @@ export const updateTimers = async (mainWindow: BrowserWindow) => {
       tables.map(async (table) => {
         let remainingTime = "00:00:00";
 
+        // if (table.status === "EXPIRE" && table.power !== "OFF") {
+        //   setTimeout(async () => {
+        //     await sendMessageToMachine(`off ${table.number}`);
+        //   }, 100 * Number(table.number));
+
+        //   await prisma.tableBilliard.update({
+        //     where: { id: table.id },
+        //     data: { status: "EXPIRE", timer: null, power: "OFF" },
+        //   });
+        // }
+
         if (table.type_play === "REGULAR" && table.timer) {
           // Countdown mode for REGULAR play
           const secondsRemaining = Math.max(
@@ -69,12 +93,13 @@ export const updateTimers = async (mainWindow: BrowserWindow) => {
           remainingTime = formatTime(secondsRemaining);
 
           if (secondsRemaining <= 0 && table.status !== "EXPIRE") {
-            await prisma.tableBilliard.update({
-              where: { id: table.id },
-              data: { status: "EXPIRE", timer: null, power: "OFF" },
-            });
             setTimeout(async () => {
-              await sendMessageToMachine(`off ${table.number}`);
+              sendMessageToMachine(`off ${table.number}`).then(async () => {
+                await prisma.tableBilliard.update({
+                  where: { id: table.id },
+                  data: { status: "EXPIRE", timer: null, power: "OFF" },
+                });
+              });
             }, 100 * Number(table.number));
           } else if (
             secondsRemaining <= 900 &&
@@ -108,25 +133,20 @@ export const updateTimers = async (mainWindow: BrowserWindow) => {
           const lastBillingTime = lastBilling
             ? new Date(lastBilling.end_duration)
             : startTime;
-          console.log(
-            "LOSS If",
-            (now.getTime() - lastBillingTime.getTime()) / 1000,
-          );
-          if ((now.getTime() - lastBillingTime.getTime()) / 1000 >= 60) {
-            const formattedTime = now
-              .toLocaleTimeString("id-ID", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: false,
-              })
-              .replace(/\./g, ":"); // Replace dots with colons
 
-            const price = await getPriceByShift(
-              table.bookings[0].price_type?.type_price || "",
-              formattedTime,
-            );
-            console.log(price);
+          if ((now.getTime() - lastBillingTime.getTime()) / 1000 >= 60) {
+            // const formattedTime = now
+            //   .toLocaleTimeString("id-ID", {
+            //     hour: "2-digit",
+            //     minute: "2-digit",
+            //     second: "2-digit",
+            //     hour12: false,
+            //   })
+            //   .replace(/\./g, ":"); // Replace dots with colons
+            // const price = await getPriceByShift(
+            //   table.bookings[0].price_type?.type_price || "",
+            //   formattedTime,
+            // );
             // Save a new billing entry
             // if (price) {
             //   await prisma.detailBooking.create({
@@ -145,6 +165,12 @@ export const updateTimers = async (mainWindow: BrowserWindow) => {
         return { ...table, remainingTime };
       }),
     );
+
+    broadcast({
+      type: "table_status",
+      ip: getLocalIPAddress(),
+      data: updatedTables,
+    });
 
     mainWindow.webContents.send("update_table_list", updatedTables);
   }, 1000);

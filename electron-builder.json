@@ -1,8 +1,51 @@
 {
     "appId": "com.rlstudio.kasir-billing",
-    "files": ["dist-electron", "dist-react"],
-    "icon": "./icon-desktop.png",
+    "productName": "Kasir Billing Billiard",
+    "files": [
+        "dist-electron/**", 
+        "dist-react/**", 
+        "prisma/**",
+        ".env", 
+        "node_modules/**/*",
+        "!node_modules/.prisma/client/*.node",
+        "!node_modules/.prisma/client/libquery_engine-*",
+        "node_modules/.prisma/client/query-engine-*",
+        "node_modules/.prisma/client/schema.prisma"
+    ],
+    "asar": false,
+    "publish": {
+      "provider": "generic",
+      "url": "https://updatecozypool.rlstudio.my.id"
+    },
+    "extraResources": [
+      {
+        "from": "node_modules/.prisma/client",
+        "to": "app/node_modules/.prisma/client"
+      }
+    ],
+    "directories": {
+        "output": "release"
+    },
+    "icon": "icon-desktop@512.png",
     "win": {
-        "target": ["portable", "msi"]
+        "target": ["nsis"],
+        "artifactName": "${productName}-${version}.${ext}",
+        "publisherName": "RL Studio",
+        "icon": "icon-desktop@512.png",
+        "signtoolOptions": {
+            "publisherName": "Kasir Billing Billiard"
+        }
+    },
+    "nsis": {
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true
+    },
+    "portable": {
+        "artifactName": "${productName}-Portable-${version}.${ext}"
+    },
+    "extraMetadata": {
+        "main": "dist-electron/main.js"
     }
 }

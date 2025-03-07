@@ -1,0 +1,309 @@
+import { ipcMain } from "electron";
+import Responses from "../lib/responses.js";
+import { prisma } from "../database.js";
+import { strukFilter } from "../lib/utils.js";
+import {
+  generateExcelReport,
+  generatePDFReport,
+} from "./report/generate-report.js";
+
+export default function ReportModule() {
+  ipcMain.handle(
+    "rincian_transaction",
+    async (
+      _,
+      filter: { period: string; start_date?: string; end_date?: string },
+      shift: string,
+    ) => {
+      try {
+        const struk_filter = await strukFilter(filter, shift);
+
+        const struk = await prisma.struk.findMany({
+          where: { ...struk_filter.where, status: "PAID" },
+          orderBy: {
+            created_at: "desc",
+          },
+        });
+
+        const total_all = struk.reduce((sum, item) => sum + item.total, 0);
+        const total_booking = struk.reduce(
+          (sum, item) => sum + (item.total_billing || 0),
+          0,
+        );
+        const total_cafe = struk.reduce(
+          (sum, item) => sum + (item.total_cafe || 0),
+          0,
+        );
+
+        return Responses({
+          code: 200,
+          detail_message: "Success",
+          data: {
+            struk,
+            total_all,
+            total_booking,
+            total_cafe,
+            period: struk_filter.period,
+          },
+        });
+      } catch (err) {
+        if (err instanceof Error) {
+          return Responses({
+            code: 500,
+            detail_message: `Terjadi Kesalahan: ${err.message}`,
+          });
+        }
+        return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+      }
+    },
+  );
+
+  ipcMain.handle("detail_transaction", async (_, id_struk: string) => {
+    try {
+      const struk = await prisma.struk.findFirst({
+        where: {
+          id_struk: id_struk,
+        },
+        include: {
+          orderId: {
+            include: {
+              menucafe: true,
+            },
+          },
+          bookingId: {
+            include: {
+              detail_booking: true,
+              table: true,
+              order_cafe: {
+                include: {
+                  menucafe: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!struk) {
+        return Responses({
+          code: 404,
+          detail_message: "Struk tidak ditemukan",
+        });
+      }
+
+      return Responses({
+        code: 200,
+        data: struk,
+      });
+    } catch (err) {
+      console.error("Error fetching struk:", err);
+      if (err instanceof Error) {
+        return Responses({
+          code: 500,
+          detail_message: `Terjadi Kesalahan: ${err.message}`,
+        });
+      }
+      return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+    }
+  });
+
+  ipcMain.handle(
+    "export_report",
+    async (
+      _,
+      type_export: string,
+      start_date: string,
+      end_date: string,
+      shift: string,
+    ) => {
+      try {
+        const startDateTime = new Date(`${start_date}T00:00:00Z`);
+        const endDateTime = new Date(`${end_date}T23:59:59.999Z`);
+
+        console.log("Filtering from:", startDateTime, "to:", endDateTime);
+
+        const check_data = await prisma.struk.findMany({
+          where: {
+            created_at: {
+              gte: startDateTime,
+              lte: endDateTime,
+            },
+          },
+        });
+
+        if (check_data.length === 0) {
+          return Responses({
+            code: 404,
+            detail_message: "Struk tidak ditemukan",
+          });
+        }
+
+        if (type_export === "excel") {
+          await generateExcelReport(start_date, end_date);
+        } else if (type_export === "pdf") {
+          await generatePDFReport(start_date, end_date, shift);
+        }
+
+        return Responses({
+          code: 201,
+          detail_message: "Export berhasil dilakukan",
+        });
+      } catch (err) {
+        if (err instanceof Error) {
+          return Responses({
+            code: 500,
+            detail_message: `Terjadi Kesalahan: ${err.message}`,
+          });
+        }
+        return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "summary_report",
+    async (
+      _,
+      filter: { period: string; start_date?: string; end_date?: string },
+    ) => {
+      try {
+        const struk_filter = await strukFilter(filter, "all");
+
+        const totalSummary = await prisma.struk.aggregate({
+          where: struk_filter.where,
+          _sum: {
+            total: true,
+            total_billing: true,
+            total_cafe: true,
+          },
+        });
+
+        const pagiSummary = await prisma.struk.aggregate({
+          where: { ...struk_filter.where, shift: "Pagi" },
+          _sum: {
+            total: true,
+          },
+        });
+
+        const malamSummary = await prisma.struk.aggregate({
+          where: { ...struk_filter.where, shift: "Malam" },
+          _sum: {
+            total: true,
+          },
+        });
+
+        const summary = {
+          total: totalSummary._sum.total || 0,
+          total_billing: totalSummary._sum.total_billing || 0,
+          total_cafe: totalSummary._sum.total_cafe || 0,
+          total_pagi: pagiSummary._sum.total || 0,
+          total_malam: malamSummary._sum.total || 0,
+          period: struk_filter.period,
+        };
+
+        return Responses({
+          code: 200,
+          detail_message: "Success",
+          data: summary,
+        });
+      } catch (err) {
+        if (err instanceof Error) {
+          return Responses({
+            code: 500,
+            detail_message: `Terjadi Kesalahan: ${err.message}`,
+          });
+        }
+        return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "billing_report",
+    async (
+      _,
+      filter: { period: string; start_date?: string; end_date?: string },
+      shift: string,
+    ) => {
+      try {
+        const struk_filter = await strukFilter(filter, shift);
+
+        const booking = await prisma.booking.findMany({
+          where: { ...struk_filter.where, status: "PAID" },
+          include: {
+            table: true,
+          },
+        });
+        console.log("booking", booking);
+        const total_all = booking.reduce(
+          (sum, item) => sum + item.total_price,
+          0,
+        );
+
+        const total_duration = booking.reduce(
+          (sum, item) => sum + item.duration,
+          0,
+        );
+
+        return Responses({
+          code: 200,
+          detail_message: "Success",
+          data: {
+            booking,
+            total_all,
+            period: struk_filter.period,
+            total_duration,
+          },
+        });
+      } catch (err) {
+        if (err instanceof Error) {
+          return Responses({
+            code: 500,
+            detail_message: `Terjadi Kesalahan: ${err.message}`,
+          });
+        }
+        return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "cafe_report",
+    async (
+      _,
+      filter: { period: string; start_date?: string; end_date?: string },
+      shift: string,
+    ) => {
+      try {
+        const struk_filter = await strukFilter(filter, shift);
+
+        const order_cafe = await prisma.orderCafe.findMany({
+          where: { ...struk_filter.where, status: "PAID" },
+          include: {
+            menucafe: true,
+          },
+        });
+
+        const total_all = order_cafe.reduce((sum, item) => sum + item.total, 0);
+
+        return Responses({
+          code: 200,
+          detail_message: "Success",
+          data: {
+            order_cafe,
+            total_all,
+            period: struk_filter.period,
+          },
+        });
+      } catch (err) {
+        if (err instanceof Error) {
+          return Responses({
+            code: 500,
+            detail_message: `Terjadi Kesalahan: ${err.message}`,
+          });
+        }
+        return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+      }
+    },
+  );
+}

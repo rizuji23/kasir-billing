@@ -1,20 +1,22 @@
 import { ipcMain } from "electron";
 import { prisma } from "../database.js";
 import Responses from "../lib/responses.js";
+import log from "electron-log";
 
-export async function saveLogging(
+export function saveLogging(
   message: string,
   status: "LOG" | "WARNING" | "ERROR" = "LOG",
 ) {
   try {
-    const res = await prisma.logsData.create({
-      data: {
-        activity: message,
-        status: status,
-      },
-    });
+    if (status === "LOG") {
+      log.info(message);
+    } else if (status === "ERROR") {
+      log.error(message);
+    } else if (status === "WARNING") {
+      log.warn(message);
+    }
 
-    return res;
+    return;
   } catch (err) {
     console.log(err);
     return err;

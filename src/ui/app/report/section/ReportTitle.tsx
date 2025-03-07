@@ -1,9 +1,9 @@
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button } from "@heroui/react";
 import { Filter, Printer } from "lucide-react";
-import { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import PrintReport from "./modal/PrintReport";
 
-export default function ReportTitle({ title }: { title: string }) {
+export default function ReportTitle({ title, setSelected }: { title: string, setSelected: Dispatch<SetStateAction<string>> }) {
     const [open, setOpen] = useState<boolean>(false);
     return (
         <>
@@ -14,12 +14,13 @@ export default function ReportTitle({ title }: { title: string }) {
                         <DropdownTrigger>
                             <Button color="success"><Filter className="w-4 h-4" /> Filter</Button>
                         </DropdownTrigger>
-                        <DropdownMenu aria-label="Static Actions">
-                            <DropdownItem key="new">Hari Ini</DropdownItem>
-                            <DropdownItem key="new">Bulan Ini</DropdownItem>
-                            <DropdownItem key="copy">Triwulan</DropdownItem>
-                            <DropdownItem key="edit">Tahun Ini</DropdownItem>
-                            <DropdownItem key="edit">Custom</DropdownItem>
+                        <DropdownMenu>
+                            <DropdownItem key="today" onPress={() => setSelected("today")}>Hari Ini</DropdownItem>
+                            <DropdownItem key="yesterday" onPress={() => setSelected("yesterday")}>Kemarin</DropdownItem>
+                            <DropdownItem key="this_month" onPress={() => setSelected("this_month")}>Bulan Ini</DropdownItem>
+                            <DropdownItem key="quarterly" onPress={() => setSelected("quarterly")}>Triwulan</DropdownItem>
+                            <DropdownItem key="this_year" onPress={() => setSelected("this_year")}>Tahun Ini</DropdownItem>
+                            <DropdownItem key="custom" onPress={() => setSelected("custom")}>Custom</DropdownItem>
                         </DropdownMenu>
                     </Dropdown>
                     <Button onPress={() => setOpen(true)} variant="bordered"><Printer className="w-4 h-4" /> Print Laporan</Button>

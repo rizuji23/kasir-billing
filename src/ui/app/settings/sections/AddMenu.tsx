@@ -256,7 +256,7 @@ export default function AddMenu() {
                                     <Select label="Pilih Kategori Menu" selectedKeys={[category]} onChange={(e) => setCategory(e.target.value)} isDisabled={loading} isRequired defaultSelectedKeys={"regular"}>
                                         {
                                             list_category.map((category) => (
-                                                <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                                                <SelectItem key={category.id}>{category.name}</SelectItem>
                                             ))
                                         }
 

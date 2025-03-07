@@ -15,6 +15,7 @@ import {
 import { sendMessageToMachine } from "./machine.js";
 import { StrukWindow } from "./struk.js";
 import { getPriceByShift } from "./table.js";
+import { getShift } from "../lib/utils.js";
 
 export interface IItemPrice {
   price: number;
@@ -70,6 +71,7 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
     }
 
     const currentDate = new Date();
+    const shift = await getShift(currentDate);
 
     await prisma.tableBilliard.update({
       where: {
@@ -82,24 +84,38 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
         power: "ON",
         blink: data.data_booking.blink === "iya" ? true : false,
         // timer: data.item_price[data.item_price.length - 1].end_duration,
-        timer: new Date(currentDate.getTime() + 5000),
+        timer: new Date(currentDate.getTime() + 10000),
       },
     });
 
     console.log("data.data_booking.name", data);
 
     const saveManyBooking = async (booking_data: Booking) => {
-      await prisma.detailBooking.createMany({
-        data: data.item_price.map((el) => {
-          return {
-            bookingId: booking_data.id,
-            price: el.price,
-            duration: el.duration,
-            start_duration: el.start_duration,
-            end_duration: el.end_duration,
-          };
-        }),
-      });
+      try {
+        const data_booking_many = await Promise.all(
+          data.item_price.map(async (el) => {
+            const shift = await getShift(el.start_duration);
+
+            return {
+              bookingId: booking_data.id,
+              price: el.price,
+              duration: el.duration,
+              start_duration: el.start_duration,
+              end_duration: el.end_duration,
+              shift: shift || "Pagi",
+            };
+          }),
+        );
+
+        await prisma.detailBooking.createMany({
+          data: data_booking_many,
+        });
+
+        console.log("Bookings created successfully");
+      } catch (err) {
+        console.error("Error saving bookings:", err);
+        throw err;
+      }
     };
 
     if (data.add_duration) {
@@ -141,6 +157,7 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
           total_price: data.subtotal,
           type_play: data.data_booking.type_play as unknown as TypePlay,
           idPriceType: type_price.id,
+          shift: shift || "Pagi",
         },
       });
 
@@ -185,6 +202,7 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
             status: "NOPAID",
             start_duration: startSlot,
             end_duration: endSlot,
+            shift: shift || "Pagi",
           },
         });
       }
@@ -247,6 +265,7 @@ async function createUpdateStruk(
       is_split_bill: false,
       type_struk: "TABLE" as TypeStruk,
       status: "PAID" as StatusTransaction,
+      shift: booking_update.shift || "Pagi",
     };
 
     if (types === "create") {

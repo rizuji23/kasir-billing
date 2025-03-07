@@ -99,7 +99,7 @@ export default function StrukView() {
                                             <p>{el.menucafe.name || "-"}</p>
                                             <p>{el.qty || "0"} x @ {convertRupiah(el.menucafe.price.toString() || "0")}</p>
                                         </div>
-                                        <p className="text-end self-end">Rp. {convertRupiah(el.total.toString() || "0")}</p>
+                                        <p className="text-end self-end">Rp. {convertRupiah(el.subtotal.toString() || "0")}</p>
                                     </div>
                                 })
                             }

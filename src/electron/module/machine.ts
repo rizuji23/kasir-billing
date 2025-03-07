@@ -13,7 +13,7 @@ export async function connectMachine(): Promise<SerialPort | null> {
   try {
     if (serialport && serialport.isOpen) {
       console.log("Serial port already connected.");
-      await saveLogging("Serial port already connected.");
+      saveLogging("Serial port already connected.");
       return serialport;
     }
 
@@ -23,7 +23,7 @@ export async function connectMachine(): Promise<SerialPort | null> {
 
     if (!get_port || !get_port.content) {
       console.error("Serial port not configured in database.");
-      await saveLogging("Serial port not configured in database.", "ERROR");
+      saveLogging("Serial port not configured in database.", "ERROR");
       await onMachineStatus("DISCONNECTED");
       return null;
     }
@@ -36,19 +36,13 @@ export async function connectMachine(): Promise<SerialPort | null> {
 
     serialport.on("error", async (err) => {
       console.error("Serial port error:", err.message);
-      await saveLogging(
-        "Serial port error: " + JSON.stringify(err.message),
-        "ERROR",
-      );
+      saveLogging("Serial port error: " + JSON.stringify(err.message), "ERROR");
       await onMachineStatus("DISCONNECTED");
     });
 
     serialport.on("close", async () => {
       console.log("Serial port closed. Attempting to reconnect...");
-      await saveLogging(
-        "Serial port closed. Attempting to reconnect...",
-        "WARNING",
-      );
+      saveLogging("Serial port closed. Attempting to reconnect...", "WARNING");
       await onMachineStatus("DISCONNECTED");
       await reconnectMachine();
     });
@@ -57,7 +51,7 @@ export async function connectMachine(): Promise<SerialPort | null> {
       serialport?.open(async (err) => {
         if (err) {
           console.error("Failed to open serial port:", err.message);
-          await saveLogging(
+          saveLogging(
             "Failed to open serial port: " + JSON.stringify(err.message),
             "ERROR",
           );
@@ -66,14 +60,14 @@ export async function connectMachine(): Promise<SerialPort | null> {
         }
 
         console.log("Serial port connected.");
-        await saveLogging("Serial port connected.");
+        saveLogging("Serial port connected.");
         await onMachineStatus("CONNECTED");
         resolve(serialport);
       });
     });
   } catch (err) {
     console.error("Error connecting to serial port:", err);
-    await saveLogging(
+    saveLogging(
       "Error connecting to serial port: " + JSON.stringify(err),
       "WARNING",
     );
@@ -88,7 +82,7 @@ export function isMachineConnected(): boolean {
 export async function reconnectMachine(): Promise<SerialPort | null> {
   if (isReconnecting) {
     console.warn("Reconnection already in progress...");
-    await saveLogging("Reconnection already in progress...", "WARNING");
+    saveLogging("Reconnection already in progress...", "WARNING");
     return serialport;
   }
 
@@ -136,10 +130,45 @@ export async function reconnectMachine(): Promise<SerialPort | null> {
   return serialport;
 }
 
+const messageQueue: string[] = [];
+let isWriting = false;
+
+async function processQueue() {
+  if (isWriting || messageQueue.length === 0 || !serialport?.isOpen) return;
+
+  isWriting = true;
+  const message = messageQueue.shift(); // Get next message
+
+  if (message) {
+    await new Promise<void>((resolve, reject) => {
+      serialport!.write(message, (err) => {
+        if (err) {
+          console.error("Error sending message:", err.message);
+          saveLogging(
+            `Error sending message: ${JSON.stringify(err.message)}`,
+            "ERROR",
+          );
+          isWriting = false;
+          return reject(err);
+        }
+
+        serialport!.drain(() => {
+          console.log(`Message sent: ${message}`);
+          isWriting = false;
+          resolve();
+          processQueue(); // Send the next message in the queue
+        });
+      });
+    });
+  } else {
+    isWriting = false;
+  }
+}
+
 export async function sendMessageToMachine(message: string): Promise<unknown> {
   if (!isMachineConnected()) {
     console.warn("Machine is not connected. Attempting to reconnect...");
-    await saveLogging(
+    saveLogging(
       "Machine is not connected. Attempting to reconnect...",
       "ERROR",
     );
@@ -153,24 +182,10 @@ export async function sendMessageToMachine(message: string): Promise<unknown> {
     }
   }
 
-  return new Promise((resolve, reject) => {
-    serialport!.write(message, (err) => {
-      if (err) {
-        console.error("Error sending message:", err.message);
-        saveLogging(
-          "Error sending message: " + JSON.stringify(err.message),
-          "ERROR",
-        );
-        return reject({
-          code: 500,
-          detail_message: `Failed to send message: ${err.message}`,
-        });
-      }
+  messageQueue.push(message);
+  processQueue();
 
-      console.log(`Message sent: ${message}`);
-      resolve({ code: 200, detail_message: "Message sent successfully" });
-    });
-  });
+  return { code: 200, detail_message: "Message queued successfully" };
 }
 
 export default function MachineModule() {

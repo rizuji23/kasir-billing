@@ -112,7 +112,7 @@ function ModalVoucher({ open, setOpen, api }: { open: IModalRow<IVoucher>, setOp
                                 value={voucher_data.discount as unknown as string}
                                 endContent={<Percent className="w-4 h-4" />}
                             />
-                            <DateRangePicker label="Kadaluarsa" value={expired} onChange={setExpired} />
+                            <DateRangePicker label="Kadaluarsa" onChange={setExpired} />
                         </div>
                     </ModalBody>
                     <ModalFooter>

@@ -2,6 +2,11 @@ import { app, BrowserWindow, ipcMain, Notification } from "electron";
 import path from "path";
 import { isDev } from "./utils.js";
 import dotenv from "dotenv";
+import log from "electron-log";
+
+log.initialize();
+
+log.info("App starting...");
 
 dotenv.config();
 process.env.DATABASE_URL = `file:${path.join(
@@ -27,9 +32,19 @@ import { onMachineStatus } from "./lib/utils.js";
 import LoggingModule from "./module/logging.js";
 import BookingModule from "./module/booking.js";
 import StrukModule from "./module/struk.js";
+import NetworkModule from "./module/networks/network_module.js";
+import http from "http";
+import { WebSocketServer } from "ws";
+import { getLocalIPAddress } from "./module/networks/network_scan.js";
+import ReportModule from "./module/report.js";
+import { setupAutoUpdater } from "./module/updater.js";
 
 let mainWindow: BrowserWindow | null = null;
 let serialport: SerialPort | null = null;
+
+const port = 3321;
+const server = http.createServer();
+const wss = new WebSocketServer({ server });
 
 async function listSerialPorts(): Promise<boolean> {
   try {
@@ -37,6 +52,7 @@ async function listSerialPorts(): Promise<boolean> {
     return ports.some((port) => port.path === serialport?.path);
   } catch (err) {
     console.error("Error listing serial ports:", err);
+    log.error(`Error listing serial ports: ${err}`);
     return false;
   }
 }
@@ -55,15 +71,18 @@ async function initializeMachine() {
       body: "SerialPort tidak ditemukan, silahkan untuk restart aplikasi",
     }).show();
   } else {
+    log.info("Machine connected successfully.");
     console.log("Machine connected successfully.");
 
     serialport.on("error", async (err) => {
       console.error("Serial port error:", err.message);
+      log.error(`Serial port error: ${err.message}`);
       await onMachineStatus("DISCONNECTED");
     });
 
     serialport.on("close", async () => {
       console.log("Serial port closed. Attempting to reconnect...");
+      log.warn(`Serial port closed. Attempting to reconnect...`);
       await onMachineStatus("DISCONNECTED");
       serialport = await reconnectMachine();
     });
@@ -95,11 +114,33 @@ app.on("ready", async () => {
     const connected = await isMachineConnected();
     if (!connected) {
       console.warn("Machine disconnected, attempting to reconnect...");
+      log.warn(`Machine disconnected, attempting to reconnect...`);
       serialport = await reconnectMachine();
     }
   }, 2000);
 
-  updateTimers(mainWindow);
+  wss.on("connection", (ws) => {
+    console.log("New WebSocket connection");
+
+    ws.on("message", (message) => {
+      console.log("Received:", message.toString());
+      ws.send("Message received");
+    });
+
+    ws.on("close", () => {
+      console.log("Client disconnected");
+    });
+  });
+
+  server.listen(port, () => {
+    log.info(`WebSocket server running on ws://${getLocalIPAddress()}:${port}`);
+    console.log(
+      `WebSocket server running on ws://${getLocalIPAddress()}:${port}`,
+    );
+  });
+
+  updateTimers(mainWindow, wss);
+  setupAutoUpdater(mainWindow);
 });
 
 setTimeout(async () => {
@@ -122,6 +163,8 @@ MachineModule();
 LoggingModule();
 BookingModule();
 StrukModule();
+NetworkModule();
+ReportModule();
 
 ipcMain.handle("get_printer", async (_, id: number | null) => {
   const printers = await mainWindow?.webContents.getPrintersAsync();

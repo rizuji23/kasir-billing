@@ -95,6 +95,16 @@ export enum TypeStruk {
   CAFEQR = "CAFEQR",
 }
 
+export enum TypeServer {
+  CASHIER = "CASHIER",
+  KITCHEN = "KITCHEN",
+}
+
+export enum StatusServer {
+  CONNECTED = "CONNECTED",
+  DISCONNECTED = "DISCONNECTED",
+}
+
 // ======== INTERFACES ========
 export interface User {
   id: number;
@@ -160,6 +170,7 @@ export interface Booking {
   detail_booking?: DetailBooking[];
   order_cafe?: OrderCafe[];
   split_bill?: SplitBill[];
+  shift?: string;
 }
 
 export interface DetailBooking {
@@ -279,6 +290,7 @@ export interface OrderCafe {
   menu_cafe: number;
   menucafe: MenuCafe;
   total: number;
+  subtotal: number;
   cash: number;
   change: number;
   qty: number;
@@ -289,6 +301,7 @@ export interface OrderCafe {
   user_in: User;
   created_at: Date;
   updated_at: Date;
+  shift: string;
   orderCafeItem: OrderCafeItem[];
 }
 
@@ -494,6 +507,7 @@ export interface Struk {
   status: StatusTransaction;
   created_at: Date;
   updated_at: Date;
+  shift?: string;
 }
 
 export interface PriceBilling {
@@ -515,4 +529,21 @@ export interface PriceBillingType {
   updated_at: Date;
   typePricing: PriceBilling[];
   bookingId: Booking[];
+}
+
+export interface IIPList {
+  ip: string;
+  hostname: string;
+}
+
+export interface ServersList {
+  id: number;
+  id_local_server: string;
+  ip: string;
+  hostname: string;
+  number: string;
+  status: StatusServer;
+  type_server: TypeServer;
+  created_at: Date;
+  updated_at: Date;
 }

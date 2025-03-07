@@ -9,6 +9,7 @@ import { prisma } from "../database.js";
 import Responses from "../lib/responses.js";
 import generateShortUUID from "../lib/random.js";
 import { StrukWindow } from "./struk.js";
+import { getShift } from "../lib/utils.js";
 
 interface ICheckoutMenuTable {
   id_menu: number;
@@ -175,6 +176,9 @@ export default function MenuModule() {
     "checkout_menu",
     async (_, cash: number, data: ICart[], payment_method: string) => {
       try {
+        const currentTime = new Date();
+        const shift = await getShift(currentTime);
+
         const total = data.reduce((acc, item) => acc + item.subtotal, 0);
         const id_order = generateShortUUID();
 
@@ -190,6 +194,7 @@ export default function MenuModule() {
             payment_method:
               payment_method as unknown as PaymentMethodCasierType,
             type_struk: "CAFEONLY",
+            shift: shift || "Pagi",
           },
         });
 
@@ -207,6 +212,7 @@ export default function MenuModule() {
             status: "PAID",
             qty: Number(item.qty),
             id_struk: struk.id,
+            shift: shift || "Pagi",
           })),
         });
 
@@ -296,6 +302,9 @@ export default function MenuModule() {
         });
       }
 
+      const currentTime = new Date();
+      const shift = await getShift(currentTime);
+
       const order = await prisma.orderCafe.findFirst({
         where: {
           menu_cafe: menu_cafe.id,
@@ -315,6 +324,7 @@ export default function MenuModule() {
             orderId: order_new.id,
             menu_cafe: menu_cafe.id,
             price: menu_cafe.price,
+            shift: shift || "Pagi",
           };
         });
 
@@ -338,6 +348,7 @@ export default function MenuModule() {
             status: "NOPAID",
             qty: Number(data.qty || "0"),
             bookingId: booking.id,
+            shift: shift || "Pagi",
           },
         });
 
@@ -402,6 +413,9 @@ export default function MenuModule() {
           });
         }
 
+        const currentTime = new Date();
+        const shift = await getShift(currentTime);
+
         const newQty = type_qty === "plus" ? order.qty + 1 : order.qty - 1;
         const newTotal = order.menucafe.price * newQty;
 
@@ -421,6 +435,7 @@ export default function MenuModule() {
               orderId: update_order_item.id,
               menu_cafe: order.menucafe.id,
               price: order.menucafe.price,
+              shift: shift || "Pagi",
             },
           });
         } else {

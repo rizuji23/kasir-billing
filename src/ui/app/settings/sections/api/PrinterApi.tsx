@@ -1,12 +1,12 @@
 import { Button } from "@heroui/button";
 import { Card, CardBody, CardFooter, CardHeader } from "@heroui/card";
-import { Select, SelectItem } from "@heroui/select";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { IPrinters, Settings } from "../../../../../electron/types";
 import { IResponses } from "../../../../../electron/lib/responses";
 import { Form } from "@heroui/form";
 import { RefreshCcw } from "lucide-react";
+import SelectCustom from "../../../../components/SelectCustom";
 
 interface IPrinterReturn {
     printers: IPrinters[],
@@ -65,14 +65,15 @@ export default function PrinterApi() {
                     <CardHeader className="font-bold">Printer</CardHeader>
                     <CardBody>
                         <div className="grid gap-3">
-                            <Select label="Nama Printer" isRequired selectedKeys={[selected]} onChange={(e) => setSelected(e.target.value)} placeholder="Pilih Printer disini" isLoading={loading}>
+                            <SelectCustom label="Nama Printer" onChange={(e) => setSelected(e.target.value)} value={selected}>
+                                <SelectCustom.Option value="">Pilih Printer...</SelectCustom.Option>
                                 {
                                     printer.map((item) => (
-                                        <SelectItem key={item.name} value={item.name}>{item.displayName}</SelectItem>
+                                        <SelectCustom.Option value={item.name}>{item.displayName}</SelectCustom.Option>
                                     ))
                                 }
-                            </Select>
 
+                            </SelectCustom>
                         </div>
                     </CardBody>
                     <CardFooter className="justify-between">

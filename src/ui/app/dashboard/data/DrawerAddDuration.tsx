@@ -9,6 +9,7 @@ import useBooking from "../../../hooks/useBooking";
 import moment from "moment-timezone";
 import { convertRupiah } from "../../../lib/utils";
 import { Form } from "@heroui/form";
+import SelectCustom from "../../../components/SelectCustom";
 
 export default function DrawerAddDuration({ open, setOpen, table }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, table: TableBilliard }) {
     const booking = useBooking({ open, setOpen, table, add_duration: true });
@@ -63,17 +64,17 @@ export default function DrawerAddDuration({ open, setOpen, table }: { open: bool
                             </div>
                             <div className="flex flex-col gap-3">
                                 <div className="grid gap-4">
-                                    <Select label="Pilih Tipe Harga" isRequired selectedKeys={[booking.data_booking.type_price]} onChange={(e) => booking.setDataBooking((prevState) => ({
+                                    <SelectCustom label="Pilih Tipe Harga" value={booking.data_booking.type_price} onChange={(e) => booking.setDataBooking((prevState) => ({
                                         ...prevState,
                                         type_price: e.target.value
                                     }))}>
                                         {
                                             booking.type_price.map((el) => {
-                                                return <SelectItem key={el.type_price}>{el.type_price}</SelectItem>
+                                                return <SelectCustom.Option value={el.type_price} key={el.type_price}>{el.type_price}</SelectCustom.Option>
                                             })
                                         }
 
-                                    </Select>
+                                    </SelectCustom>
                                     <Input
                                         isRequired
                                         label="Durasi (Per Jam)"

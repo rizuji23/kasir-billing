@@ -14,7 +14,6 @@ const MainWrapper = () => {
       className={`${isStrukPage ? "light" : "dark"
         } text-foreground bg-background w-full h-screen overflow-auto`}
     >
-      <Toaster position="top-right" richColors closeButton />
       <App />
     </main>
   );
@@ -22,6 +21,7 @@ const MainWrapper = () => {
 
 createRoot(document.getElementById("root")!).render(
   <HashRouter>
+    <Toaster position="top-right" richColors closeButton className="!pointer-events-auto" />
     <HeroUIProvider>
       <MainWrapper />
     </HeroUIProvider>

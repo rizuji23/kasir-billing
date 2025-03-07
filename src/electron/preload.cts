@@ -1,5 +1,33 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
+contextBridge.exposeInMainWorld("update", {
+  checkForUpdates: () => ipcRenderer.send("check-for-updates"),
+  downloadUpdate: () => ipcRenderer.send("download-update"),
+  quitAndInstall: () => ipcRenderer.send("quit-and-install"),
+  onUpdateAvailable: (
+    callback: (info: { version: string; releaseNotes: string }) => void,
+  ) =>
+    ipcRenderer.on("update-available", (_: any, info: any) => callback(info)),
+  onUpdateNotAvailable: (callback: () => void) =>
+    ipcRenderer.on("update-not-available", () => callback()),
+  onUpdateDownloaded: (callback: () => void) =>
+    ipcRenderer.on("update-downloaded", () => callback()),
+  onUpdateError: (callback: (error: Error) => void) =>
+    ipcRenderer.on("update-error", (_: any, error: any) => callback(error)),
+  onDownloadProgress: (
+    callback: (progress: {
+      percent: number;
+      bytesPerSecond: number;
+      transferred: number;
+      total: number;
+    }) => void,
+  ) =>
+    ipcRenderer.on("download-progress", (_: any, progress: any) =>
+      callback(progress),
+    ),
+  get_version: () => ipcRenderer.invoke("get_version"),
+});
+
 contextBridge.exposeInMainWorld("api", {
   login: (username: any, password: any) =>
     ipcRenderer.invoke("login", username, password),
@@ -74,4 +102,33 @@ contextBridge.exposeInMainWorld("api", {
   payment_booking: (data: unknown) =>
     ipcRenderer.invoke("payment_booking", data),
   test_struk: () => ipcRenderer.invoke("test_struk"),
+  network_scan: (port: number) => ipcRenderer.invoke("network_scan", port),
+  my_ip: () => ipcRenderer.invoke("my_ip"),
+  save_network: (data: unknown) => ipcRenderer.invoke("save_network", data),
+  opsi_network: (ip: string, opsi: "delete" | "check") =>
+    ipcRenderer.invoke("opsi_network", ip, opsi),
+  list_network: () => ipcRenderer.invoke("list_network"),
+  rincian_transaction: (filter: string, shift: string) =>
+    ipcRenderer.invoke("rincian_transaction", filter, shift),
+  detail_transaction: (id_struk: string) =>
+    ipcRenderer.invoke("detail_transaction", id_struk),
+  export_report: (
+    type_export: string,
+    start_date: string,
+    end_date: string,
+    shift: string,
+  ) =>
+    ipcRenderer.invoke(
+      "export_report",
+      type_export,
+      start_date,
+      end_date,
+      shift,
+    ),
+  summary_report: (filter: string) =>
+    ipcRenderer.invoke("summary_report", filter),
+  billing_report: (filter: string, shift: string) =>
+    ipcRenderer.invoke("billing_report", filter, shift),
+  cafe_report: (filter: string, shift: string) =>
+    ipcRenderer.invoke("cafe_report", filter, shift),
 });

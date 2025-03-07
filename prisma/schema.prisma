@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native"]
 }
 
 // ======== DATABASE CONFIGURATION ========
@@ -48,7 +49,9 @@ enum TypeBill {
 enum StatusTransaction {
   PAID
   NOPAID
+  RESET
 }
+
 
 enum SendType {
   KASIR1
@@ -112,6 +115,16 @@ enum PaymentMethodCasier {
   CASH
   TRANSFER
   QRIS
+}
+
+enum TypeServer {
+  CASHIER
+  KITCHEN
+}
+
+enum StatusServer {
+  CONNECTED
+  DISCONNECTED
 }
 
 // ======== MODELS ========
@@ -206,6 +219,7 @@ model Booking {
   type_play  TypePlay @default(REGULAR)
   idPriceType Int?
   price_type   PriceBillingType? @relation(fields: [idPriceType], references: [id], onDelete: Cascade)
+  shift String @default("Pagi")
   created_at   DateTime    @default(now())
   updated_at   DateTime    @updatedAt
   detail_booking DetailBooking[]
@@ -224,6 +238,7 @@ model DetailBooking {
   start_duration DateTime
   end_duration   DateTime
   type_bill      TypeBill       @default(ALL)
+  shift String @default("Pagi")
   created_at     DateTime       @default(now())
   updated_at     DateTime       @updatedAt
   split_bill_detail SplitBillDetail[]
@@ -297,6 +312,7 @@ model OrderCafe {
   status      StatusTransaction    @default(NOPAID)
   userId      Int?
   user_in     User?                 @relation(fields: [userId], references: [id])
+  shift String @default("Pagi")
   created_at  DateTime             @default(now())
   updated_at  DateTime             @updatedAt
   orderCafeItem OrderCafeItem[]
@@ -310,6 +326,7 @@ model OrderCafeItem {
   menu_cafe   Int
   menucafe    MenuCafe             @relation(fields: [menu_cafe], references: [id], onDelete: Cascade)
   price Int @default(0)
+  shift String @default("Pagi")
   created_at  DateTime             @default(now())
   updated_at  DateTime             @updatedAt
 }
@@ -432,6 +449,7 @@ model Struk {
   payment_method PaymentMethodCasier @default(CASH)
   is_split_bill Boolean @default(false)
   type_struk TypeStruk
+  shift String @default("Pagi")
   status StatusTransaction @default(NOPAID)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -446,6 +464,18 @@ model Voucher {
   start_date DateTime
   end_date DateTime
   status StatusMember @default(ACTIVE)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model LocalServers {
+  id Int @id @default(autoincrement())
+  id_local_server String @unique
+  ip String @unique
+  hostname String
+  number String
+  status StatusServer @default(DISCONNECTED)
+  type_server TypeServer @default(CASHIER)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }

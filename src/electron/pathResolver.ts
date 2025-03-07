@@ -3,11 +3,12 @@ import { app } from "electron";
 import { isDev } from "./utils.js";
 
 export function getPreloadPath() {
-  return path.join(
-    app.getAppPath(),
-    isDev() ? "." : "..",
-    "/dist-electron/preload.cjs",
-  );
+  const preloadPath = isDev()
+    ? path.join(app.getAppPath(), ".", "/dist-electron/preload.cjs") // Development path
+    : path.join(app.getAppPath(), "/dist-electron/preload.cjs"); // Production path
+
+  console.log("Preload Path:", preloadPath); // Debugging
+  return preloadPath;
 }
 
 export function getUIPath() {

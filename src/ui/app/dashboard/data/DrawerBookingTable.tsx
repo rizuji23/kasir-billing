@@ -79,7 +79,7 @@ export default function DrawerBookingTable({ open, setOpen, table }: { open: boo
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
-                                <div>
+                                <div className="overflow-x-auto h-screen pe-5 pb-24">
                                     <div className="grid gap-3">
                                         <div className="p-3 border-3 rounded-md flex justify-start gap-3">
                                             <Button startContent={<RefreshCcw className="w-4 h-4" />}>Reset Meja</Button>

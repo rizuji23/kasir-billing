@@ -2,13 +2,13 @@ import { Alert } from "@heroui/alert";
 import { Button } from "@heroui/button";
 import { Card, CardBody, CardFooter, CardHeader } from "@heroui/card";
 import { Divider } from "@heroui/divider";
-import { Select, SelectItem } from "@heroui/select";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { SerialPortInfo, Settings } from "../../../../../electron/types";
 import { IResponses } from "../../../../../electron/lib/responses";
 import { Form } from "@heroui/form";
 import { RefreshCcw } from "lucide-react";
+import SelectCustom from "../../../../components/SelectCustom";
 
 interface IPortReturn {
     ports: SerialPortInfo[],
@@ -66,14 +66,15 @@ export default function HardwareApi() {
                     <CardHeader className="font-bold">Hardware</CardHeader>
                     <CardBody>
                         <div className="grid gap-3">
-                            <Select label="COM Port" isRequired selectedKeys={[selected]} onChange={(e) => setSelected(e.target.value)} placeholder="Pilih COM Port disini" isLoading={loading}>
+                            <SelectCustom label="COM Port" onChange={(e) => setSelected(e.target.value)} value={selected}>
+                                <SelectCustom.Option value="">Pilih COM Port...</SelectCustom.Option>
                                 {
                                     ports.map((item) => (
-                                        <SelectItem key={item.path} value={item.path}>{item.friendlyName}</SelectItem>
+                                        <SelectCustom.Option value={item.path}>{item.friendlyName}</SelectCustom.Option>
                                     ))
                                 }
 
-                            </Select>
+                            </SelectCustom>
                             <Divider />
                             <div className="grid gap-3">
                                 <Alert color="danger" description={`"Reconnect Box Billing" atau Mengganti COM Port akan menyebabkan Lampu mati sesaat.
