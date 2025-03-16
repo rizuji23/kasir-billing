@@ -89,7 +89,7 @@ export default function SidebarComponent() {
                             <div>
                                 <User
                                     description="Kasir"
-                                    name="M Rizki Fauzi"
+                                    name="Kasir Cozypool"
                                 />
                             </div>
                             <Button>Sign Out</Button>
