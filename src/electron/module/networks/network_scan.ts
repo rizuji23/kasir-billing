@@ -2,6 +2,7 @@ import net from "net";
 import os from "os";
 import { exec } from "child_process";
 import ping from "ping";
+import { prisma } from "../../database.js";
 
 /**
  * Function to check if a port is open on a given host
@@ -108,6 +109,16 @@ export const getLocalIPAddress = (): string | null => {
   }
 
   return null; // If no IP is found
+};
+
+export const getCashierName = async () => {
+  const res = await prisma.settings.findFirst({
+    where: {
+      id_settings: "CASHIER_NAME",
+    },
+  });
+
+  return res;
 };
 
 export const isAlive = async (host: string) => {

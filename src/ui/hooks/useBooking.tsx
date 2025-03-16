@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { IPriceType, TableBilliard } from "../../electron/types";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import moment from "moment-timezone";
 import { useTableBilliard } from "../components/context/TableContext";
 

@@ -1,8 +1,27 @@
 import { Popover, PopoverTrigger, PopoverContent, Input, Button } from "@heroui/react";
 import { Chip } from "@heroui/chip";
 import { MessageCircle, SendHorizonal } from "lucide-react";
+import { useWebsocketData } from "../context/WebsocketContext";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import moment from "moment-timezone";
 
 export default function ChatTray() {
+    const chat = useWebsocketData();
+    const [message, setMessage] = useState<string>("");
+
+    const sendChat = async () => {
+        if (message.length === 0) {
+            toast.error("Pesan harus diisi");
+            return;
+        }
+
+        const data_message = await window.api.send_chat(message);
+        console.log("data_message", data_message.data)
+        chat.broadcastMessage(JSON.stringify(data_message.data));
+        setMessage("");
+    }
+
     return (
         <>
             <Popover placement="top">
@@ -23,20 +42,13 @@ export default function ChatTray() {
                             <div className="w-full">
                                 <div className="grid gap-3 w-full">
                                     {
-                                        Array.from({ length: 10 }).map((_, i) => {
+                                        chat.chat.map((el, i) => {
                                             return <div key={i}>
-                                                <div className="max-w-[200px] h-fit rounded-md bg-primary-500 p-2 text-white">
-                                                    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+                                                <div className="w-full h-fit rounded-md bg-primary-500 p-2 text-white">
+                                                    <small className="font-bold text-sm">{el.name}</small>
+                                                    <p>{el.data.message}</p>
                                                     <div className="mt-3">
-                                                        <small className="font-extralight">23 Mei 2022 01:00 AM</small>
-                                                    </div>
-                                                </div>
-                                                <div className="flex justify-end w-full">
-                                                    <div className="max-w-[200px] h-fit rounded-md border-2 p-2 ">
-                                                        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
-                                                        <div className="mt-3 text-end">
-                                                            <small className="font-extralight">23 Mei 2022 01:00 AM</small>
-                                                        </div>
+                                                        <small className="font-extralight">{moment(el.data.created_at).format("DD/MM/YYYY HH:mm:ss")}</small>
                                                     </div>
                                                 </div>
                                             </div>
@@ -47,8 +59,8 @@ export default function ChatTray() {
                         </div>
                     </div>
                     <div className="w-full flex gap-2 py-3 px-2">
-                        <Input variant="bordered" placeholder="Ketik pesan disini..." />
-                        <Button isIconOnly color="primary">
+                        <Input variant="bordered" placeholder="Ketik pesan disini..." onChange={(e) => setMessage(e.target.value)} value={message} />
+                        <Button isIconOnly color="primary" onPress={sendChat}>
                             <SendHorizonal className="w-5 h-5" />
                         </Button>
                     </div>

@@ -16,7 +16,9 @@ export default function DrawerTable({ open, setOpen, table }: { open: boolean, s
 
     const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        return await booking.checkOut();
+        if (await window.api.confirm()) {
+            return await booking.checkOut();
+        }
     }
 
     return (

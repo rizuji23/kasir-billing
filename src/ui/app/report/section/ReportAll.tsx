@@ -3,7 +3,7 @@ import { Coins, Moon, Sun, Utensils } from "lucide-react";
 import ReportTitle from "./ReportTitle";
 import moment from "moment-timezone";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import { LoadingComponent } from "../../../components/datatable/DataTableCustom";
 import { convertRupiah } from "../../../lib/utils";
 

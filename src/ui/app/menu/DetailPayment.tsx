@@ -9,10 +9,12 @@ import cart_empty from "../../assets/cart_empty.png"
 import { convertRupiah, convertToInteger } from "../../lib/utils"
 import { useState } from "react"
 import { Radio, RadioGroup } from "@heroui/radio"
+import toast from "react-hot-toast"
 
 export default function DetailPayment({ cart }: { cart: UseCartResult }) {
     const [cash, setCash] = useState<string>("");
     const [payment_method, setPaymentMethod] = useState<"CASH" | "TRANSFER" | "QRIS" | string>("CASH");
+    const [name, setName] = useState<string>("");
 
     const total = cart.getTotal();
     const change = Math.max(0, Number(cash) - total);
@@ -42,20 +44,22 @@ export default function DetailPayment({ cart }: { cart: UseCartResult }) {
                             <div className="flex flex-col gap-1">
                                 <h3 className="text-lg font-bold">Detail Pembayaran:</h3>
                                 <p className="text-xs">Tanggal Pembelian: {moment().tz("Asia/Jakarta").format("DD/MM/YYYY hh:mm A")}</p>
-                                <Input
-                                    isRequired
-                                    label="Jumlah Pembayaran"
-                                    name="uang_cash"
-                                    className=" mt-5"
-                                    errorMessage={cash === "" ? "Silakan isi kolom ini." : ""}
-                                    placeholder="Masukan jumlah pembayaran disini..."
-                                    type="text"
-                                    value={convertRupiah(cash)}
-                                    onValueChange={(e) => {
-                                        const rawValue = e.replace(/\D/g, "");
-                                        setCash(rawValue);
-                                    }}
-                                />
+                                <div className="mt-5 grid gap-3">
+                                    <Input isRequired label="Nama Pemesan" onChange={(e) => setName(e.target.value)} value={name} placeholder="Masukan nama pemesan disini..." />
+                                    <Input
+                                        isRequired
+                                        label="Jumlah Pembayaran"
+                                        name="uang_cash"
+                                        errorMessage={cash === "" ? "Silakan isi kolom ini." : ""}
+                                        placeholder="Masukan jumlah pembayaran disini..."
+                                        type="text"
+                                        value={convertRupiah(cash)}
+                                        onValueChange={(e) => {
+                                            const rawValue = e.replace(/\D/g, "");
+                                            setCash(rawValue);
+                                        }}
+                                    />
+                                </div>
                                 <RadioGroup value={payment_method} onValueChange={(e) => setPaymentMethod(e)} orientation="horizontal" isRequired className="mt-2" label="Cara Pembayaran">
                                     <Radio classNames={{ label: "text-sm" }} value={"CASH"}>Cash</Radio>
                                     <Radio classNames={{ label: "text-sm" }} value={"TRANSFER"}>Transfer</Radio>
@@ -75,21 +79,22 @@ export default function DetailPayment({ cart }: { cart: UseCartResult }) {
                             </div>
                         </div>
                         <div className="flex flex-col gap-3">
-                            <Button className="bg-blue-500" isLoading={cart.loading} onPress={() => {
+                            <Button className="bg-blue-500" isLoading={cart.loading} onPress={async () => {
                                 if (cart.cart.length === 0) {
-                                    alert("Cart masih kosong");
+                                    toast.error("Cart masih kosong")
                                     return;
                                 } else if (cash === "") {
-                                    alert("Silakan isi uang cash terlebih dahulu");
+                                    toast.error("Silakan isi uang cash terlebih dahulu")
                                     return;
-                                } else if (confirm("Apakah anda yakin ingin memesan?")) {
-                                    cart.checkout(convertToInteger(cash), payment_method);
+                                } else if (await window.api.confirm("Apakah anda yakin ingin memesan?")) {
+                                    cart.checkout(convertToInteger(cash), payment_method, name);
                                     setCash("");
+                                    setName("");
                                     return;
                                 }
                             }}>Pesan</Button>
-                            <Button color="danger" onPress={() => {
-                                if (confirm("Apakah anda yakin ingin membatalkan pesanan?")) {
+                            <Button color="danger" onPress={async () => {
+                                if (await window.api.confirm("Apakah anda yakin ingin membatalkan pesanan?")) {
                                     cart.cancelOrder();
                                 }
                             }}>Batalkan</Button>

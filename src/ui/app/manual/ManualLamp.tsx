@@ -6,7 +6,7 @@ import { Divider } from "@heroui/divider";
 import { useEffect, useState } from "react";
 import { TableBilliard } from "../../../electron/types";
 import { IResponses } from "../../../electron/lib/responses";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import { Chip } from "@heroui/chip";
 
 interface ExtendsTableBilliard extends TableBilliard {
@@ -16,7 +16,8 @@ interface ExtendsTableBilliard extends TableBilliard {
 function BoxLamp(props: ExtendsTableBilliard) {
     const handleOn = async () => {
         try {
-            if (confirm("Apakah anda yakin?")) {
+            const confirm = window.api.confirm();
+            if (await confirm) {
                 const res = await window.api.send_on({ id_table: props.id_table, number: props.number || "" });
 
                 if (res.status) {
@@ -32,7 +33,8 @@ function BoxLamp(props: ExtendsTableBilliard) {
 
     const handleOff = async () => {
         try {
-            if (confirm("Apakah anda yakin?")) {
+            const confirm = window.api.confirm();
+            if (await confirm) {
                 const res = await window.api.send_off({ id_table: props.id_table, number: props.number || "" });
 
                 if (res.status) {
@@ -81,7 +83,8 @@ export default function ManualLamp() {
 
     const handleOnOffAll = async (status: string) => {
         try {
-            if (confirm("Apakah anda yakin?")) {
+            const confirm = window.api.confirm();
+            if (await confirm) {
                 const res = await window.api.on_off_all(status);
 
                 if (res.status) {

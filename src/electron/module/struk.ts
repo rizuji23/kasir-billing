@@ -35,8 +35,6 @@ export async function StrukWindow(id_struk: string) {
       return false;
     }
 
-    console.log("struk", struk);
-
     const printWindow = new BrowserWindow({
       show: true,
       webPreferences: {
@@ -67,19 +65,19 @@ export async function StrukWindow(id_struk: string) {
           .then((result) => {
             if (result) {
               printWindow.webContents.send("print_struk", struk);
-              //   printWindow.webContents.print({
-              //     silent: true,
-              //     printBackground: true,
-              //     deviceName: result.content || "Microsoft Print to PDF",
-              //     copies: 0,
-              //     margins: {
-              //       marginType: "custom",
-              //       top: 0,
-              //       bottom: 0,
-              //       left: 0,
-              //       right: 0,
-              //     },
-              //   });
+              printWindow.webContents.print({
+                silent: true,
+                printBackground: true,
+                deviceName: result.content || "Microsoft Print to PDF",
+                copies: 0,
+                margins: {
+                  marginType: "custom",
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                },
+              });
               return true;
             } else {
               dialog.showErrorBox(

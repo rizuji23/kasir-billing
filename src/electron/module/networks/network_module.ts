@@ -149,4 +149,46 @@ export default function NetworkModule() {
   ipcMain.handle("my_ip", async () => {
     return getLocalIPAddress();
   });
+
+  ipcMain.handle("send_chat", async (_, message: string) => {
+    try {
+      const get_cashier = await prisma.settings.findFirst({
+        where: {
+          id_settings: "CASHIER_NAME",
+        },
+      });
+
+      if (!get_cashier) {
+        return Responses({
+          code: 404,
+          detail_message: "Cashier name tidak ditemukan",
+        });
+      }
+
+      const my_ip = getLocalIPAddress();
+
+      const data = {
+        type: "chat",
+        ip: my_ip,
+        name: get_cashier.content,
+        data: {
+          message: message,
+          created_at: new Date(),
+        },
+      };
+
+      return Responses({
+        code: 200,
+        data: data,
+        detail_message: "Chat berhasil didapatkan",
+      });
+    } catch (err) {
+      return Responses({
+        code: 500,
+        detail_message: `Terjadi Kesalahan: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`,
+      });
+    }
+  });
 }

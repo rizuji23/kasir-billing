@@ -9,14 +9,22 @@ import { Button } from "@heroui/button";
 import DrawerAddDuration from "./data/DrawerAddDuration";
 import DrawerCafeTable from "./data/DrawerCafeTable";
 
-export default function BoxTable(props: TableBilliard) {
+interface BoxTableProps extends TableBilliard {
+    is_remote?: boolean
+}
+
+export default function BoxTable({ is_remote = false, ...props }: BoxTableProps) {
     const [open, setOpen] = useState<boolean>(false);
     const [open_duration, setOpenDuration] = useState<boolean>(false);
     const [open_cafe, setOpenCafe] = useState<boolean>(false);
 
     return (
         <>
-            <div className="w-full bg-muted h-fit rounded-md cursor-pointer select-none hover:bg-muted/50 duration-300 transition-colors" onClick={() => setOpen(true)}>
+            <div className="w-full bg-muted h-fit rounded-md cursor-pointer select-none hover:bg-muted/50 duration-300 transition-colors" onClick={() => {
+                if (!is_remote) {
+                    setOpen(true)
+                }
+            }}>
                 <div className="grid gap-3 px-4 pt-4 pb-1">
                     <div className="flex gap-3">
                         {
@@ -47,14 +55,15 @@ export default function BoxTable(props: TableBilliard) {
 
                 </div>
                 {
-                    props.status !== "AVAILABLE" ? props.bookings.length !== 0 && (
-                        <div className="flex gap-3 p-2">
-                            {
-                                props.status === "EXPIRE" || props.status === "MOSTLYEXPIRE" ? <Button onPress={() => setOpenDuration(true)} className="flex-1" size="sm">Durasi</Button> : <></>
-                            }
-                            <Button onPress={() => setOpenCafe(true)} className="flex-1" color="warning" size="sm">Cafe</Button>
-                        </div>
-                    ) : <></>
+                    !is_remote ?
+                        props.status !== "AVAILABLE" ? (props?.bookings || []).length !== 0 && (
+                            <div className="flex gap-3 p-2">
+                                {
+                                    props.status === "EXPIRE" || props.status === "MOSTLYEXPIRE" ? <Button onPress={() => setOpenDuration(true)} className="flex-1" size="sm">Durasi</Button> : <></>
+                                }
+                                <Button onPress={() => setOpenCafe(true)} className="flex-1" color="warning" size="sm">Cafe</Button>
+                            </div>
+                        ) : <></> : <></>
                 }
             </div>
             {

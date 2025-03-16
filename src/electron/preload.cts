@@ -36,6 +36,9 @@ contextBridge.exposeInMainWorld("api", {
   onTableUpdate: (callback: (data: any) => void) => {
     ipcRenderer.on("update_table_list", (_: any, data: any) => callback(data));
   },
+  onSendKitchen: (callback: (data: any) => void) => {
+    ipcRenderer.on("send_kitchen", (_: any, data: string) => callback(data));
+  },
   removeTableUpdateListener: () => {
     ipcRenderer.removeAllListeners("update_table_list");
   },
@@ -56,8 +59,12 @@ contextBridge.exposeInMainWorld("api", {
   update_menu: (id: number, data: any) =>
     ipcRenderer.invoke("update_menu", id, data),
   total_booking: () => ipcRenderer.invoke("total_booking"),
-  checkout_menu: (cash: number, data: any[], payment_method: string) =>
-    ipcRenderer.invoke("checkout_menu", cash, data, payment_method),
+  checkout_menu: (
+    cash: number,
+    data: any[],
+    payment_method: string,
+    name: string,
+  ) => ipcRenderer.invoke("checkout_menu", cash, data, payment_method, name),
   get_printer: () => ipcRenderer.invoke("get_printer"),
   get_serialport: () => ipcRenderer.invoke("get_serialport"),
   get_type: (type_member: string) =>
@@ -131,4 +138,44 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("billing_report", filter, shift),
   cafe_report: (filter: string, shift: string) =>
     ipcRenderer.invoke("cafe_report", filter, shift),
+  cashier_name: (name: string) => ipcRenderer.invoke("cashier_name", name),
+  get_cashier_name: () => ipcRenderer.invoke("get_cashier_name"),
+  confirm: (title?: string) => ipcRenderer.invoke("confirm", title),
+  send_chat: (message: string) => ipcRenderer.invoke("send_chat", message),
+  reconnect_box: () => ipcRenderer.invoke("reconnect_box"),
+  onNavigate: (callback: void) => ipcRenderer.on("navigate", callback),
+  get_user: () => ipcRenderer.invoke("get_user"),
+  create_user: (data: { name: string; username: string; password: string }) =>
+    ipcRenderer.invoke("create_user", data),
+  update_user: (data: {
+    name: string;
+    username: string;
+    password: string;
+    id_user: number;
+  }) => ipcRenderer.invoke("update_user", data),
+  delete_user: (id_user: number) => ipcRenderer.invoke("delete_user", id_user),
+  get_price_list: () => ipcRenderer.invoke("get_price_list"),
+  update_price: (data: {
+    id_price: string;
+    price: number;
+    start_from: string;
+    end_from: string;
+  }) => ipcRenderer.invoke("update_price", data),
+  get_shift: () => ipcRenderer.invoke("get_shift"),
+  update_shift: (data: {
+    id_shift: number;
+    start_hours: Date;
+    end_hours: Date;
+  }) => ipcRenderer.invoke("update_shift", data),
+  reset_table: (id_booking: string, id_table: string) =>
+    ipcRenderer.invoke("reset_table", id_booking, id_table),
+  print_struk_temp: (data: unknown) =>
+    ipcRenderer.invoke("print_struk_temp", data),
+  table_list_not_used: () => ipcRenderer.invoke("table_list_not_used"),
+  change_table: (
+    id_curr_table: string,
+    id_to_table: string,
+    id_booking: string,
+  ) =>
+    ipcRenderer.invoke("change_table", id_curr_table, id_to_table, id_booking),
 });

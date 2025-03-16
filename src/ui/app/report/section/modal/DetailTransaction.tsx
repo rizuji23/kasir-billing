@@ -16,7 +16,7 @@ import {
     TableCell,
 } from "@heroui/react";
 import { Printer } from "lucide-react";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import NotFound from "../../../../components/NotFound";
 import { convertRupiah } from "../../../../lib/utils";
 import moment from "moment-timezone";

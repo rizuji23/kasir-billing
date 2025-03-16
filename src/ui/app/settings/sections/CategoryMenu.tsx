@@ -5,7 +5,7 @@ import { Input } from "@heroui/input";
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/modal";
 import { CirclePlus, Trash } from "lucide-react";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import { CategoryMenu, IModalRow } from "../../../../electron/types";
 import DataTableCustom from "../../../components/datatable/DataTableCustom";
 import { TableColumn } from "react-data-table-component";

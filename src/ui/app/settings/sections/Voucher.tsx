@@ -7,7 +7,7 @@ import { Input } from "@heroui/input";
 import { DateRangePicker } from "@heroui/date-picker";
 import { Form } from "@heroui/react";
 import { getLocalTimeZone, parseDate } from "@internationalized/date";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import { IModalRow, IVoucher } from "../../../../electron/types";
 import { IResponses } from "../../../../electron/lib/responses";
 import { TableColumn } from "react-data-table-component";

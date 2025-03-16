@@ -1,4 +1,4 @@
-import { ipcMain } from "electron";
+import { BrowserWindow, ipcMain } from "electron";
 import {
   ICart,
   IMenu,
@@ -10,6 +10,7 @@ import Responses from "../lib/responses.js";
 import generateShortUUID from "../lib/random.js";
 import { StrukWindow } from "./struk.js";
 import { getShift } from "../lib/utils.js";
+import { sendToKitchen } from "./kitchen.js";
 
 interface ICheckoutMenuTable {
   id_menu: number;
@@ -19,7 +20,7 @@ interface ICheckoutMenuTable {
   id_booking: string;
 }
 
-export default function MenuModule() {
+export default function MenuModule(mainWindow: BrowserWindow | null) {
   ipcMain.handle("add_menu", async (_, data: IMenu) => {
     try {
       const category = await prisma.categoryMenu.findFirst({
@@ -174,7 +175,13 @@ export default function MenuModule() {
 
   ipcMain.handle(
     "checkout_menu",
-    async (_, cash: number, data: ICart[], payment_method: string) => {
+    async (
+      _,
+      cash: number,
+      data: ICart[],
+      payment_method: string,
+      name: string,
+    ) => {
       try {
         const currentTime = new Date();
         const shift = await getShift(currentTime);
@@ -185,7 +192,7 @@ export default function MenuModule() {
         const struk = await prisma.struk.create({
           data: {
             id_struk: `STK-${generateShortUUID()}`,
-            name: "Cafe",
+            name: name,
             total,
             total_cafe: total,
             cash,
@@ -205,6 +212,7 @@ export default function MenuModule() {
             menu_cafe: item.id,
             subtotal: item.subtotal,
             total,
+            name,
             cash,
             change: cash - total,
             payment_method:
@@ -217,6 +225,8 @@ export default function MenuModule() {
         });
 
         await StrukWindow(struk.id_struk);
+
+        await sendToKitchen(mainWindow, id_order, "CAFE");
 
         return Responses({
           code: 201,
@@ -312,6 +322,16 @@ export default function MenuModule() {
         },
       });
 
+      let order_id = "";
+      const item_data: {
+        id_order_cafe_item: string;
+        orderId: number;
+        menu_cafe: number;
+        price: number;
+        shift: string;
+        name_menu: string;
+      }[] = [];
+
       const createManyOrderItem = async (
         order_new: IOrderCafeNew,
         qty: number,
@@ -319,13 +339,17 @@ export default function MenuModule() {
         if (qty <= 0) return;
 
         const newOrderItem = Array.from({ length: qty }, () => {
-          return {
+          const data_item = {
             id_order_cafe_item: generateShortUUID(),
             orderId: order_new.id,
             menu_cafe: menu_cafe.id,
             price: menu_cafe.price,
             shift: shift || "Pagi",
           };
+
+          item_data.push({ ...data_item, name_menu: menu_cafe.name });
+
+          return data_item;
         });
 
         await prisma.orderCafeItem.createMany({
@@ -345,12 +369,15 @@ export default function MenuModule() {
             total: newSubtotal,
             cash: 0,
             change: 0,
+            name: booking.name,
             status: "NOPAID",
             qty: Number(data.qty || "0"),
             bookingId: booking.id,
             shift: shift || "Pagi",
           },
         });
+
+        order_id = new_order.id_order;
 
         await createManyOrderItem(new_order, Number(data.qty || "0"));
       } else {
@@ -371,12 +398,19 @@ export default function MenuModule() {
           data: {
             subtotal: totalNew,
             total: totalNew,
+            name: booking.name,
             qty: qtyResult,
           },
         });
 
+        order_id = update_order_item.id_order;
+
         await createManyOrderItem(update_order_item, newQty);
       }
+
+      console.log("order_id", order_id);
+
+      await sendToKitchen(mainWindow, order_id, "TABLE", item_data);
 
       return Responses({
         code: 201,

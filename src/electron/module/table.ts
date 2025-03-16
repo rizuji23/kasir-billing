@@ -166,55 +166,60 @@ export const updateTimers = async (
       }),
     );
 
+    const cashier_name = await prisma.settings.findFirst({
+      where: {
+        id_settings: "CASHIER_NAME",
+      },
+    });
+
     broadcast({
       type: "table_status",
       ip: getLocalIPAddress(),
       data: updatedTables,
+      name: cashier_name?.content || "Uknown",
     });
 
     mainWindow.webContents.send("update_table_list", updatedTables);
   }, 1000);
 };
 
-async function getCurrentShiftByTime(timeString: string) {
-  const now = new Date();
-  if (timeString) {
-    const [hours, minutes, seconds] = timeString.split(":").map(Number);
-    now.setHours(hours, minutes, seconds || 0);
-  }
+// async function getCurrentShiftByTime(timeString: string) {
+//   const now = new Date();
+//   if (timeString) {
+//     const [hours, minutes, seconds] = timeString.split(":").map(Number);
+//     now.setHours(hours, minutes, seconds || 0);
+//   }
 
-  const currentTime = now.getHours() * 60 + now.getMinutes();
-  const shifts = await prisma.shift.findMany();
+//   const currentTime = now.getHours() * 60 + now.getMinutes();
+//   const shifts = await prisma.shift.findMany();
 
-  const activeShift = shifts.find((shift) => {
-    const start = new Date(shift.start_hours);
-    const end = new Date(shift.end_hours);
+//   const activeShift = shifts.find((shift) => {
+//     const start = new Date(shift.start_hours);
+//     const end = new Date(shift.end_hours);
 
-    const startMinutes = start.getHours() * 60 + start.getMinutes();
-    const endMinutes = end.getHours() * 60 + end.getMinutes();
+//     const startMinutes = start.getHours() * 60 + start.getMinutes();
+//     const endMinutes = end.getHours() * 60 + end.getMinutes();
 
-    if (startMinutes < endMinutes) {
-      return currentTime >= startMinutes && currentTime < endMinutes;
-    } else {
-      return currentTime >= startMinutes || currentTime < endMinutes;
-    }
-  });
+//     if (startMinutes < endMinutes) {
+//       return currentTime >= startMinutes && currentTime < endMinutes;
+//     } else {
+//       return currentTime >= startMinutes || currentTime < endMinutes;
+//     }
+//   });
 
-  return activeShift;
-}
+//   return activeShift;
+// }
 
 export const getPriceByShift = async (
   type_price: string,
   time: string,
 ): Promise<PriceBilling | null> => {
   try {
-    const activeShift = await getCurrentShiftByTime(time);
+    // Convert time string (HH:MM:SS) into total minutes of the day
+    const [hours, minutes] = time.split(":").map(Number);
+    const currentMinutes = hours * 60 + minutes;
 
-    if (!activeShift?.shift) {
-      console.log("ERROR Shift");
-      return null;
-    }
-
+    // Fetch type pricing
     const type_pricing = await prisma.priceBillingType.findFirst({
       where: { type_price },
     });
@@ -224,14 +229,31 @@ export const getPriceByShift = async (
       return null;
     }
 
-    const price = await prisma.priceBilling.findFirst({
-      where: {
-        type_price_id: type_pricing.id,
-        season: activeShift.shift, // Fetch price for the correct shift
-      },
+    // Fetch all price records for the type
+    const prices = await prisma.priceBilling.findMany({
+      where: { type_price_id: type_pricing.id },
     });
 
-    return price as unknown as PriceBilling;
+    // Find the correct price based on `start_from` and `end_from`
+    const activePrice = prices.find((price) => {
+      if (!price.start_from || !price.end_from) return false;
+
+      const [startH, startM] = price.start_from.split(":").map(Number);
+      const [endH, endM] = price.end_from.split(":").map(Number);
+
+      const startMinutes = startH * 60 + startM;
+      const endMinutes = endH * 60 + endM;
+
+      if (startMinutes < endMinutes) {
+        // Normal case: shift is within the same day (e.g., 08:00 - 18:00)
+        return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+      } else {
+        // Cross-midnight case (e.g., 22:00 - 04:00)
+        return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+      }
+    });
+
+    return activePrice as unknown as PriceBilling;
   } catch (err) {
     console.log("err", err);
     return null;
@@ -263,7 +285,20 @@ export default function TableModule() {
   }
 
   ipcMain.handle("table_list_only", async () => {
-    const tables = await await prisma.tableBilliard.findMany();
+    const tables = await prisma.tableBilliard.findMany();
+
+    return Responses({
+      code: 200,
+      data: tables,
+    });
+  });
+
+  ipcMain.handle("table_list_not_used", async () => {
+    const tables = await prisma.tableBilliard.findMany({
+      where: {
+        status: "AVAILABLE",
+      },
+    });
 
     return Responses({
       code: 200,

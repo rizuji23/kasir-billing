@@ -16,14 +16,6 @@ export default function ServerApi() {
                             errorMessage={"Silakan isi kolom ini."}
                             placeholder="Masukan URL disini"
                             type="text"
-                        />
-                        <Input
-                            isRequired
-                            label="Websocket Local"
-                            name="websocket_local"
-                            errorMessage={"Silakan isi kolom ini."}
-                            placeholder="Masukan URL disini"
-                            type="text"
                             endContent={<Button size="sm" color="success">Test Koneksi</Button>}
                         />
                         <Input

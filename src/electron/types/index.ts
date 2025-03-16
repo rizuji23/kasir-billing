@@ -517,6 +517,8 @@ export interface PriceBilling {
   type_price: PriceBillingType;
   season: string;
   price: number;
+  start_from: string;
+  end_from: string;
   created_at: Date;
   updated_at: Date;
 }

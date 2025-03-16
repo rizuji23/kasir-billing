@@ -10,11 +10,16 @@ import {
   ITableBilliard,
   IVoucher,
   OrderCafe,
+  PriceBilling,
   ServersList,
+  Settings,
+  Shift,
   Struk,
   TableBilliard,
+  User,
 } from "./types/index.js";
 import { IBookingCheckout } from "./module/booking.ts";
+import { IpcRendererEvent } from "electron";
 
 interface UpdateAPI {
   checkForUpdates: () => void;
@@ -42,7 +47,11 @@ interface ApiAPI {
   table_list: () => Promise<IResponses<ITableBilliard[]>>;
   table_list_only: () => Promise<IResponses<ITableBilliard[]>>;
   onTableUpdate: (callback: (data: TableBilliard[]) => void) => void;
+  onSendKitchen: (callback: (data: string) => void) => void;
   removeTableUpdateListener: () => void;
+  onNavigate: (
+    callback: (event: IpcRendererEvent, path: string) => void,
+  ) => void;
   onPrintStruk: (callback: (data: Struk) => void) => void;
   removePrintStruk: () => void;
   menu_list: (filter: string) => Promise<IResponses<IMenu[]>>;
@@ -63,6 +72,7 @@ interface ApiAPI {
     cash: number,
     data: ICart[],
     payment_method: string,
+    name: string,
   ) => Promise<IResponses<{ cash: number; data: ICart[] }>>;
   get_printer: () => Promise<IResponses<unknown>>;
   get_serialport: () => Promise<IResponses<unknown>>;
@@ -208,6 +218,48 @@ interface ApiAPI {
       period: string;
     }>
   >;
+  cashier_name: (name: string) => Promise<IResponses<unknown>>;
+  get_cashier_name: () => Promise<IResponses<Settings | null>>;
+  confirm: (title?: string) => Promise<boolean>;
+  send_chat: (message: string) => Promise<IResponses<unknown>>;
+  reconnect_box: () => Promise<IResponses<{ status: "SUCCESS" | "FAILED" }>>;
+  get_user: () => Promise<IResponses<User[]>>;
+  create_user: (data: {
+    name: string;
+    username: string;
+    password: string;
+  }) => Promise<IResponses<unknown>>;
+  update_user: (data: {
+    name: string;
+    username: string;
+    password: string;
+    id_user: number;
+  }) => Promise<IResponses<unknown>>;
+  delete_user: (id_user: number) => Promise<IResponses<unknown>>;
+  get_price_list: () => Promise<IResponses<PriceBilling[]>>;
+  update_price: (data: {
+    id_price: string;
+    price: number;
+    start_from: string;
+    end_from: string;
+  }) => Promise<IResponses<unknown>>;
+  get_shift: () => Promise<IResponses<Shift[]>>;
+  update_shift: (data: {
+    id_shift: number;
+    start_hours: Date;
+    end_hours: Date;
+  }) => Promise<IResponses<unknown>>;
+  reset_table: (
+    id_booking: string,
+    id_table: string,
+  ) => Promise<IResponses<unknown>>;
+  print_struk_temp: (data: IPaymentData) => Promise<IResponses<unknown>>;
+  table_list_not_used: () => Promise<IResponses<ITableBilliard[]>>;
+  change_table: (
+    id_curr_table: string,
+    id_to_table: string,
+    id_booking: string,
+  ) => Promise<IResponses<unknown>>;
 }
 
 declare global {

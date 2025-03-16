@@ -1,4 +1,11 @@
-import { app, BrowserWindow, ipcMain, Notification } from "electron";
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  Menu,
+  Notification,
+} from "electron";
 import path from "path";
 import { isDev } from "./utils.js";
 import dotenv from "dotenv";
@@ -35,9 +42,15 @@ import StrukModule from "./module/struk.js";
 import NetworkModule from "./module/networks/network_module.js";
 import http from "http";
 import { WebSocketServer } from "ws";
-import { getLocalIPAddress } from "./module/networks/network_scan.js";
+import {
+  getCashierName,
+  getLocalIPAddress,
+} from "./module/networks/network_scan.js";
 import ReportModule from "./module/report.js";
 import { setupAutoUpdater } from "./module/updater.js";
+import UserModule from "./module/user.js";
+import PriceModule from "./module/price.js";
+import ShiftModule from "./module/shift.js";
 
 let mainWindow: BrowserWindow | null = null;
 let serialport: SerialPort | null = null;
@@ -45,6 +58,7 @@ let serialport: SerialPort | null = null;
 const port = 3321;
 const server = http.createServer();
 const wss = new WebSocketServer({ server });
+// let sockets = new Map<string, WebSocket>();
 
 async function listSerialPorts(): Promise<boolean> {
   try {
@@ -73,16 +87,26 @@ async function initializeMachine() {
   } else {
     log.info("Machine connected successfully.");
     console.log("Machine connected successfully.");
+    new Notification({
+      title: "Mesin berhasil terhubung.",
+    }).show();
 
     serialport.on("error", async (err) => {
       console.error("Serial port error:", err.message);
       log.error(`Serial port error: ${err.message}`);
+      new Notification({
+        title: "Kesalahan port serial:",
+        body: err.message,
+      }).show();
       await onMachineStatus("DISCONNECTED");
     });
 
     serialport.on("close", async () => {
       console.log("Serial port closed. Attempting to reconnect...");
       log.warn(`Serial port closed. Attempting to reconnect...`);
+      new Notification({
+        title: "Port serial tertutup. Mencoba menyambungkan kembali...",
+      }).show();
       await onMachineStatus("DISCONNECTED");
       serialport = await reconnectMachine();
     });
@@ -100,6 +124,7 @@ app.on("ready", async () => {
       contextIsolation: true,
       nodeIntegration: false,
     },
+    focusable: true,
   });
 
   if (isDev()) {
@@ -107,6 +132,59 @@ app.on("ready", async () => {
   } else {
     mainWindow.loadFile(path.join(app.getAppPath(), "/dist-react/index.html"));
   }
+
+  const template: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: "File",
+      submenu: [
+        {
+          label: "Pengaturan Admin",
+          click: () => {
+            mainWindow?.webContents.send("navigate", "/admin");
+          },
+        },
+        { type: "separator" },
+        {
+          label: "Exit",
+          click: () => {
+            app.quit();
+          },
+        },
+      ],
+    },
+    {
+      label: "Edit",
+      submenu: [
+        { role: "undo" },
+        { role: "redo" },
+        { type: "separator" },
+        { role: "cut" },
+        { role: "copy" },
+        { role: "paste" },
+      ],
+    },
+    {
+      label: "View",
+      submenu: [
+        { role: "reload" },
+        { role: "forceReload" },
+        { role: "toggleDevTools" },
+        { type: "separator" },
+        { role: "resetZoom" },
+        { role: "zoomIn" },
+        { role: "zoomOut" },
+        { type: "separator" },
+        { role: "togglefullscreen" },
+      ],
+    },
+    {
+      label: "Window",
+      submenu: [{ role: "minimize" }, { role: "zoom" }, { role: "close" }],
+    },
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
 
   await initializeMachine();
 
@@ -141,6 +219,9 @@ app.on("ready", async () => {
 
   updateTimers(mainWindow, wss);
   setupAutoUpdater(mainWindow);
+  // sockets = await initWebSockets(mainWindow!);
+
+  MenuModule(mainWindow);
 });
 
 setTimeout(async () => {
@@ -156,7 +237,6 @@ app.on("window-all-closed", () => {
 AuthModule();
 TableModule();
 CategoryModule();
-MenuModule();
 MemberModule();
 VoucherModule();
 MachineModule();
@@ -165,6 +245,9 @@ BookingModule();
 StrukModule();
 NetworkModule();
 ReportModule();
+UserModule();
+PriceModule();
+ShiftModule();
 
 ipcMain.handle("get_printer", async (_, id: number | null) => {
   const printers = await mainWindow?.webContents.getPrintersAsync();
@@ -312,3 +395,78 @@ ipcMain.handle(
     }
   },
 );
+
+ipcMain.handle("get_cashier_name", async () => {
+  try {
+    const res = await getCashierName();
+
+    return Responses({
+      code: 200,
+      data: res,
+      detail_message: "Port berhasil disimpan atau diperbarui",
+    });
+  } catch (err) {
+    if (err instanceof Error) {
+      return Responses({
+        code: 500,
+        detail_message: `Gagal mengupdate data: ${err.message}`,
+      });
+    }
+    return Responses({ code: 500, detail_message: "Gagal mengupdate data" });
+  }
+});
+
+ipcMain.handle("cashier_name", async (_, name: string) => {
+  try {
+    const cashier = await prisma.settings.findFirst({
+      where: {
+        id_settings: "CASHIER_NAME",
+      },
+    });
+
+    if (cashier) {
+      await prisma.settings.update({
+        where: {
+          id_settings: cashier.id_settings,
+        },
+        data: {
+          content: name,
+        },
+      });
+    } else {
+      await prisma.settings.create({
+        data: {
+          id_settings: "CASHIER_NAME",
+          content: name,
+          label_settings: "Cashier Name",
+          url: "",
+        },
+      });
+    }
+
+    return Responses({
+      code: 200,
+      detail_message: "Nama Kasir berhasil disimpan atau diperbarui",
+    });
+  } catch (err) {
+    if (err instanceof Error) {
+      return Responses({
+        code: 500,
+        detail_message: `Gagal mengupdate data: ${err.message}`,
+      });
+    }
+    return Responses({ code: 500, detail_message: "Gagal mengupdate data" });
+  }
+});
+
+ipcMain.handle("confirm", async (_, title: string = "Apakah anda yakin?") => {
+  const result = await dialog.showMessageBox(mainWindow!, {
+    type: "question",
+    buttons: ["Cancel", "OK"],
+    defaultId: 1,
+    title: "Konfirmasi",
+    message: title,
+  });
+
+  return result.response === 1;
+});

@@ -4,7 +4,7 @@ import { Form } from "@heroui/form";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import logo from "../assets/logo-login.png"
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import { useNavigate } from "react-router";
 
 export default function Login() {

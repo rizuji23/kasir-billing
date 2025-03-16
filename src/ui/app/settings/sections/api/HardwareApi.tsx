@@ -3,7 +3,7 @@ import { Button } from "@heroui/button";
 import { Card, CardBody, CardFooter, CardHeader } from "@heroui/card";
 import { Divider } from "@heroui/divider";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import { SerialPortInfo, Settings } from "../../../../../electron/types";
 import { IResponses } from "../../../../../electron/lib/responses";
 import { Form } from "@heroui/form";
@@ -39,19 +39,38 @@ export default function HardwareApi() {
 
     const savePort = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setLoading(true)
         try {
-            setLoading(true)
-            const res = await window.api.save_port("PORT", selected, selected)
-            setLoading(false);
-            if (res.status) {
-                toast.success("Port berhasil disimpan.");
-                getPots();
+            if (await window.api.confirm()) {
+
+                const res = await window.api.save_port("PORT", selected, selected)
+                setLoading(false);
+                if (res.status) {
+                    toast.success("Port berhasil disimpan.");
+                    getPots();
+                    handleReconnectBox();
+                } else {
+                    console.log(res);
+                }
             } else {
-                console.log(res);
+                setLoading(false)
             }
         } catch (err) {
             setLoading(false)
             toast.error(`Error fetching save: ${err}`);
+        }
+    }
+
+    const handleReconnectBox = async () => {
+        try {
+            const res = await window.api.reconnect_box();
+            if (res.data?.status) {
+                toast.success("Box berhasil direstart");
+            } else {
+                toast.error("Box gagal direstart");
+            }
+        } catch (err) {
+            toast.error(`Terjadi kesalahan: ${err}`)
         }
     }
 
@@ -80,7 +99,11 @@ export default function HardwareApi() {
                                 <Alert color="danger" description={`"Reconnect Box Billing" atau Mengganti COM Port akan menyebabkan Lampu mati sesaat.
 `} title={"PERHATIAN"} />
                                 <div>
-                                    <Button color="danger">Reconnect Box Billing</Button>
+                                    <Button color="danger" onPress={async () => {
+                                        if (await window.api.confirm()) {
+                                            handleReconnectBox();
+                                        }
+                                    }}>Reconnect Box Billing</Button>
                                 </div>
                             </div>
                         </div>

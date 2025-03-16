@@ -1,12 +1,11 @@
 import { Card, CardBody, CardHeader } from "@heroui/card";
-import MainLayout from "../../components/MainLayout";
 import { Divider } from "@heroui/divider";
 import { Input } from "@heroui/input";
 import { Radio, RadioGroup, RadioProps } from "@heroui/radio";
 import { Button, Chip, cn, Form } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { Members, PriceMember } from "../../../electron/types";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import { TableColumn } from "react-data-table-component";
 import DataTableCustom from "../../components/datatable/DataTableCustom";
 import { IResponses } from "../../../electron/lib/responses";
@@ -209,97 +208,95 @@ export default function MemberPage() {
 
     return (
         <>
-            <MainLayout>
-                <div className="flex flex-col gap-5">
-                    <Card>
-                        <CardBody className="p-5">
-                            <Form className="!block" validationBehavior="native" onSubmit={onSubmit}>
-                                <div className="flex flex-col gap-4">
-                                    <div className="text-center">
-                                        <h3 className="text-lg font-bold">Tambah Member</h3>
+            <div className="flex flex-col gap-5">
+                <Card>
+                    <CardBody className="p-5">
+                        <Form className="!block" validationBehavior="native" onSubmit={onSubmit}>
+                            <div className="flex flex-col gap-4">
+                                <div className="text-center">
+                                    <h3 className="text-lg font-bold">Tambah Member</h3>
+                                </div>
+                                <Divider />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="flex flex-col gap-3">
+                                        <Input
+                                            isRequired
+                                            label="Nama Lengkap"
+                                            name="name"
+                                            errorMessage={"Silakan isi kolom ini."}
+                                            placeholder="Masukan Nama Lengkap disini"
+                                            type="text"
+                                            onChange={(e) => setDataMember((prevState) => ({
+                                                ...prevState,
+                                                name: e.target.value
+                                            }))}
+                                            value={data_member.name}
+                                        />
+                                        <Input
+                                            isRequired
+                                            label="Nomor Telepon"
+                                            name="no_telp"
+                                            errorMessage={"Silakan isi kolom ini."}
+                                            placeholder="Masukan Nomor Telepon disini"
+                                            type="number"
+                                            onChange={(e) => setDataMember((prevState) => ({
+                                                ...prevState,
+                                                no_telp: e.target.value
+                                            }))}
+                                            value={data_member.no_telp}
+                                        />
+                                        <Input
+                                            isRequired
+                                            label="Email"
+                                            name="email"
+                                            errorMessage={"Silakan isi kolom ini."}
+                                            placeholder="Masukan Email disini"
+                                            type="email"
+                                            onChange={(e) => setDataMember((prevState) => ({
+                                                ...prevState,
+                                                email: e.target.value
+                                            }))}
+                                            value={data_member.email}
+                                        />
                                     </div>
-                                    <Divider />
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="flex flex-col gap-3">
-                                            <Input
-                                                isRequired
-                                                label="Nama Lengkap"
-                                                name="name"
-                                                errorMessage={"Silakan isi kolom ini."}
-                                                placeholder="Masukan Nama Lengkap disini"
-                                                type="text"
-                                                onChange={(e) => setDataMember((prevState) => ({
-                                                    ...prevState,
-                                                    name: e.target.value
-                                                }))}
-                                                value={data_member.name}
-                                            />
-                                            <Input
-                                                isRequired
-                                                label="Nomor Telepon"
-                                                name="no_telp"
-                                                errorMessage={"Silakan isi kolom ini."}
-                                                placeholder="Masukan Nomor Telepon disini"
-                                                type="number"
-                                                onChange={(e) => setDataMember((prevState) => ({
-                                                    ...prevState,
-                                                    no_telp: e.target.value
-                                                }))}
-                                                value={data_member.no_telp}
-                                            />
-                                            <Input
-                                                isRequired
-                                                label="Email"
-                                                name="email"
-                                                errorMessage={"Silakan isi kolom ini."}
-                                                placeholder="Masukan Email disini"
-                                                type="email"
-                                                onChange={(e) => setDataMember((prevState) => ({
-                                                    ...prevState,
-                                                    email: e.target.value
-                                                }))}
-                                                value={data_member.email}
-                                            />
+                                    <div className="w-full h-fit p-4 bg-muted rounded-md grid gap-4">
+                                        <div className="grid gap-3">
+                                            <h3 className="font-bold">Jenis Member</h3>
+                                            <RadioGroup orientation="horizontal" onValueChange={setSelected} value={selected}>
+                                                <CustomRadio value="PREMIUM">
+                                                    Premium
+                                                </CustomRadio>
+                                                <CustomRadio value="GOLD">
+                                                    Gold
+                                                </CustomRadio>
+                                                <CustomRadio value="PLATINUM">
+                                                    Platinum
+                                                </CustomRadio>
+                                            </RadioGroup>
                                         </div>
-                                        <div className="w-full h-fit p-4 bg-muted rounded-md grid gap-4">
-                                            <div className="grid gap-3">
-                                                <h3 className="font-bold">Jenis Member</h3>
-                                                <RadioGroup orientation="horizontal" onValueChange={setSelected} value={selected}>
-                                                    <CustomRadio value="PREMIUM">
-                                                        Premium
-                                                    </CustomRadio>
-                                                    <CustomRadio value="GOLD">
-                                                        Gold
-                                                    </CustomRadio>
-                                                    <CustomRadio value="PLATINUM">
-                                                        Platinum
-                                                    </CustomRadio>
-                                                </RadioGroup>
-                                            </div>
-                                            <div className="grid gap-3">
-                                                <h3 className="font-bold">Harga</h3>
-                                                <div className="p-3 bg-default-200 rounded-md">
-                                                    <p><span className="font-bold">Rp. {convertRupiah(price?.price.toString() || "0")}</span> Per bulan,<br />
-                                                        dengan Potongan sebesar <b>{price?.discount || 0}% & {price?.playing || 0}x</b> kesempatan bermain.</p>
-                                                </div>
+                                        <div className="grid gap-3">
+                                            <h3 className="font-bold">Harga</h3>
+                                            <div className="p-3 bg-default-200 rounded-md">
+                                                <p><span className="font-bold">Rp. {convertRupiah(price?.price.toString() || "0")}</span> Per bulan,<br />
+                                                    dengan Potongan sebesar <b>{price?.discount || 0}% & {price?.playing || 0}x</b> kesempatan bermain.</p>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="flex justify-end">
-                                        <Button color="danger" type="submit" isLoading={loading_btn}>Tambah Sekarang</Button>
                                     </div>
                                 </div>
-                            </Form>
-                        </CardBody>
-                    </Card>
-                    <Card>
-                        <CardHeader>List Member</CardHeader>
-                        <CardBody>
-                            <DataTableCustom columns={columns} data={members} progressPending={loading} pagination />
-                        </CardBody>
-                    </Card>
-                </div>
-            </MainLayout>
+                                <div className="flex justify-end">
+                                    <Button color="danger" type="submit" isLoading={loading_btn}>Tambah Sekarang</Button>
+                                </div>
+                            </div>
+                        </Form>
+                    </CardBody>
+                </Card>
+                <Card>
+                    <CardHeader>List Member</CardHeader>
+                    <CardBody>
+                        <DataTableCustom columns={columns} data={members} progressPending={loading} pagination />
+                    </CardBody>
+                </Card>
+            </div>
         </>
     )
 }

@@ -5,7 +5,7 @@ import { Form } from "@heroui/form";
 import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import { CategoryMenu, IMenu } from "../../../../electron/types";
 import { IResponses } from "../../../../electron/lib/responses";
 import { convertRupiah, convertToInteger } from "../../../lib/utils";

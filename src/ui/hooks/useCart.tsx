@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ICart } from "../../electron/types";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 
 export interface UseCartResult {
     cart: ICart[];
@@ -10,7 +10,7 @@ export interface UseCartResult {
     getTotal: () => number;
     getChange: (cash: number) => number;
     cancelOrder: () => void;
-    checkout: (cash: number, payment_method: string) => void;
+    checkout: (cash: number, payment_method: string, name: string) => void;
     loading: boolean;
 }
 
@@ -68,15 +68,15 @@ export default function useCart(): UseCartResult {
         return cash - getTotal();
     };
 
-    const checkout = async (cash: number, payment_method: "CASH" | "TRANSFER" | "QRIS" | string) => {
+    const checkout = async (cash: number, payment_method: "CASH" | "TRANSFER" | "QRIS" | string, name: string) => {
         setLoading(true);
 
         try {
-            const res = await window.api.checkout_menu(cash, cart, payment_method);
+            const res = await window.api.checkout_menu(cash, cart, payment_method, name);
             setLoading(false)
             if (res.status && res.data) {
                 cancelOrder()
-                toast.success(res.detail_message);
+                toast.success(res.detail_message || "");
             } else {
                 toast.error(`Gagal melakukan pembayaran: ${res.detail_message}`);
             }

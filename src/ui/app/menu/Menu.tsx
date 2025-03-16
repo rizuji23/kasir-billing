@@ -7,7 +7,7 @@ import BoxMenu from "./BoxMenu";
 import { useEffect, useState } from "react";
 import { CategoryMenu, IMenu } from "../../../electron/types";
 import { IResponses } from "../../../electron/lib/responses";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import { LoadingComponent } from "../../components/datatable/DataTableCustom";
 import NotFound from "../../components/NotFound";
 import DetailPayment from "./DetailPayment";

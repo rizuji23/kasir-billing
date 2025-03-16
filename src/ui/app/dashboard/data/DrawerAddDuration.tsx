@@ -17,7 +17,9 @@ export default function DrawerAddDuration({ open, setOpen, table }: { open: bool
 
     const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        return await booking.checkOut();
+        if (await window.api.confirm()) {
+            return await booking.checkOut();
+        }
     }
 
     useEffect(() => {

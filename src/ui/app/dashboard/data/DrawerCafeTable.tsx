@@ -8,8 +8,7 @@ import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { PlusCircle } from "lucide-react";
 import { IResponses } from "../../../../electron/lib/responses";
-import { toast } from "sonner";
-import InputQty from "../../../components/InputQty";
+import toast from 'react-hot-toast';
 
 interface IOrderData {
     id_menu: number,
@@ -130,16 +129,17 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
     const onSubmit = async () => {
         setLoadingBtn(true);
         try {
-            if (confirm("Apakah anda yakin?")) {
+            if (await window.api.confirm()) {
+                console.log("YES")
                 const qty = Number(order_data.qty);
                 if (!qty || isNaN(qty) || qty <= 0) {
-                    toast.warning("Jumlah tidak boleh kosong atau kurang dari 1");
+                    toast.error("Jumlah tidak boleh kosong atau kurang dari 1");
                     setLoadingBtn(false);
                     return;
                 }
 
                 if (order_data.id_menu === 0) {
-                    toast.warning("Menu wajib diisi");
+                    toast.error("Menu wajib diisi");
                     setLoadingBtn(false);
                     return;
                 }
@@ -153,6 +153,7 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
                 const data = { ...order_data, id_booking: table.bookings[0].id_booking };
 
                 const res = await window.api.checkout_menu_table(data);
+                console.log("res", res)
                 setLoadingBtn(false);
                 if (res.status) {
                     toast.success("Pesanan berhasil disimpan");
@@ -167,6 +168,8 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
                     }));
                     setSelectedMenu(null);
                 }
+            } else {
+                setLoadingBtn(false);
             }
         } catch (err) {
             setLoadingBtn(false)
@@ -174,19 +177,19 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
         }
     }
 
-    const handleQtyItem = async (id_order: number, type_qty: "plus" | "minus") => {
-        try {
-            const res = await window.api.menu_table_qty(id_order, type_qty);
+    // const handleQtyItem = async (id_order: number, type_qty: "plus" | "minus") => {
+    //     try {
+    //         const res = await window.api.menu_table_qty(id_order, type_qty);
 
-            if (res.status) {
-                await getMenu();
-                await getMenuTable();
-            }
+    //         if (res.status) {
+    //             await getMenu();
+    //             await getMenuTable();
+    //         }
 
-        } catch (err) {
-            toast.error(`Terjadi kesalahan saat tambah/kurang menu: ${err}`);
-        }
-    }
+    //     } catch (err) {
+    //         toast.error(`Terjadi kesalahan saat tambah/kurang menu: ${err}`);
+    //     }
+    // }
 
     return (
         <>
@@ -218,7 +221,10 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
                                                     </div>
                                                     <div className="flex flex-col gap-2">
                                                         <p className="text-sm font-bold self-center">Rp. {convertRupiah(el.total.toString())}</p>
-                                                        <InputQty value={el.qty.toString()} onPressMinus={() => handleQtyItem(el.id, "minus")} onPressPlus={() => handleQtyItem(el.id, "plus")} />
+                                                        <div className="text-center bg-slate-300/50 rounded-md px-3 py-1">
+                                                            <span className="text-sm">Qty: {el.qty.toString()}</span>
+                                                        </div>
+                                                        {/* <InputQty value={el.qty.toString()} onPressMinus={() => handleQtyItem(el.id, "minus")} onPressPlus={() => handleQtyItem(el.id, "plus")} /> */}
                                                     </div>
                                                 </div>
                                                 <Divider />
@@ -237,7 +243,7 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
                         <div className="grid gap-2">
                             <span className="text-sm font-semibold">Tambah Pesanan:</span>
                             <div className="flex flex-col gap-3">
-                                <Select options={list_menu} value={selected_menu} onChange={(e) => {
+                                <Select className="react-select-container" classNamePrefix="react-select" options={list_menu} value={selected_menu} onChange={(e) => {
                                     handleMenu((e as unknown as { label: string, value: string })?.value || "")
                                     setSelectedMenu(e as unknown as { label: string, value: string });
                                 }} placeholder="Pilih menu..." isLoading={loading} />

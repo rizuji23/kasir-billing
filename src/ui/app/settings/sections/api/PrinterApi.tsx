@@ -1,7 +1,7 @@
 import { Button } from "@heroui/button";
 import { Card, CardBody, CardFooter, CardHeader } from "@heroui/card";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import { IPrinters, Settings } from "../../../../../electron/types";
 import { IResponses } from "../../../../../electron/lib/responses";
 import { Form } from "@heroui/form";
@@ -38,15 +38,19 @@ export default function PrinterApi() {
 
     const savePrinter = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setLoading(true)
         try {
-            setLoading(true)
-            const res = await window.api.save_printer("PRINTER", selected, selected)
-            setLoading(false);
-            if (res.status) {
-                toast.success("Printer berhasil disimpan.");
-                getPrinters();
+            if (await window.api.confirm()) {
+                const res = await window.api.save_printer("PRINTER", selected, selected)
+                setLoading(false);
+                if (res.status) {
+                    toast.success("Printer berhasil disimpan.");
+                    getPrinters();
+                } else {
+                    console.log(res);
+                }
             } else {
-                console.log(res);
+                setLoading(false)
             }
         } catch (err) {
             setLoading(false)

@@ -1,7 +1,7 @@
 import { Alert } from "@heroui/alert";
 import { Card, CardBody } from "@heroui/card";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import { IMachine } from "../../../electron/types";
 
 

@@ -9,7 +9,7 @@ import {
 } from "@heroui/react";
 import moment from "moment-timezone";
 import { Dispatch, SetStateAction, useState } from "react";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import SelectCustom from "../../../../components/SelectCustom";
 
 export default function PrintReport({ open, setOpen }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>> }) {
@@ -31,7 +31,7 @@ export default function PrintReport({ open, setOpen }: { open: boolean, setOpen:
             if (res.status) {
                 toast.success("Laporan berhasil diprint");
             } else {
-                toast.error(res.detail_message);
+                toast.error(res.detail_message || "");
             }
 
         } catch (err) {

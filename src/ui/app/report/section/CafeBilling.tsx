@@ -10,7 +10,7 @@ import ReportTitle from "./ReportTitle";
 import { OrderCafe } from "../../../../electron/types";
 import moment from "moment-timezone";
 import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import { debounce } from "lodash";
 
 const columns: TableColumn<OrderCafe>[] = [

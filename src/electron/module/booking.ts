@@ -1,4 +1,4 @@
-import { ipcMain } from "electron";
+import { dialog, ipcMain } from "electron";
 import { prisma } from "../database.js";
 import generateShortUUID from "../lib/random.js";
 import Responses from "../lib/responses.js";
@@ -83,8 +83,8 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
         duration: (Number(tables.duration) + data.item_price.length).toString(),
         power: "ON",
         blink: data.data_booking.blink === "iya" ? true : false,
-        // timer: data.item_price[data.item_price.length - 1].end_duration,
-        timer: new Date(currentDate.getTime() + 10000),
+        timer: data.item_price[data.item_price.length - 1].end_duration,
+        // timer: new Date(currentDate.getTime() + 10000),
       },
     });
 
@@ -252,6 +252,7 @@ async function createUpdateStruk(
   booking_update: Booking,
   struk: number | null,
   data: IPaymentData,
+  is_paid = true,
 ): Promise<unknown> {
   try {
     const data_new = {
@@ -264,7 +265,9 @@ async function createUpdateStruk(
       payment_method: data.payment_method as unknown as PaymentMethodCasierType,
       is_split_bill: false,
       type_struk: "TABLE" as TypeStruk,
-      status: "PAID" as StatusTransaction,
+      status: is_paid
+        ? ("PAID" as StatusTransaction)
+        : ("NOPAID" as StatusTransaction),
       shift: booking_update.shift || "Pagi",
     };
 
@@ -492,7 +495,7 @@ export default function BookingModule() {
         } else {
           // update struk
           const struk_update = await createUpdateStruk(
-            "create",
+            "update",
             booking_update as unknown as Booking,
             struk.id,
             data,
@@ -535,4 +538,294 @@ export default function BookingModule() {
       return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
     }
   });
+
+  ipcMain.handle("print_struk_temp", async (_, data: IPaymentData) => {
+    try {
+      const booking = await prisma.booking.findFirst({
+        where: {
+          id_booking: data.id_booking,
+        },
+        include: {
+          order_cafe: true,
+        },
+      });
+
+      if (!booking) {
+        return Responses({
+          code: 404,
+          detail_message: "Booking tidak ditemukan",
+        });
+      }
+
+      const struk = await prisma.struk.findFirst({
+        where: {
+          id_booking: booking.id,
+          is_split_bill: false,
+        },
+      });
+
+      if (!struk) {
+        // create new struk
+        const struk_create = await createUpdateStruk(
+          "create",
+          booking as unknown as Booking,
+          null,
+          data,
+          false,
+        );
+
+        if (!struk_create) {
+          return Responses({
+            code: 500,
+            detail_message: "Error saat membuat struk",
+          });
+        }
+
+        await StrukWindow((struk_create as unknown as Struk).id_struk);
+      } else {
+        // update struk
+        const struk_update = await createUpdateStruk(
+          "update",
+          booking as unknown as Booking,
+          struk.id,
+          data,
+          false,
+        );
+
+        if (!struk_update) {
+          return Responses({
+            code: 500,
+            detail_message: "Error saat update struk",
+          });
+        }
+
+        await StrukWindow((struk_update as unknown as Struk).id_struk);
+      }
+
+      return Responses({
+        code: 201,
+        data: null,
+      });
+    } catch (err) {
+      if (err instanceof Error) {
+        return Responses({
+          code: 500,
+          detail_message: `Terjadi Kesalahan: ${err.message}`,
+        });
+      }
+      return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+    }
+  });
+
+  ipcMain.handle(
+    "reset_table",
+    async (_, id_booking: string, id_table: string) => {
+      try {
+        const tables = await prisma.tableBilliard.findFirst({
+          where: {
+            id_table: id_table,
+          },
+        });
+
+        const booking = await prisma.booking.findFirst({
+          where: {
+            id_booking: id_booking,
+          },
+          include: {
+            order_cafe: true,
+          },
+        });
+
+        if (!tables) {
+          return Responses({
+            code: 404,
+            detail_message: "Table tidak ditemukan",
+          });
+        }
+
+        if (!booking) {
+          return Responses({
+            code: 404,
+            detail_message: "Booking tidak ditemukan",
+          });
+        }
+
+        if (booking.order_cafe.length !== 0) {
+          dialog.showErrorBox(
+            "Reset table tidak bisa dilakukan",
+            "Saat ini table ditemukan memiliki order cafe, jika order cafe ditemukan maka tidak bisa melakukan reset table!",
+          );
+          return Responses({
+            code: 400,
+            detail_message: "Reset tidak dapat dilakukan",
+          });
+        }
+
+        const struk = await prisma.struk.findFirst({
+          where: {
+            id_booking: booking.id,
+          },
+        });
+
+        if (struk) {
+          await prisma.struk.updateMany({
+            where: {
+              id_booking: booking.id,
+            },
+            data: {
+              status: "RESET",
+            },
+          });
+        }
+
+        await prisma.booking.update({
+          where: {
+            id_booking: booking.id_booking,
+          },
+          data: {
+            status: "RESET",
+          },
+        });
+
+        await prisma.detailBooking.updateMany({
+          where: {
+            bookingId: booking.id,
+          },
+          data: {
+            status: "RESET",
+          },
+        });
+
+        const check_out_table = await checkoutTableDone(
+          tables as unknown as TableBilliard,
+        );
+
+        if (!check_out_table) {
+          return Responses({
+            code: 500,
+            detail_message: "Error saat mematikan table",
+          });
+        }
+
+        return Responses({
+          code: 201,
+          data: null,
+        });
+      } catch (err) {
+        if (err instanceof Error) {
+          return Responses({
+            code: 500,
+            detail_message: `Terjadi Kesalahan: ${err.message}`,
+          });
+        }
+        return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "change_table",
+    async (
+      _,
+      id_curr_table: string,
+      id_to_table: string,
+      id_booking: string,
+    ) => {
+      try {
+        const [tables_curr, tables_move] = await Promise.all([
+          await prisma.tableBilliard.findFirst({
+            where: {
+              id_table: id_curr_table,
+            },
+          }),
+          await prisma.tableBilliard.findFirst({
+            where: {
+              id_table: id_to_table,
+            },
+          }),
+        ]);
+
+        const booking = await prisma.booking.findFirst({
+          where: {
+            id_booking: id_booking,
+          },
+        });
+
+        if (!booking) {
+          return Responses({
+            code: 400,
+            detail_message: "Booking tidak ditemukan",
+          });
+        }
+
+        if (!tables_curr || !tables_move) {
+          return Responses({
+            code: 400,
+            detail_message: "Table tidak ditemukan",
+          });
+        }
+
+        // move to table move
+        await prisma.tableBilliard.update({
+          where: {
+            id: tables_move.id,
+          },
+          data: {
+            duration: tables_curr.duration,
+            status: tables_curr.status,
+            type_play: tables_curr.type_play,
+            timer: tables_curr.timer,
+            power: tables_curr.power,
+            blink: tables_curr.blink,
+          },
+        });
+
+        if (tables_curr.status === "USED") {
+          await sendMessageToMachine(`on ${tables_move.number}`);
+        }
+
+        // set to default table curr
+        await prisma.tableBilliard.update({
+          where: {
+            id: tables_curr.id,
+          },
+          data: {
+            duration: "0",
+            status: "AVAILABLE",
+            type_play: "NONE",
+            timer: null,
+            power: "OFF",
+            blink: false,
+          },
+        });
+
+        setTimeout(async () => {
+          await sendMessageToMachine(`off ${tables_curr.number}`);
+        }, 1500);
+
+        // set booking to move table
+        await prisma.booking.update({
+          where: {
+            id: booking.id,
+          },
+          data: {
+            tableId: tables_move.id,
+          },
+        });
+
+        return Responses({
+          code: 201,
+          detail_message: "Table berhasil dipindahkan",
+        });
+      } catch (err) {
+        if (err instanceof Error) {
+          return Responses({
+            code: 500,
+            detail_message: `Terjadi Kesalahan: ${err.message}`,
+          });
+        }
+        return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+      }
+    },
+  );
 }

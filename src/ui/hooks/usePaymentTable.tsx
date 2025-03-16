@@ -2,7 +2,7 @@ import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { Booking, DetailBooking, IPaymentData, OrderCafe, TableBilliard } from "../../electron/types";
 import { Selection } from "@heroui/react";
 import { convertToInteger } from "../lib/utils";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 
 interface IPaymentTableDetail {
     table: TableBilliard,
@@ -29,7 +29,8 @@ export interface UsePaymentTableResult {
     setNameSplit: Dispatch<SetStateAction<string>>,
     name_split: string;
     checkOut: () => Promise<void>;
-    loading: boolean
+    loading: boolean,
+    printStruk: () => Promise<void>;
 }
 
 export interface UsePaymentTable {
@@ -134,7 +135,8 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
     const checkOut = async () => {
         setLoading(true);
         try {
-            if (confirm("Apakah anda yakin?")) {
+            const confirm = window.api.confirm();
+            if (await confirm) {
                 const data: IPaymentData = {
                     id_table: table.id_table,
                     id_booking: detail?.booking.id_booking || "",
@@ -191,13 +193,42 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
                 } else {
                     toast.error("Pembayaran gagal dilakukan");
                 }
+            } else {
+                setLoading(false);
             }
 
         } catch (err) {
             toast.error(`Error save payment_booking: ${err}`);
             setLoading(false);
         }
+    }
 
+    const printStruk = async () => {
+        try {
+            if (await window.api.confirm()) {
+                const data: IPaymentData = {
+                    id_table: table.id_table,
+                    id_booking: detail?.booking.id_booking || "",
+                    total: total,
+                    payment_cash: payment_cash,
+                    change: Math.abs(change),
+                    payment_method: payment_method,
+                    is_split_bill: is_split_bill,
+                    splitbill: null,
+                };
+
+                const res = await window.api.print_struk_temp(data);
+
+                if (res.status) {
+                    toast.success("Struk berhasil diprint");
+                    await getDetailBookingTable();
+                } else {
+                    toast.error(res.detail_message || "Terjadi Kesalahan");
+                }
+            }
+        } catch (err) {
+            toast.error(`Error save print struk: ${err}`);
+        }
     }
 
     useEffect(() => {
@@ -244,5 +275,5 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
         }
     }, [selected_cafe, selected_booking]);
 
-    return { list_booking, list_cafe, setSelectedBooking, setSelectedCafe, selected_cafe, selected_booking, total, change, payment_cash, setPaymentCash, handlePaymentChange, payment_method, setPaymentMethod, duration, setIsSplitBill, is_split_bill, setNameSplit, name_split, checkOut, loading };
+    return { list_booking, list_cafe, setSelectedBooking, setSelectedCafe, selected_cafe, selected_booking, total, change, payment_cash, setPaymentCash, handlePaymentChange, payment_method, setPaymentMethod, duration, setIsSplitBill, is_split_bill, setNameSplit, name_split, checkOut, loading, printStruk };
 }

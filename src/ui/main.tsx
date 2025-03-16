@@ -2,8 +2,8 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 import { HeroUIProvider } from "@heroui/react";
-import { Toaster } from "sonner";
 import { HashRouter, useLocation } from "react-router";
+import { Toaster } from "react-hot-toast";
 
 const MainWrapper = () => {
   const location = useLocation();
@@ -21,7 +21,7 @@ const MainWrapper = () => {
 
 createRoot(document.getElementById("root")!).render(
   <HashRouter>
-    <Toaster position="top-right" richColors closeButton className="!pointer-events-auto" />
+    <Toaster position="top-right" />
     <HeroUIProvider>
       <MainWrapper />
     </HeroUIProvider>

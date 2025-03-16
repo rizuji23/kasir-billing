@@ -8,7 +8,7 @@ import { Tab, Tabs } from "@heroui/tabs";
 import ReportTitle from "./ReportTitle";
 import { Struk } from "../../../../electron/types";
 import { Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import moment from "moment-timezone";
 import { cn, convertRupiah } from "../../../lib/utils";
 import DetailTransaction from "./modal/DetailTransaction";

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { IMachine, TableBilliard } from "../../../electron/types";
 import { IResponses } from "../../../electron/lib/responses";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 
 interface TableBilliardContextProps {
     tableList: TableBilliard[];

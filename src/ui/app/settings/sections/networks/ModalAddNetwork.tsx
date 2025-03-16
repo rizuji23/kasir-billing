@@ -10,7 +10,7 @@ import {
 } from "@heroui/react";
 import { Dispatch, FormEvent, SetStateAction, useEffect, useState } from "react";
 import { IIPList } from "../../../../../electron/types";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import SelectCustom from "../../../../components/SelectCustom";
 
 export default function ModalAddNetwork({ open, setOpen, type_network = "cashier", my_ip, api }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, type_network: "cashier" | "kitchen", my_ip: string | null, api: () => Promise<void> }) {
@@ -22,7 +22,7 @@ export default function ModalAddNetwork({ open, setOpen, type_network = "cashier
 
     const getIpLocal = async () => {
         setLoading(true)
-        const res = await window.api.network_scan(type_network === "cashier" ? 80 : 443);
+        const res = await window.api.network_scan(type_network === "cashier" ? 3321 : 4321);
 
         setIpList(res.filter((el) => el.ip !== my_ip));
         setLoading(false);

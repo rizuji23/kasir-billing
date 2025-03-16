@@ -122,6 +122,13 @@ enum TypeServer {
   KITCHEN
 }
 
+enum StatusKitchen {
+  DONE
+  PENDING
+  REJECT
+  CANCEL
+}
+
 enum StatusServer {
   CONNECTED
   DISCONNECTED
@@ -133,6 +140,7 @@ model User {
   name       String
   username   String   @unique
   password   String
+  role String @default("cashier")
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   order_cafe OrderCafe[]
@@ -171,6 +179,8 @@ model PriceBilling {
   type_price       PriceBillingType @relation(fields: [type_price_id], references: [id], onDelete: Cascade)
   season           String
   price            Int
+  start_from String?
+  end_from String?
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 }
@@ -300,6 +310,7 @@ model OrderCafe {
   menu_cafe   Int
   menucafe    MenuCafe             @relation(fields: [menu_cafe], references: [id], onDelete: Cascade)
   id_struk    Int?
+  name String?
   strukId Struk? @relation(fields: [id_struk], references: [id])
   subtotal    Int
   qty         Int
@@ -310,6 +321,7 @@ model OrderCafe {
   booking     Booking?             @relation(fields: [bookingId], references: [id], onDelete: Cascade) // Make relation optional
   payment_method PaymentMethodCasier @default(CASH)
   status      StatusTransaction    @default(NOPAID)
+  status_kitchen StatusKitchen @default(PENDING)
   userId      Int?
   user_in     User?                 @relation(fields: [userId], references: [id])
   shift String @default("Pagi")
@@ -471,7 +483,7 @@ model Voucher {
 model LocalServers {
   id Int @id @default(autoincrement())
   id_local_server String @unique
-  ip String @unique
+  ip String
   hostname String
   number String
   status StatusServer @default(DISCONNECTED)

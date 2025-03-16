@@ -116,8 +116,9 @@ export default function AboutPage() {
                         }
 
                         {
-                            isUpdateAvailable ? <Button color="primary" onPress={() => {
-                                if (confirm("Apakah anda yakin?")) {
+                            isUpdateAvailable ? <Button color="primary" onPress={async () => {
+                                const confirm = window.api.confirm();
+                                if (await confirm) {
                                     handleUpdateNow();
                                 }
                             }} isDisabled={isNowDownloaded} startContent={<MonitorUp className="w-4 h-4" />} >{isUpdateDownloaded ? "Restart & Install" : "Update Sekarang"}</Button> : <Button color="primary" onPress={handleCheckForUpdates} startContent={<MonitorUp className="w-4 h-4" />}>Check Update</Button>

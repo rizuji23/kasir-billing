@@ -35,7 +35,7 @@ export default function StrukView() {
                             <p className="text-center text-xs !font-black ">Jl. Papandayan No.110, Kota Kulon, Kec. Garut Kota, Kabupaten Garut, Jawa Barat 44114 <br /> 08987395378</p>
                         </div>
                         <StripDivider />
-                        <div className="text-xs !font-black grid gap-1">
+                        <div className="text-xs !font-black grid gap-1 px-2">
                             <div className="flex justify-between">
                                 <p>Struk ID:</p>
                                 <p className="text-end">{struk.id_struk}</p>
@@ -83,7 +83,7 @@ export default function StrukView() {
                             )
                         }
                         <p className="text-xs !font-black text-center">*Cafe Item*</p>
-                        <div className="text-xs !font-black grid gap-1.5 py-2">
+                        <div className="text-xs !font-black grid gap-1.5 py-2 px-2">
                             {
                                 struk.type_struk === "TABLE" ? (struk.bookingId?.order_cafe || []).map((el, i) => {
                                     return <div className="flex justify-between" key={i}>
@@ -108,7 +108,7 @@ export default function StrukView() {
                         {
                             struk.type_struk === "TABLE" && (
                                 <>
-                                    <div className="text-xs !font-black grid gap-1.5">
+                                    <div className="text-xs !font-black grid gap-1.5 px-2">
                                         <div className="flex justify-between">
                                             <p>Billing: </p>
                                             <p className="text-end">Rp. {convertRupiah(struk.total_billing?.toString() || "0")}</p>
@@ -122,14 +122,14 @@ export default function StrukView() {
                                 </>
                             )
                         }
-                        <div className="text-xs !font-black grid gap-1.5">
+                        <div className="text-xs !font-black grid gap-1.5 px-2">
                             <div className="flex justify-between">
                                 <p>Total: </p>
                                 <p className="text-end">Rp. {convertRupiah(struk.total?.toString() || "0")}</p>
                             </div>
                         </div>
                         <StripDivider />
-                        <div className="text-xs !font-black grid gap-1.5">
+                        <div className="text-xs !font-black grid gap-1.5 px-2">
                             <div className="flex justify-between">
                                 <p className="capitalize">{struk.payment_method.toLowerCase()}: </p>
                                 <p className="text-end">Rp. {convertRupiah(struk.cash.toString() || "0")}</p>

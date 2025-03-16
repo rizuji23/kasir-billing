@@ -13,7 +13,7 @@ import {
 import { Chip } from "@heroui/chip";
 import ModalAddNetwork from "./ModalAddNetwork";
 import { ServersList } from "../../../../../electron/types";
-import { toast } from "sonner";
+import toast from 'react-hot-toast';
 import { LoadingComponent } from "../../../../components/datatable/DataTableCustom";
 
 function CardNetwork({ title, type_server, my_ip, data, api }: { title: string; type_server: "cashier" | "kitchen", my_ip: string | null, data: ServersList[], api: () => Promise<void> }) {
@@ -62,8 +62,9 @@ function CardNetwork({ title, type_server, my_ip, data, api }: { title: string; 
                                         <TableCell>
                                             <div className="flex gap-3">
                                                 <Button size="sm" isLoading={loading} onPress={() => handleOption(el.ip, "check")}>Cek Koneksi</Button>
-                                                <Button size="sm" color="danger" isLoading={loading} onPress={() => {
-                                                    if (confirm("Apakah anda yakin?")) {
+                                                <Button size="sm" color="danger" isLoading={loading} onPress={async () => {
+                                                    const confirm = window.api.confirm();
+                                                    if (await confirm) {
                                                         handleOption(el.ip, "delete")
                                                     }
                                                 }}>Hapus</Button>
