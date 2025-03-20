@@ -95,8 +95,8 @@ export async function generateExcelReport(
 
       // Insert TOTAL row
       const totalRow = worksheet.addRow({
-        no: "TOTAL",
-        id_struk: "",
+        no: "",
+        id_struk: "TOTAL",
         name: "",
         total_billing: total_billing,
         total_cafe: total_cafe,

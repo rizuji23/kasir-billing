@@ -10,9 +10,9 @@ export default function BoxMenu({ item, cart }: { item: IMenu, cart: UseCartResu
             <Card isPressable shadow="sm" onPress={() => cart.addToCart({ id: item.id || 0, name: item.name, price: item.price, qty: "1", subtotal: item.price })}>
                 <CardBody className="overflow-visible">
                     <div className="grid gap-2">
-                        <div className="flex text-small justify-between">
+                        <div className="flex-col text-small justify-between">
                             <b>{item.name}</b>
-                            <p className="text-default-500">Rp. {convertRupiah(item.price.toString())}</p>
+                            <p className="text-default-500 font-semibold">Rp. {convertRupiah(item.price.toString())}</p>
                         </div>
                         <div className="flex justify-end">
                             <Chip size="sm">{item.category_menu?.name || "-"}</Chip>

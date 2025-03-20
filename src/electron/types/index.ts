@@ -236,6 +236,7 @@ export interface IMenu {
   category_menu?: CategoryMenu;
   price_profit: number;
   price_modal: number;
+  send_to_kitchen: boolean;
   created_at?: Date;
   updated_at?: Date;
 }

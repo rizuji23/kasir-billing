@@ -33,6 +33,20 @@ export const sendToKitchen = async (
       },
       include: {
         menucafe: true,
+        booking: {
+          include: {
+            table: true,
+          },
+        },
+      },
+    });
+
+    const table = await prisma.booking.findFirst({
+      where: {
+        id_booking: order[0].booking?.id_booking,
+      },
+      include: {
+        table: true,
       },
     });
 
@@ -61,8 +75,15 @@ export const sendToKitchen = async (
       ip: getLocalIPAddress(),
       data: {
         order_type: type_order,
-        order: order,
+        order: order.filter((el) => el.menucafe.send_to_kitchen === true),
         item: item_data,
+        no_billiard: table?.table.name || "-",
+        no_meja:
+          order.length !== 0
+            ? order[0].no_meja
+              ? order[0].no_meja.toString()
+              : "-"
+            : "-",
       },
       name: cashier_name?.content || "",
     };

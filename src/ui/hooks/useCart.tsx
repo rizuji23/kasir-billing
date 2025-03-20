@@ -10,7 +10,7 @@ export interface UseCartResult {
     getTotal: () => number;
     getChange: (cash: number) => number;
     cancelOrder: () => void;
-    checkout: (cash: number, payment_method: string, name: string) => void;
+    checkout: (cash: number, payment_method: string, name: string, no_meja: string) => void;
     loading: boolean;
 }
 
@@ -68,11 +68,23 @@ export default function useCart(): UseCartResult {
         return cash - getTotal();
     };
 
-    const checkout = async (cash: number, payment_method: "CASH" | "TRANSFER" | "QRIS" | string, name: string) => {
+    const checkout = async (cash: number, payment_method: "CASH" | "TRANSFER" | "QRIS" | string, name: string, no_meja: string) => {
         setLoading(true);
 
+        if (name.length === 0) {
+            toast.error("Nama pemesan wajib diisi.");
+            setLoading(false)
+            return;
+        }
+
+        if (no_meja.length === 0) {
+            toast.error("Nomor meja wajib diisi.");
+            setLoading(false)
+            return;
+        }
+
         try {
-            const res = await window.api.checkout_menu(cash, cart, payment_method, name);
+            const res = await window.api.checkout_menu(cash, cart, payment_method, name, no_meja);
             setLoading(false)
             if (res.status && res.data) {
                 cancelOrder()

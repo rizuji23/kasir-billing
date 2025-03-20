@@ -64,7 +64,16 @@ contextBridge.exposeInMainWorld("api", {
     data: any[],
     payment_method: string,
     name: string,
-  ) => ipcRenderer.invoke("checkout_menu", cash, data, payment_method, name),
+    no_meja: string,
+  ) =>
+    ipcRenderer.invoke(
+      "checkout_menu",
+      cash,
+      data,
+      payment_method,
+      name,
+      no_meja,
+    ),
   get_printer: () => ipcRenderer.invoke("get_printer"),
   get_serialport: () => ipcRenderer.invoke("get_serialport"),
   get_type: (type_member: string) =>
@@ -178,4 +187,6 @@ contextBridge.exposeInMainWorld("api", {
     id_booking: string,
   ) =>
     ipcRenderer.invoke("change_table", id_curr_table, id_to_table, id_booking),
+  send_blink: (number: string) => ipcRenderer.invoke("send_blink", number),
+  open_url: (url: string) => ipcRenderer.invoke("open_url", url),
 });

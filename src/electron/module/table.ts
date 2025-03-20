@@ -102,7 +102,7 @@ export const updateTimers = async (
               });
             }, 100 * Number(table.number));
           } else if (
-            secondsRemaining <= 900 &&
+            secondsRemaining <= 300 &&
             table.status !== "MOSTLYEXPIRE"
           ) {
             await prisma.tableBilliard.update({

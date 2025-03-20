@@ -38,7 +38,7 @@ export default function DrawerTable({ open, setOpen, table }: { open: boolean, s
                                         type_play: e
                                     }))}>
                                         <Radio value="REGULAR">Regular</Radio>
-                                        <Radio value="LOSS">Loss</Radio>
+                                        {/* <Radio value="LOSS">Loss</Radio> */}
                                     </RadioGroup>
                                     <div>
                                         <Input

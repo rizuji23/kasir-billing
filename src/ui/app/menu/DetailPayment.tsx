@@ -15,6 +15,7 @@ export default function DetailPayment({ cart }: { cart: UseCartResult }) {
     const [cash, setCash] = useState<string>("");
     const [payment_method, setPaymentMethod] = useState<"CASH" | "TRANSFER" | "QRIS" | string>("CASH");
     const [name, setName] = useState<string>("");
+    const [no_meja, setNoMeja] = useState<string>("");
 
     const total = cart.getTotal();
     const change = Math.max(0, Number(cash) - total);
@@ -46,6 +47,7 @@ export default function DetailPayment({ cart }: { cart: UseCartResult }) {
                                 <p className="text-xs">Tanggal Pembelian: {moment().tz("Asia/Jakarta").format("DD/MM/YYYY hh:mm A")}</p>
                                 <div className="mt-5 grid gap-3">
                                     <Input isRequired label="Nama Pemesan" onChange={(e) => setName(e.target.value)} value={name} placeholder="Masukan nama pemesan disini..." />
+                                    <Input isRequired label="Nomor Meja" type="number" onChange={(e) => setNoMeja(e.target.value)} value={no_meja} placeholder="Masukan nomor meja disini..." />
                                     <Input
                                         isRequired
                                         label="Jumlah Pembayaran"
@@ -87,9 +89,10 @@ export default function DetailPayment({ cart }: { cart: UseCartResult }) {
                                     toast.error("Silakan isi uang cash terlebih dahulu")
                                     return;
                                 } else if (await window.api.confirm("Apakah anda yakin ingin memesan?")) {
-                                    cart.checkout(convertToInteger(cash), payment_method, name);
+                                    cart.checkout(convertToInteger(cash), payment_method, name, no_meja);
                                     setCash("");
                                     setName("");
+                                    setNoMeja("");
                                     return;
                                 }
                             }}>Pesan</Button>

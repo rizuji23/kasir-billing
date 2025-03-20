@@ -71,6 +71,7 @@ export async function connectMachine(): Promise<SerialPort | null> {
       "Box sudah terkoneksi",
       "Box sudah dalam keadaan terkoneksi",
     );
+
     return serialport;
   }
 
@@ -284,6 +285,21 @@ export default function MachineModule() {
       }
     },
   );
+
+  ipcMain.handle("send_blink", async (_, number: string) => {
+    try {
+      await sendMessageToMachine(`blink ${number}`);
+      return Responses({
+        code: 201,
+        detail_message: `Table ${number} blink`,
+      });
+    } catch (err) {
+      return Responses({
+        code: 500,
+        detail_message: `Error fetching table power: ${err}`,
+      });
+    }
+  });
 
   ipcMain.handle("on_off_all", async (_, status: string) => {
     try {

@@ -13,6 +13,7 @@ import DataTableCustom from "../../../components/datatable/DataTableCustom";
 import { TableColumn } from "react-data-table-component";
 import { Trash } from "lucide-react";
 import { Chip } from "@heroui/chip";
+import { RadioGroup, Radio } from "@heroui/radio";
 
 
 
@@ -28,6 +29,7 @@ export default function AddMenu() {
     const [modal, setModal] = useState<string>("");
     const [name, setName] = useState<string>("");
     const [category, setCategory] = useState<string>("");
+    const [send_to_kitchen, setSendToKitchen] = useState<string>("true");
 
     const [id, setId] = useState<number | null>(null);
 
@@ -55,6 +57,11 @@ export default function AddMenu() {
             selector: row => `Rp. ${convertRupiah(row.price_modal.toString())}`,
         },
         {
+            name: "Kirim Ke Dapur",
+            selector: row => row.send_to_kitchen,
+            cell: row => <Chip color={row.send_to_kitchen === true ? "success" : "danger"} size="sm">{row.send_to_kitchen === true ? "Iya" : "Tidak"}</Chip>
+        },
+        {
             name: "Actions",
             cell: row => (
                 <div className="flex gap-2">
@@ -72,7 +79,7 @@ export default function AddMenu() {
     ]
 
     const handleDelete = async (row: IMenu) => {
-        if (confirm(`Apakah anda yakin ingin menghapus "${row.name}"?`)) {
+        if (await window.api.confirm(`Apakah anda yakin ingin menghapus "${row.name}"?`)) {
             try {
                 if (row.id) {
                     const res = await window.api.delete_menu(row.id);
@@ -105,6 +112,7 @@ export default function AddMenu() {
             setName(row.name)
             setCategory((row.category_menu?.id || 0).toString())
             setId(row.id || null);
+            setSendToKitchen(row.send_to_kitchen === true ? "true" : "false");
 
         } catch (err) {
             toast.error(`Error updating menu: ${err}`);
@@ -171,7 +179,8 @@ export default function AddMenu() {
             price: convertToInteger(data.price_sell),
             price_modal: convertToInteger(data.price_modal),
             price_profit: convertToInteger(data.price_profit),
-            categoryMenuId: parseInt(category)
+            categoryMenuId: parseInt(category),
+            send_to_kitchen: send_to_kitchen === "true" ? true : false
         }
 
         try {
@@ -261,6 +270,10 @@ export default function AddMenu() {
                                         }
 
                                     </Select>
+                                    <RadioGroup isRequired name="send_to_kitchen" orientation="horizontal" label="Kirim ke Dapur" value={send_to_kitchen} onValueChange={(e) => setSendToKitchen(e)}>
+                                        <Radio classNames={{ label: "text-sm" }} value={"true"}>Iya</Radio>
+                                        <Radio classNames={{ label: "text-sm" }} value={"false"}>Tidak</Radio>
+                                    </RadioGroup>
                                 </div>
                             </div>
                             <div className="w-full h-fit p-4 bg-muted-foreground/20 rounded-md grid gap-4">

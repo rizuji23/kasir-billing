@@ -26,7 +26,7 @@ export default function StrukView() {
     return (
         <>
             {
-                struk ? <div className="w-[219px] !font-mono !font-black">
+                struk ? <div className="w-[219px] !font-mono !font-black mb-2">
                     <div className="grid gap-0.5">
                         <div className="flex flex-col gap-3 px-2 pt-3">
                             <div className="flex justify-center">

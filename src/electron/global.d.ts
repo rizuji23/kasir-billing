@@ -73,6 +73,7 @@ interface ApiAPI {
     data: ICart[],
     payment_method: string,
     name: string,
+    no_meja: string,
   ) => Promise<IResponses<{ cash: number; data: ICart[] }>>;
   get_printer: () => Promise<IResponses<unknown>>;
   get_serialport: () => Promise<IResponses<unknown>>;
@@ -260,6 +261,8 @@ interface ApiAPI {
     id_to_table: string,
     id_booking: string,
   ) => Promise<IResponses<unknown>>;
+  send_blink: (number: string) => Promise<IResponses<unknown>>;
+  open_url: (url: string) => Promise<void>;
 }
 
 declare global {

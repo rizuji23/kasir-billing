@@ -1,4 +1,4 @@
-import { ChefHat, CirclePower, Cog, FileChartColumn, Home, Utensils } from "lucide-react";
+import { CirclePower, Cog, FileChartColumn, Home, Utensils } from "lucide-react";
 import logo from "../../assets/logo-login.png";
 import { Link, useLocation } from "react-router";
 import { cn } from "../../lib/utils";
@@ -22,11 +22,11 @@ const sidebar: { title: string, icon: React.ReactNode, href: string }[] = [
         icon: <Utensils className="w-5 h-5" />,
         href: "/menu"
     },
-    {
-        title: "Dapur",
-        icon: <ChefHat className="w-5 h-5" />,
-        href: "/kitchen"
-    },
+    // {
+    //     title: "Dapur",
+    //     icon: <ChefHat className="w-5 h-5" />,
+    //     href: "/kitchen"
+    // },
     // {
     //     title: "Member",
     //     icon: <UserRoundPen className="w-5 h-5" />,

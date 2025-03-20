@@ -36,7 +36,7 @@ export async function StrukWindow(id_struk: string) {
     }
 
     const printWindow = new BrowserWindow({
-      show: true,
+      show: false,
       webPreferences: {
         preload: getPreloadPath(),
         contextIsolation: true,

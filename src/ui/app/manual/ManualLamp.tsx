@@ -1,7 +1,6 @@
 import { Card, CardBody } from "@heroui/card";
 import MainLayout from "../../components/MainLayout";
 import { Button } from "@heroui/button";
-import { Power, PowerOff } from "lucide-react";
 import { Divider } from "@heroui/divider";
 import { useEffect, useState } from "react";
 import { TableBilliard } from "../../../electron/types";
@@ -48,6 +47,22 @@ function BoxLamp(props: ExtendsTableBilliard) {
         }
     }
 
+    const handleBlink = async () => {
+        try {
+            const confirm = window.api.confirm();
+            if (await confirm) {
+                const res = await window.api.send_blink(props.number || "");
+
+                if (res.status) {
+                    toast.success(res.detail_message || "");
+                }
+            }
+
+        } catch (err) {
+            toast.error(`Error lamp table: ${err}`);
+        }
+    }
+
     return <Card>
         <CardBody>
             <div className="grid gap-2">
@@ -56,9 +71,10 @@ function BoxLamp(props: ExtendsTableBilliard) {
                     <small>Status: <Chip color={props.power === "ON" ? "success" : "danger"} size="sm">{props.power}</Chip></small>
                 </div>
                 <div className="grid gap-3 grid-cols-2">
-                    <Button onPress={handleOn} startContent={<Power className="w-4 h-4" />}>Turn On</Button>
-                    <Button onPress={handleOff} startContent={<PowerOff className="w-4 h-4" />} color="danger">Turn Off</Button>
+                    <Button onPress={handleOn} size="sm">Turn On</Button>
+                    <Button onPress={handleOff} size="sm" color="danger">Turn Off</Button>
                 </div>
+                <Button size="sm" color="secondary" onPress={handleBlink}>Test Blink</Button>
             </div>
         </CardBody>
     </Card>
@@ -124,8 +140,8 @@ export default function ManualLamp() {
                                 <div className="grid gap-3">
                                     <h3 className="font-bold text-lg">{"Semua Table"}</h3>
                                     <div className="grid gap-3 grid-cols-2">
-                                        <Button onPress={() => handleOnOffAll("ON_ALL")} startContent={<Power className="w-4 h-4" />}>Turn On</Button>
-                                        <Button onPress={() => handleOnOffAll("OFF_ALL")} startContent={<PowerOff className="w-4 h-4" />} color="danger">Turn Off</Button>
+                                        <Button onPress={() => handleOnOffAll("ON_ALL")}>Turn On</Button>
+                                        <Button onPress={() => handleOnOffAll("OFF_ALL")} color="danger">Turn Off</Button>
                                     </div>
                                 </div>
                             </CardBody>

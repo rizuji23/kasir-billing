@@ -41,6 +41,7 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
           categoryMenuId: data.categoryMenuId,
           price_modal: data.price_modal,
           price_profit: data.price_profit,
+          send_to_kitchen: data.send_to_kitchen,
         },
         include: {
           category_menu: true,
@@ -154,6 +155,7 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
           categoryMenuId: data.categoryMenuId,
           price_modal: data.price_modal,
           price_profit: data.price_profit,
+          send_to_kitchen: data.send_to_kitchen,
         },
       });
 
@@ -181,6 +183,7 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
       data: ICart[],
       payment_method: string,
       name: string,
+      no_meja: string,
     ) => {
       try {
         const currentTime = new Date();
@@ -213,6 +216,7 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
             subtotal: item.subtotal,
             total,
             name,
+            no_meja: Number(no_meja || "0") || 0,
             cash,
             change: cash - total,
             payment_method:

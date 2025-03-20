@@ -5,6 +5,7 @@ import {
   ipcMain,
   Menu,
   Notification,
+  shell,
 } from "electron";
 import path from "path";
 import { isDev } from "./utils.js";
@@ -16,10 +17,6 @@ log.initialize();
 log.info("App starting...");
 
 dotenv.config();
-process.env.DATABASE_URL = `file:${path.join(
-  app.getPath("userData"),
-  "kasir.sqlite",
-)}`;
 
 import { getPreloadPath } from "./pathResolver.js";
 import CategoryModule from "./module/category.js";
@@ -54,6 +51,8 @@ import ShiftModule from "./module/shift.js";
 
 let mainWindow: BrowserWindow | null = null;
 let serialport: SerialPort | null = null;
+
+const gotTheLock = app.requestSingleInstanceLock();
 
 const port = 3321;
 const server = http.createServer();
@@ -113,116 +112,131 @@ async function initializeMachine() {
   }
 }
 
-app.on("ready", async () => {
-  console.log(app.getPath("userData"));
-
-  mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      preload: getPreloadPath(),
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-    focusable: true,
-  });
-
-  if (isDev()) {
-    mainWindow.loadURL("http://localhost:5123");
-  } else {
-    mainWindow.loadFile(path.join(app.getAppPath(), "/dist-react/index.html"));
-  }
-
-  const template: Electron.MenuItemConstructorOptions[] = [
-    {
-      label: "File",
-      submenu: [
-        {
-          label: "Pengaturan Admin",
-          click: () => {
-            mainWindow?.webContents.send("navigate", "/admin");
-          },
-        },
-        { type: "separator" },
-        {
-          label: "Exit",
-          click: () => {
-            app.quit();
-          },
-        },
-      ],
-    },
-    {
-      label: "Edit",
-      submenu: [
-        { role: "undo" },
-        { role: "redo" },
-        { type: "separator" },
-        { role: "cut" },
-        { role: "copy" },
-        { role: "paste" },
-      ],
-    },
-    {
-      label: "View",
-      submenu: [
-        { role: "reload" },
-        { role: "forceReload" },
-        { role: "toggleDevTools" },
-        { type: "separator" },
-        { role: "resetZoom" },
-        { role: "zoomIn" },
-        { role: "zoomOut" },
-        { type: "separator" },
-        { role: "togglefullscreen" },
-      ],
-    },
-    {
-      label: "Window",
-      submenu: [{ role: "minimize" }, { role: "zoom" }, { role: "close" }],
-    },
-  ];
-
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
-
-  await initializeMachine();
-
-  setInterval(async () => {
-    const connected = await isMachineConnected();
-    if (!connected) {
-      console.warn("Machine disconnected, attempting to reconnect...");
-      log.warn(`Machine disconnected, attempting to reconnect...`);
-      serialport = await reconnectMachine();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
     }
-  }, 2000);
-
-  wss.on("connection", (ws) => {
-    console.log("New WebSocket connection");
-
-    ws.on("message", (message) => {
-      console.log("Received:", message.toString());
-      ws.send("Message received");
-    });
-
-    ws.on("close", () => {
-      console.log("Client disconnected");
-    });
   });
 
-  server.listen(port, () => {
-    log.info(`WebSocket server running on ws://${getLocalIPAddress()}:${port}`);
-    console.log(
-      `WebSocket server running on ws://${getLocalIPAddress()}:${port}`,
-    );
+  app.on("ready", async () => {
+    console.log(app.getPath("userData"));
+
+    mainWindow = new BrowserWindow({
+      width: 800,
+      height: 600,
+      webPreferences: {
+        preload: getPreloadPath(),
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+      focusable: true,
+    });
+
+    if (isDev()) {
+      mainWindow.loadURL("http://localhost:5123");
+    } else {
+      mainWindow.loadFile(
+        path.join(app.getAppPath(), "/dist-react/index.html"),
+      );
+    }
+
+    const template: Electron.MenuItemConstructorOptions[] = [
+      {
+        label: "File",
+        submenu: [
+          {
+            label: "Pengaturan Admin",
+            click: () => {
+              mainWindow?.webContents.send("navigate", "/admin");
+            },
+          },
+          { type: "separator" },
+          {
+            label: "Exit",
+            click: () => {
+              app.quit();
+            },
+          },
+        ],
+      },
+      {
+        label: "Edit",
+        submenu: [
+          { role: "undo" },
+          { role: "redo" },
+          { type: "separator" },
+          { role: "cut" },
+          { role: "copy" },
+          { role: "paste" },
+        ],
+      },
+      {
+        label: "View",
+        submenu: [
+          { role: "reload" },
+          { role: "forceReload" },
+          { role: "toggleDevTools" },
+          { type: "separator" },
+          { role: "resetZoom" },
+          { role: "zoomIn" },
+          { role: "zoomOut" },
+          { type: "separator" },
+          { role: "togglefullscreen" },
+        ],
+      },
+      {
+        label: "Window",
+        submenu: [{ role: "minimize" }, { role: "zoom" }, { role: "close" }],
+      },
+    ];
+
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
+
+    await initializeMachine();
+
+    setInterval(async () => {
+      const connected = await isMachineConnected();
+      if (!connected) {
+        console.warn("Machine disconnected, attempting to reconnect...");
+        log.warn(`Machine disconnected, attempting to reconnect...`);
+        serialport = await reconnectMachine();
+      }
+    }, 2000);
+
+    wss.on("connection", (ws) => {
+      console.log("New WebSocket connection");
+
+      ws.on("message", (message) => {
+        console.log("Received:", message.toString());
+        ws.send("Message received");
+      });
+
+      ws.on("close", () => {
+        console.log("Client disconnected");
+      });
+    });
+
+    server.listen(port, () => {
+      log.info(
+        `WebSocket server running on ws://${getLocalIPAddress()}:${port}`,
+      );
+      console.log(
+        `WebSocket server running on ws://${getLocalIPAddress()}:${port}`,
+      );
+    });
+
+    updateTimers(mainWindow, wss);
+    setupAutoUpdater(mainWindow);
+    // sockets = await initWebSockets(mainWindow!);
+
+    MenuModule(mainWindow);
   });
-
-  updateTimers(mainWindow, wss);
-  setupAutoUpdater(mainWindow);
-  // sockets = await initWebSockets(mainWindow!);
-
-  MenuModule(mainWindow);
-});
+}
 
 setTimeout(async () => {
   await initialStartLamp();
@@ -469,4 +483,8 @@ ipcMain.handle("confirm", async (_, title: string = "Apakah anda yakin?") => {
   });
 
   return result.response === 1;
+});
+
+ipcMain.handle("open_url", async (_, url: string) => {
+  return shell.openExternal(url);
 });
