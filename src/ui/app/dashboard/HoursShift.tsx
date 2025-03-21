@@ -48,7 +48,7 @@ export default function HoursShift() {
                     {formatTime(time)}
                 </Chip>
             </div>
-            {/* <button onClick={() => window.api.test_struk()}>Test Struk</button> */}
+            <button onClick={() => window.api.test_struk()}>Test Struk</button>
         </>
     );
 }

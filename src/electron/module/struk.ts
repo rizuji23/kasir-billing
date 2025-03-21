@@ -36,7 +36,7 @@ export async function StrukWindow(id_struk: string) {
     }
 
     const printWindow = new BrowserWindow({
-      show: true,
+      show: false,
       webPreferences: {
         preload: getPreloadPath(),
         contextIsolation: true,
@@ -67,15 +67,16 @@ export async function StrukWindow(id_struk: string) {
               printWindow.webContents.send("print_struk", struk);
               setTimeout(() => {
                 printWindow.webContents.print({
-                  silent: false,
+                  silent: true,
                   printBackground: true,
                   deviceName: result.content || "Microsoft Print to PDF",
                   copies: 0,
                   margins: {
                     marginType: "none",
                   },
+                  scaleFactor: 84,
                 });
-              }, 5000);
+              }, 2000);
               return true;
             } else {
               dialog.showErrorBox(
@@ -105,6 +106,6 @@ export async function StrukWindow(id_struk: string) {
 
 export default function StrukModule() {
   ipcMain.handle("test_struk", async () => {
-    return await StrukWindow("STR-KwE4tCxe1U");
+    return await StrukWindow("STK-318VHAk5fn");
   });
 }

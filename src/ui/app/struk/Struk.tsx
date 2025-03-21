@@ -6,7 +6,7 @@ import moment from "moment-timezone";
 import { convertRupiah } from "../../lib/utils";
 
 function StripDivider() {
-    return <p className="text-[10px] !font-black">------------------------------------</p>
+    return <p className="text-[10px] !font-black">---------------------------------------</p>
 }
 
 export default function StrukView() {
@@ -23,10 +23,22 @@ export default function StrukView() {
         }
     }, []);
 
+    useEffect(() => {
+        document.body.style.margin = "0";
+        document.body.style.padding = "0";
+        document.body.style.setProperty("padding", "0", "important"); // Force override if needed
+        document.body.style.setProperty("margin", "0", "important"); // Force override if needed
+
+        return () => {
+            document.body.style.margin = "";
+            document.body.style.padding = "";
+        };
+    }, []);
+
     return (
         <>
             {
-                struk ? <div className="w-[55mm] !font-mono !font-black mb-2 pe-[1mm]">
+                struk ? <div className="w-[210px] print:w-[219px] !font-mono !font-black mb-2">
                     <div className="grid gap-0.5">
                         <div className="flex flex-col gap-3 px-2 pt-3">
                             <div className="flex justify-center">
@@ -48,10 +60,10 @@ export default function StrukView() {
                                 <p>Nama Kustomer:</p>
                                 <p className="text-end">{struk.name}</p>
                             </div>
-                            <div className="flex justify-between">
+                            {/* <div className="flex justify-between">
                                 <p>Kasir:</p>
                                 <p className="text-end">Test</p>
-                            </div>
+                            </div> */}
                             {
                                 struk.bookingId?.table.name ? <div className="flex justify-between">
                                     <p>Table Name:</p>
