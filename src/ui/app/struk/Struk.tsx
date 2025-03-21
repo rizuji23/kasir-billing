@@ -6,7 +6,7 @@ import moment from "moment-timezone";
 import { convertRupiah } from "../../lib/utils";
 
 function StripDivider() {
-    return <p className="text-xs !font-black font-bold">---------------------------------</p>
+    return <p className="text-[10px] !font-black">------------------------------------</p>
 }
 
 export default function StrukView() {
@@ -26,16 +26,16 @@ export default function StrukView() {
     return (
         <>
             {
-                struk ? <div className="w-[219px] !font-mono !font-black mb-2">
+                struk ? <div className="w-[55mm] !font-mono !font-black mb-2 pe-[1mm]">
                     <div className="grid gap-0.5">
                         <div className="flex flex-col gap-3 px-2 pt-3">
                             <div className="flex justify-center">
-                                <img src={logo} alt="" className="w-[150px]" />
+                                <img src={logo} alt="" className="w-[130px]" />
                             </div>
-                            <p className="text-center text-xs !font-black ">Jl. Papandayan No.110, Kota Kulon, Kec. Garut Kota, Kabupaten Garut, Jawa Barat 44114 <br /> 08987395378</p>
+                            <p className="text-center text-[10px] !font-black ">Jl. Papandayan No.110, Kota Kulon, Kec. Garut Kota, Kabupaten Garut, Jawa Barat 44114 <br /> 08987395378</p>
                         </div>
                         <StripDivider />
-                        <div className="text-xs !font-black grid gap-1 px-2">
+                        <div className="text-[10px] !font-black grid gap-1 px-2">
                             <div className="flex justify-between">
                                 <p>Struk ID:</p>
                                 <p className="text-end">{struk.id_struk}</p>
@@ -64,15 +64,15 @@ export default function StrukView() {
                         {
                             struk.type_struk === "TABLE" && (
                                 <>
-                                    <p className="text-xs !font-black text-center">*Biling Item*</p>
+                                    <p className="text-[10px] !font-black text-center">*Biling Item*</p>
                                     <div className="flex flex-col gap-1 py-2 text-center">
                                         {
                                             (struk.bookingId?.detail_booking || []).map((el, i) => {
-                                                return <p className="text-xs !font-black" key={i}>{moment(el.end_duration).format("HH:mm:ss")} = Rp. {convertRupiah(el.price.toString() || "0")}</p>
+                                                return <p className="text-[10px] !font-black" key={i}>{moment(el.end_duration).format("HH:mm:ss")} = Rp. {convertRupiah(el.price.toString() || "0")}</p>
                                             })
                                         }
                                     </div>
-                                    <div className="text-xs !font-black grid gap-1">
+                                    <div className="text-[10px] !font-black grid gap-1">
                                         <div className="flex justify-between">
                                             <p>Total Durasi:</p>
                                             <p className="text-end">{struk.bookingId?.duration || "0"} Jam</p>
@@ -82,8 +82,8 @@ export default function StrukView() {
                                 </>
                             )
                         }
-                        <p className="text-xs !font-black text-center">*Cafe Item*</p>
-                        <div className="text-xs !font-black grid gap-1.5 py-2 px-2">
+                        <p className="text-[10px] !font-black text-center">*Cafe Item*</p>
+                        <div className="text-[10px] !font-black grid gap-1.5 py-2 px-2">
                             {
                                 struk.type_struk === "TABLE" ? (struk.bookingId?.order_cafe || []).map((el, i) => {
                                     return <div className="flex justify-between" key={i}>
@@ -108,7 +108,7 @@ export default function StrukView() {
                         {
                             struk.type_struk === "TABLE" && (
                                 <>
-                                    <div className="text-xs !font-black grid gap-1.5 px-2">
+                                    <div className="text-[10px] !font-black grid gap-1.5 px-2">
                                         <div className="flex justify-between">
                                             <p>Billing: </p>
                                             <p className="text-end">Rp. {convertRupiah(struk.total_billing?.toString() || "0")}</p>
@@ -122,14 +122,14 @@ export default function StrukView() {
                                 </>
                             )
                         }
-                        <div className="text-xs !font-black grid gap-1.5 px-2">
+                        <div className="text-[10px] !font-black grid gap-1.5 px-2">
                             <div className="flex justify-between">
                                 <p>Total: </p>
                                 <p className="text-end">Rp. {convertRupiah(struk.total?.toString() || "0")}</p>
                             </div>
                         </div>
                         <StripDivider />
-                        <div className="text-xs !font-black grid gap-1.5 px-2">
+                        <div className="text-[10px] !font-black grid gap-1.5 px-2">
                             <div className="flex justify-between">
                                 <p className="capitalize">{struk.payment_method.toLowerCase()}: </p>
                                 <p className="text-end">Rp. {convertRupiah(struk.cash.toString() || "0")}</p>
@@ -143,10 +143,10 @@ export default function StrukView() {
                         <div className="flex justify-center">
                             <div className="flex gap-1">
                                 <Instagram className="w-4 h-4 self-center" />
-                                <p className="text-xs !font-black">cozypool</p>
+                                <p className="text-[10px] !font-black">cozypool</p>
                             </div>
                         </div>
-                        <p className="text-xs !font-black text-center my-3">Terimakasih sudah berkunjung!</p>
+                        <p className="text-[10px] !font-black text-center my-3">Terimakasih sudah berkunjung!</p>
                     </div>
                 </div> : <></>
             }

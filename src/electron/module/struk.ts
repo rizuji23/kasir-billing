@@ -36,7 +36,7 @@ export async function StrukWindow(id_struk: string) {
     }
 
     const printWindow = new BrowserWindow({
-      show: false,
+      show: true,
       webPreferences: {
         preload: getPreloadPath(),
         contextIsolation: true,
@@ -65,19 +65,17 @@ export async function StrukWindow(id_struk: string) {
           .then((result) => {
             if (result) {
               printWindow.webContents.send("print_struk", struk);
-              printWindow.webContents.print({
-                silent: true,
-                printBackground: true,
-                deviceName: result.content || "Microsoft Print to PDF",
-                copies: 0,
-                margins: {
-                  marginType: "custom",
-                  top: 0,
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                },
-              });
+              setTimeout(() => {
+                printWindow.webContents.print({
+                  silent: false,
+                  printBackground: true,
+                  deviceName: result.content || "Microsoft Print to PDF",
+                  copies: 0,
+                  margins: {
+                    marginType: "none",
+                  },
+                });
+              }, 5000);
               return true;
             } else {
               dialog.showErrorBox(
