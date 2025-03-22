@@ -17,13 +17,14 @@ export interface ISocketChat {
 
 interface WebSocketContextProps {
     tableRemote: ISocket<TableBilliard[]>[];
-    connectedCashiers: string[],
+    connectedCashiers: string[];
     list_servers: {
         cashier: ServersList[];
         kitchen: ServersList[];
     },
     broadcastMessage: (message: string) => void;
-    chat: ISocket<ISocketChat>[]
+    chat: ISocket<ISocketChat>[];
+    connectedKitchens: string[];
 }
 
 const WebsocketContext = createContext<WebSocketContextProps | undefined>(undefined);
@@ -38,6 +39,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         kitchen: [],
     });
     const [connectedCashiers, setConnectedCashiers] = useState<string[]>([]);
+    const [connectedKitchens, setConnectedKitchens] = useState<string[]>([]);
 
     const [tableRemote, setTableRemote] = useState<ISocket<TableBilliard[]>[]>([]);
     const [chat, setChat] = useState<ISocket<ISocketChat>[]>([]);
@@ -63,11 +65,18 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         ws.onopen = () => {
             console.log(`Connected to ${url}`);
             connections.current.set(ip, ws);
-            setConnectedCashiers((prev) => [...prev, ip]);
+
+            if (port === 3321) setConnectedCashiers((prev) => [...prev, ip]);
+            if (port === 4321) setConnectedKitchens((prev) => [...prev, ip]);
 
             window.api.onSendKitchen((data) => {
+                // console.log("connectedKitchens.length", connectedKitchens.length)
+                // if (connectedKitchens.length === 0) {
+                //     window.api.show_message_box("warning", "Dapur tidak terkoneksi, maka struk dapur tidak akan terkirim.");
+                //     return;
+                // }
+
                 ws.send(data)
-                console.log("KITCHEN DATA", data);
             })
         }
 
@@ -96,7 +105,9 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         ws.onclose = () => {
             console.log(`Disconnected from ${url}`);
             connections.current.delete(ip);
-            setConnectedCashiers((prev) => prev.filter((c) => c !== ip));
+
+            if (port === 3321) setConnectedCashiers((prev) => prev.filter((c) => c !== ip));
+            if (port === 4321) setConnectedKitchens((prev) => prev.filter((c) => c !== ip));
 
             // Remove the table data for the disconnected IP
             const data_table_before = tableRemote.filter((el) => el.ip !== ip)
@@ -150,8 +161,10 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     //     console.log("Table", tableRemote)
     // }, [tableRemote])
     return (
-        <WebsocketContext.Provider value={{ tableRemote, connectedCashiers, list_servers, broadcastMessage, chat }}>
-            {children}
+        <WebsocketContext.Provider value={{ tableRemote, connectedCashiers, list_servers, broadcastMessage, chat, connectedKitchens }}>
+            <div>
+                {children}
+            </div>
         </WebsocketContext.Provider>
     )
 }

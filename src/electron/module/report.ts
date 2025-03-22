@@ -120,13 +120,17 @@ export default function ReportModule() {
         const startDateTime = new Date(`${start_date}T00:00:00Z`);
         const endDateTime = new Date(`${end_date}T23:59:59.999Z`);
 
-        console.log("Filtering from:", startDateTime, "to:", endDateTime);
+        endDateTime.setUTCDate(endDateTime.getUTCDate() + 1);
+        endDateTime.setUTCHours(5, 0, 0, 0);
+
+        console.log("startDateTime", startDateTime.toISOString());
+        console.log("endDateTime", endDateTime.toISOString());
 
         const check_data = await prisma.struk.findMany({
           where: {
-            created_at: {
-              gte: startDateTime,
-              lte: endDateTime,
+            updated_at: {
+              gte: startDateTime.toISOString(),
+              lte: endDateTime.toISOString(),
             },
           },
         });

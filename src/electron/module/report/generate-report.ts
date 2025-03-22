@@ -12,15 +12,19 @@ export async function generateExcelReport(
   try {
     const startDateTime = new Date(`${start_date}T00:00:00Z`);
     const endDateTime = new Date(`${end_date}T23:59:59.999Z`);
+
+    endDateTime.setUTCDate(endDateTime.getUTCDate() + 1);
+    endDateTime.setUTCHours(5, 0, 0, 0);
+
     const strukData = await prisma.struk.findMany({
       where: {
-        created_at: {
+        updated_at: {
           gte: startDateTime,
           lte: endDateTime,
         },
       },
       orderBy: {
-        created_at: "desc",
+        updated_at: "desc",
       },
       include: {
         orderId: true,

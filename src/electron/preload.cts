@@ -189,4 +189,10 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("change_table", id_curr_table, id_to_table, id_booking),
   send_blink: (number: string) => ipcRenderer.invoke("send_blink", number),
   open_url: (url: string) => ipcRenderer.invoke("open_url", url),
+  show_message_box: (
+    type: "none" | "info" | "error" | "question" | "warning",
+    message: string,
+  ) => ipcRenderer.invoke("show_message_box", type, message),
+  run_migration: (migrationName: string) =>
+    ipcRenderer.invoke("run_migration", migrationName),
 });

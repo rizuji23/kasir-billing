@@ -1,7 +1,10 @@
 import { Alert } from "@heroui/alert";
+import { Button } from "@heroui/button";
 import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
+import { Input } from "@heroui/input";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function AboutPage() {
     // const [versionInfo, setVersionInfo] = useState<string>("");
@@ -10,6 +13,8 @@ export default function AboutPage() {
     // const [isUpdateDownloaded, setIsUpdateDownloaded] = useState<boolean>(false);
     // const [downloadProgress, setDownloadProgress] = useState<number>(0);
     const [currentVersion, setCurrentVersion] = useState<string>("");
+    const [message, setMessage] = useState<string>("");
+    const [migration_name, setMigrationName] = useState<string>("");
     // const [isDownloading, setIsDownloading] = useState<boolean>(false);
 
     // // Handle "Check for Updates"
@@ -37,6 +42,17 @@ export default function AboutPage() {
     const handleOpenExternal = async (url: string) => {
         await window.api.open_url(url);
     };
+
+    const handleMigration = async () => {
+        if (await window.api.confirm("Apakah Anda yakin ingin menjalankan migrasi?")) {
+            if (!migration_name) {
+                toast.error("Migration name harus diisi.");
+                return;
+            }
+            const result = await window.api.run_migration(migration_name);
+            setMessage(result);
+        }
+    }
 
     // useEffect(() => {
     //     // Listen for update available
@@ -86,30 +102,31 @@ export default function AboutPage() {
 
     return (
         <>
-            <Card>
-                <CardBody>
-                    <div className="grid gap-3">
-                        <div className="flex flex-col gap-3">
-                            <div className="grid gap-3">
-                                <h3 className="font-bold text-lg">Versi Aplikasi:</h3>
-                                <Chip color="success" classNames={{ content: "font-bold" }}>v{currentVersion}</Chip>
-                            </div>
-                        </div>
-                        <Alert color="warning" title={"Informasi Pembaharuan"} description={
-                            <>
-                                <div className="flex flex-col gap-3">
-                                    <p>Update akan diupload pada url berikut ini: <button className="font-bold underline" onClick={() => handleOpenExternal("https://updatecozypool.rlstudio.my.id")}>updatecozypool.rlstudio.my.id</button></p>
-                                    <div>
-                                        <p>Dengan Akun sebagai berikut:</p>
-                                        <ul className="list-disc list-inside ml-3 mt-1">
-                                            <li>Username: <b>user</b></li>
-                                            <li>Password: <b>cozypool2025</b></li>
-                                        </ul>
-                                    </div>
+            <div className="grid gap-3">
+                <Card>
+                    <CardBody>
+                        <div className="grid gap-3">
+                            <div className="flex flex-col gap-3">
+                                <div className="grid gap-3">
+                                    <h3 className="font-bold text-lg">Versi Aplikasi:</h3>
+                                    <Chip color="success" classNames={{ content: "font-bold" }}>v{currentVersion}</Chip>
                                 </div>
-                            </>
-                        } />
-                        {/* {isUpdateAvailable && (
+                            </div>
+                            <Alert color="warning" title={"Informasi Pembaharuan"} description={
+                                <>
+                                    <div className="flex flex-col gap-3">
+                                        <p>Update akan diupload pada url berikut ini: <button className="font-bold underline" onClick={() => handleOpenExternal("https://updatecozypool.rlstudio.my.id")}>updatecozypool.rlstudio.my.id</button></p>
+                                        <div>
+                                            <p>Dengan Akun sebagai berikut:</p>
+                                            <ul className="list-disc list-inside ml-3 mt-1">
+                                                <li>Username: <b>user</b></li>
+                                                <li>Password: <b>cozypool2025</b></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </>
+                            } />
+                            {/* {isUpdateAvailable && (
                             <>
                                 <Alert color="secondary" title="Pembaharuan" description={versionInfo} />
                                 <div className="grid gap-2">
@@ -167,9 +184,31 @@ export default function AboutPage() {
                                 Check Update
                             </Button>
                         )} */}
-                    </div>
-                </CardBody>
-            </Card>
+                        </div>
+                    </CardBody>
+                </Card>
+                <Card>
+                    <CardBody>
+                        <div className="grid gap-3">
+                            <div className="flex flex-col gap-3">
+                                <div className="grid gap-3">
+                                    <h3 className="font-bold text-lg">Run Migrations</h3>
+                                </div>
+                            </div>
+
+                            <div className="grid gap-3">
+                                <Input label="Migrations Name" onChange={(e) => setMigrationName(e.target.value)} value={migration_name} />
+                                <Button color="success" onPress={handleMigration}>Migrate</Button>
+                            </div>
+
+                            <p>Message:</p>
+                            <div className="bg-black text-white p-3 rounded-md">
+                                {message}
+                            </div>
+                        </div>
+                    </CardBody>
+                </Card>
+            </div>
         </>
     );
 }

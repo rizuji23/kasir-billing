@@ -198,6 +198,8 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
             } else {
                 clearState();
             }
+        } else {
+            clearState();
         }
     }, [open, data_booking.type_play])
 

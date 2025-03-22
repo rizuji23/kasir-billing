@@ -255,6 +255,9 @@ async function createUpdateStruk(
   is_paid = true,
 ): Promise<unknown> {
   try {
+    const currentTime = new Date();
+    const shift = await getShift(currentTime);
+
     const data_new = {
       name: booking_update.name,
       total: data.total?.total_all || 0,
@@ -268,7 +271,7 @@ async function createUpdateStruk(
       status: is_paid
         ? ("PAID" as StatusTransaction)
         : ("NOPAID" as StatusTransaction),
-      shift: booking_update.shift || "Pagi",
+      shift: shift || "Pagi",
     };
 
     if (types === "create") {
