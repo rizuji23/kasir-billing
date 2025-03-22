@@ -83,7 +83,7 @@ export default function DrawerAddDuration({ open, setOpen, table }: { open: bool
                                         name="username"
                                         errorMessage={"Silakan isi kolom ini."}
                                         placeholder="Masukan durasi disini"
-                                        type="number"
+                                        type="text"
                                         value={booking.data_booking.duration}
                                         isDisabled={booking.data_booking.type_play === "LOSS"}
                                         onChange={(e) => {

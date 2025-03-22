@@ -124,6 +124,14 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
     const checkOut = async () => {
         try {
             const durations = Number(duration_billing);
+
+            if (add_duration) {
+                if (item_price.length === 0) {
+                    toast.error("Silahkan untuk isi terlebih dahulu durasi.");
+                    return;
+                }
+            }
+
             if (data_booking.type_play === "REGULAR") {
                 if (item_price.length === 0) {
                     toast.error("Silahkan untuk isi terlebih dahulu durasi.");
