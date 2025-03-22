@@ -263,6 +263,11 @@ interface ApiAPI {
   ) => Promise<IResponses<unknown>>;
   send_blink: (number: string) => Promise<IResponses<unknown>>;
   open_url: (url: string) => Promise<void>;
+  show_message_box: (
+    type: "none" | "info" | "error" | "question" | "warning",
+    message: string,
+  ) => void;
+  run_migration: (migrationName: string) => Promise<string>;
 }
 
 declare global {

@@ -46,6 +46,7 @@ export default function ModalAddNetwork({ open, setOpen, type_network = "cashier
                 toast.success("Jaringan berhasil disimpan");
                 api();
                 setOpen(false);
+                window.location.reload();
             } else {
                 toast.error(`Gagal menambahkan Network: ${res.detail_message}`);
             }

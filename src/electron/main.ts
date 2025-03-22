@@ -48,6 +48,7 @@ import { setupAutoUpdater } from "./module/updater.js";
 import UserModule from "./module/user.js";
 import PriceModule from "./module/price.js";
 import ShiftModule from "./module/shift.js";
+import { runMigration } from "./migrate.js";
 
 let mainWindow: BrowserWindow | null = null;
 let serialport: SerialPort | null = null;
@@ -485,6 +486,28 @@ ipcMain.handle("confirm", async (_, title: string = "Apakah anda yakin?") => {
   return result.response === 1;
 });
 
+ipcMain.handle(
+  "show_message_box",
+  (
+    _,
+    type: "none" | "info" | "error" | "question" | "warning",
+    message: string,
+  ) => {
+    dialog.showMessageBox(mainWindow!, {
+      type,
+      message,
+    });
+  },
+);
+
 ipcMain.handle("open_url", async (_, url: string) => {
   return shell.openExternal(url);
+});
+
+ipcMain.handle("run_migration", async (_, migrationName: string) => {
+  try {
+    return await runMigration(migrationName);
+  } catch (err) {
+    return err;
+  }
 });

@@ -83,8 +83,9 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
         duration: (Number(tables.duration) + data.item_price.length).toString(),
         power: "ON",
         blink: data.data_booking.blink === "iya" ? true : false,
-        timer: data.item_price[data.item_price.length - 1].end_duration,
+        // timer: data.item_price[data.item_price.length - 1].end_duration,
         // timer: new Date(currentDate.getTime() + 10000),
+        timer: new Date(currentDate.getTime() + 5.5 * 60 * 1000),
       },
     });
 
@@ -255,6 +256,9 @@ async function createUpdateStruk(
   is_paid = true,
 ): Promise<unknown> {
   try {
+    const currentTime = new Date();
+    const shift = await getShift(currentTime);
+
     const data_new = {
       name: booking_update.name,
       total: data.total?.total_all || 0,
@@ -268,7 +272,7 @@ async function createUpdateStruk(
       status: is_paid
         ? ("PAID" as StatusTransaction)
         : ("NOPAID" as StatusTransaction),
-      shift: booking_update.shift || "Pagi",
+      shift: shift || "Pagi",
     };
 
     if (types === "create") {

@@ -15,7 +15,7 @@
     "dist:mac": "npm run transpile:electron && npm run build && electron-builder --mac --arm64",
     "dist:win": "npm run transpile:electron && npm run build && electron-builder --win --x64",
     "dist:linux": "npm run transpile:electron && npm run build && electron-builder --linux --x64",
-    "migrate": "npx prisma migrate dev",
+    "migrate": "node scripts/migrate.cjs",
     "seed:user": "node prisma/seed.js",
     "seed:table": "node prisma/seed_table.js",
     "seed:member_price": "node prisma/seed_price_member.js",

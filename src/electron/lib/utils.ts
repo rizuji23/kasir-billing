@@ -44,36 +44,35 @@ export const getShift = async (time: Date): Promise<string | null> => {
     // Fetch all shifts from the database
     const shifts = await prisma.shift.findMany();
 
-    const currentHour = time.getHours();
+    // Convert current time to minutes for precise comparison
+    const currentMinutes = time.getHours() * 60 + time.getMinutes();
 
-    // Iterate through each shift to find a match
     for (const shift of shifts) {
       const startHours = new Date(shift.start_hours);
       const endHours = new Date(shift.end_hours);
 
-      // Extract the hours from start_hours and end_hours
-      const startHour = startHours.getHours();
-      const endHour = endHours.getHours();
+      // Convert shift start & end times to minutes
+      const startMinutes = startHours.getHours() * 60 + startHours.getMinutes();
+      const endMinutes = endHours.getHours() * 60 + endHours.getMinutes();
 
-      // Handle shifts that span midnight (e.g., 10 PM to 6 AM)
-      if (startHour > endHour) {
-        // Shift spans midnight
-        if (currentHour >= startHour || currentHour <= endHour) {
+      // Handle shifts that span midnight (e.g., 17:00 - 08:00)
+      if (startMinutes > endMinutes) {
+        // Shift spans midnight: valid if current time is after start or before end
+        if (currentMinutes >= startMinutes || currentMinutes < endMinutes) {
           return shift.shift;
         }
       } else {
-        // Normal shift (e.g., 9 AM to 5 PM)
-        if (currentHour >= startHour && currentHour <= endHour) {
+        // Normal shift: valid if current time is within the range (excluding end time)
+        if (currentMinutes >= startMinutes && currentMinutes < endMinutes) {
           return shift.shift;
         }
       }
     }
 
-    // If no shift is found, return null
-    return null;
+    return null; // No shift found
   } catch (err) {
     console.error("Error fetching shift:", err);
-    throw err; // Re-throw the error or return null if you prefer
+    throw err;
   }
 };
 
@@ -109,7 +108,7 @@ export const strukFilter = async (
   // Define the type for the whereClause object
   const whereClause: {
     status: StatusTransaction;
-    created_at?: {
+    updated_at?: {
       gte?: Date;
       lte?: Date;
     };
@@ -130,7 +129,7 @@ export const strukFilter = async (
 
   switch (filter.period) {
     case "today": {
-      whereClause["created_at"] = {
+      whereClause["updated_at"] = {
         gte: startOfDay,
         lte: endOfDay,
       };
@@ -143,7 +142,7 @@ export const strukFilter = async (
       yesterday.setDate(today.getDate() - 1);
       const startOfYesterday = new Date(yesterday.setHours(0, 0, 0, 0));
       const endOfYesterday = new Date(yesterday.setHours(23, 59, 59, 999));
-      whereClause["created_at"] = {
+      whereClause["updated_at"] = {
         gte: startOfYesterday,
         lte: endOfYesterday,
       };
@@ -162,7 +161,7 @@ export const strukFilter = async (
         59,
         999,
       );
-      whereClause["created_at"] = {
+      whereClause["updated_at"] = {
         gte: startOfMonth,
         lte: endOfMonth,
       };
@@ -186,7 +185,7 @@ export const strukFilter = async (
         59,
         999,
       );
-      whereClause["created_at"] = {
+      whereClause["updated_at"] = {
         gte: startOfQuarter,
         lte: endOfQuarter,
       };
@@ -199,7 +198,7 @@ export const strukFilter = async (
     case "this_year": {
       const startOfYear = new Date(today.getFullYear(), 0, 1);
       const endOfYear = new Date(today.getFullYear(), 11, 31, 23, 59, 59, 999);
-      whereClause["created_at"] = {
+      whereClause["updated_at"] = {
         gte: startOfYear,
         lte: endOfYear,
       };
@@ -211,7 +210,7 @@ export const strukFilter = async (
       if (filter.start_date && filter.end_date) {
         const startDate = new Date(filter.start_date);
         const endDate = new Date(filter.end_date);
-        whereClause["created_at"] = {
+        whereClause["updated_at"] = {
           gte: startDate,
           lte: endDate,
         };

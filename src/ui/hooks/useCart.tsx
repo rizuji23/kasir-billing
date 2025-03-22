@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ICart } from "../../electron/types";
 import toast from 'react-hot-toast';
+import { useWebsocketData } from "../components/context/WebsocketContext";
 
 export interface UseCartResult {
     cart: ICart[];
@@ -17,6 +18,7 @@ export interface UseCartResult {
 export default function useCart(): UseCartResult {
     const [cart, setCart] = useState<ICart[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
+    const socket = useWebsocketData();
 
     const cancelOrder = () => {
         setCart([]);
@@ -87,8 +89,12 @@ export default function useCart(): UseCartResult {
             const res = await window.api.checkout_menu(cash, cart, payment_method, name, no_meja);
             setLoading(false)
             if (res.status && res.data) {
+                console.log("connectedKitchens.length", socket.connectedKitchens.length)
                 cancelOrder()
                 toast.success(res.detail_message || "");
+                if (socket.connectedKitchens.length === 0) {
+                    window.api.show_message_box("warning", "Dapur tidak terkoneksi, maka struk dapur tidak akan terkirim.");
+                }
             } else {
                 toast.error(`Gagal melakukan pembayaran: ${res.detail_message}`);
             }
