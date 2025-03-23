@@ -83,9 +83,9 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
         duration: (Number(tables.duration) + data.item_price.length).toString(),
         power: "ON",
         blink: data.data_booking.blink === "iya" ? true : false,
-        // timer: data.item_price[data.item_price.length - 1].end_duration,
+        timer: data.item_price[data.item_price.length - 1].end_duration,
         // timer: new Date(currentDate.getTime() + 10000),
-        timer: new Date(currentDate.getTime() + 5.5 * 60 * 1000),
+        // timer: new Date(currentDate.getTime() + 5.5 * 60 * 1000),
       },
     });
 
