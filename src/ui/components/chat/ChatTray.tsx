@@ -1,7 +1,6 @@
 import { Popover, PopoverTrigger, PopoverContent, Input, Button } from "@heroui/react";
 import { Chip } from "@heroui/chip";
 import { MessageCircle, SendHorizonal } from "lucide-react";
-import { useWebsocketData } from "../context/WebsocketContext";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import moment from "moment-timezone";
@@ -68,7 +67,11 @@ export default function ChatTray() {
                         </div>
                     </div>
                     <div className="w-full flex gap-2 py-3 px-2">
-                        <Input variant="bordered" placeholder="Ketik pesan disini..." onChange={(e) => setMessage(e.target.value)} value={message} />
+                        <Input variant="bordered" placeholder="Ketik pesan disini..." onKeyUp={(e) => {
+                            if (e.key === "Enter") {
+                                sendChat();
+                            }
+                        }} onChange={(e) => setMessage(e.target.value)} value={message} />
                         <Button isIconOnly color="primary" onPress={sendChat}>
                             <SendHorizonal className="w-5 h-5" />
                         </Button>
