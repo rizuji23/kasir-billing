@@ -4,6 +4,7 @@ import { ServersList } from "../../../electron/types";
 import { ISocket, ISocketChat } from "./WebsocketContext";
 import { addToast } from "@heroui/react";
 import { MessageCircleWarning } from "lucide-react";
+import toast from "react-hot-toast";
 
 interface SocketContextType {
     messages: ISocket<ISocketChat>[];
@@ -55,7 +56,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Send message to ALL servers
     const sendMessage = (message: string) => {
         Object.values(sockets).forEach((socket) => {
-            socket.emit("message", message);
+            try {
+                const data_message: ISocket<ISocketChat> = JSON.parse(message);
+
+                setMessages((prev) => [...prev, data_message as unknown as ISocket<ISocketChat>]);
+                socket.emit("message", message);
+            } catch (err) {
+                toast.error(`Error sending message to server: ${err}`);
+            }
         });
     };
 
@@ -81,7 +89,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 })
                 setMessages((prev) => [...prev, data_message as unknown as ISocket<ISocketChat>]);
             } catch (err) {
-                console.error("Error handling message:", err);
+                toast.error(`Error receive message to server: ${err}`);
             }
 
         });
