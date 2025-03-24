@@ -12,7 +12,7 @@ import { Dispatch, SetStateAction, useState } from "react";
 import toast from 'react-hot-toast';
 import SelectCustom from "../../../../components/SelectCustom";
 
-export default function PrintReport({ open, setOpen }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>> }) {
+export default function PrintReportCafe({ open, setOpen }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>> }) {
     const [date, setDate] = useState<{ start_date: string, end_date: string }>({
         start_date: moment().format("YYYY-MM-DD"),
         end_date: moment().format("YYYY-MM-DD"),
@@ -46,7 +46,7 @@ export default function PrintReport({ open, setOpen }: { open: boolean, setOpen:
                 <ModalContent>
                     {(onClose) => (
                         <>
-                            <ModalHeader className="flex flex-col gap-1">Print Laporan</ModalHeader>
+                            <ModalHeader className="flex flex-col gap-1">Print Laporan Cafe</ModalHeader>
                             <ModalBody>
                                 <div className="grid gap-3">
                                     <div className="grid grid-cols-2 gap-3">

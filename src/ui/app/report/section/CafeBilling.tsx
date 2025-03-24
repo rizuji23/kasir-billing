@@ -12,6 +12,9 @@ import moment from "moment-timezone";
 import { useCallback, useEffect, useState } from "react";
 import toast from 'react-hot-toast';
 import { debounce } from "lodash";
+import TopSaleCafe from "./components/TopSaleCafe";
+
+
 
 const columns: TableColumn<OrderCafe>[] = [
     {
@@ -20,6 +23,11 @@ const columns: TableColumn<OrderCafe>[] = [
         cell: row => <Chip color="success" size="sm" classNames={{
             content: "font-semibold"
         }}>{row.id_order_cafe}</Chip>
+    },
+    {
+        name: "Nama Pelanggan",
+        selector: row => row.name,
+        sortable: true
     },
     {
         name: "Menu",
@@ -33,7 +41,7 @@ const columns: TableColumn<OrderCafe>[] = [
     },
     {
         name: "Total",
-        selector: row => convertRupiah(row.total.toString() || "0"),
+        selector: row => convertRupiah(row.toString() || "0"),
         sortable: true
     },
     {
@@ -55,6 +63,36 @@ interface CafeReportType {
     period: string
 }
 
+function CafeTable({ cafe, searchTerm, setSearchTerm, loading, filteredCafe }: { cafe: CafeReportType | null, searchTerm: string, setSearchTerm: (term: string) => void, loading: boolean, filteredCafe: OrderCafe[] }) {
+    return <div className="grid gap-3">
+        <Card>
+            <CardBody className="p-5">
+                <div className="flex justify-between">
+                    <div className="flex flex-col gap-4">
+                        <div className="grid gap-2">
+                            <h3 className="text-xl font-bold">Total Transaksi Cafe</h3>
+                            <h3 className="text-xl font-bold">Rp. {convertRupiah(cafe?.total_all.toString() || "0")}</h3>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+                    </div>
+                    <div>
+                        <Coins />
+                    </div>
+                </div>
+            </CardBody>
+        </Card>
+        <div className="w-full flex justify-end">
+            <div className="max-w-[300px] w-full">
+                <Input value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)} autoFocus startContent={<Search className="w-5 h-5" />} placeholder="Cari nama/id order disini..." />
+            </div>
+        </div>
+        <div>
+            <DataTableCustom data={filteredCafe} columns={columns} pagination progressPending={loading} />
+        </div>
+    </div>
+}
+
 export default function CafeBilling() {
     const [loading, setLoading] = useState<boolean>(true);
     const [selected, setSelected] = useState<string>("today");
@@ -66,6 +104,7 @@ export default function CafeBilling() {
     const getDataRincian = async (filter: string = "today") => {
         setLoading(true);
         try {
+
             console.log("shift", shift)
             const res = await window.api.cafe_report({ period: filter }, shift);
             setLoading(false);
@@ -83,6 +122,7 @@ export default function CafeBilling() {
     useEffect(() => {
         getDataRincian(selected);
     }, [selected, shift]);
+
 
     const handleSearch = useCallback(debounce((term: string) => {
         if (!cafe) return;
@@ -106,36 +146,21 @@ export default function CafeBilling() {
             <div className="grid gap-3">
                 <ReportTitle title={`Rincian Transaksi Cafe ${cafe?.period}`} setSelected={setSelected} />
                 <Tabs aria-label="Options" onSelectionChange={(key) => setShift(key as unknown as string)}>
-                    <Tab key="all" title="Semua" />
-                    <Tab key="Pagi" title="Shift Siang" />
-                    <Tab key="Malam" title="Shift Malam" />
+                    <Tab key="analytics" title="Analisis">
+                        <TopSaleCafe />
+                    </Tab>
+                    <Tab key="all" title="Semua">
+                        <CafeTable loading={loading} filteredCafe={filteredCafe} searchTerm={searchTerm} setSearchTerm={setSearchTerm} cafe={cafe} />
+                    </Tab>
+                    <Tab key="Pagi" title="Shift Siang">
+                        <CafeTable loading={loading} filteredCafe={filteredCafe} searchTerm={searchTerm} setSearchTerm={setSearchTerm} cafe={cafe} />
+                    </Tab>
+                    <Tab key="Malam" title="Shift Malam">
+                        <CafeTable loading={loading} filteredCafe={filteredCafe} searchTerm={searchTerm} setSearchTerm={setSearchTerm} cafe={cafe} />
+                    </Tab>
                 </Tabs>
-                <Card>
-                    <CardBody className="p-5">
-                        <div className="flex justify-between">
-                            <div className="flex flex-col gap-4">
-                                <div className="grid gap-2">
-                                    <h3 className="text-xl font-bold">Total Transaksi Cafe</h3>
-                                    <h3 className="text-xl font-bold">Rp. {convertRupiah(cafe?.total_all.toString() || "0")}</h3>
-                                </div>
-                                <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
-                            </div>
-                            <div>
-                                <Coins />
-                            </div>
-                        </div>
-                    </CardBody>
-                </Card>
-                <div className="w-full flex justify-end">
-                    <div className="max-w-[300px] w-full">
-                        <Input value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)} autoFocus startContent={<Search className="w-5 h-5" />} placeholder="Cari nama/id order disini..." />
-                    </div>
-                </div>
-                <div>
-                    <DataTableCustom data={filteredCafe} columns={columns} pagination progressPending={loading} />
-                </div>
             </div>
+
         </>
     )
 }

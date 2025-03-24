@@ -195,4 +195,7 @@ contextBridge.exposeInMainWorld("api", {
   ) => ipcRenderer.invoke("show_message_box", type, message),
   run_migration: (migrationName: string) =>
     ipcRenderer.invoke("run_migration", migrationName),
+  top_sale_cafe: () => ipcRenderer.invoke("top_sale_cafe"),
+  print_struk: (id_struk: string) =>
+    ipcRenderer.invoke("print_struk", id_struk),
 });

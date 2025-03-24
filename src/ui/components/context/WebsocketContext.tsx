@@ -81,6 +81,8 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         }
 
         ws.onmessage = (event) => {
+            console.info("INCOMING", event.data)
+
             const data_incoming: ISocket<unknown> = JSON.parse(event.data);
 
             if (data_incoming.type === "table_status") {
@@ -96,6 +98,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
                     }
                 });
             } else if (data_incoming.type === "chat") {
+                console.log("chat", data_incoming)
                 setChat((prev) => [...prev, data_incoming as unknown as ISocket<ISocketChat>]);
             }
 
@@ -117,8 +120,8 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
             setTimeout(() => connectToServer(ip, port), 5000);
         }
 
-        ws.onerror = (err) => {
-            console.log(`Error connecting to ${url}:`, err);
+        ws.onerror = () => {
+            console.log(`Error connecting to ${url}:`);
         }
     }
 
@@ -135,8 +138,10 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     }
 
     const broadcastMessage = (message: string) => {
+        console.log("connections", connections.current)
         connections.current.forEach((ws, ip) => {
             if (ws.readyState === WebSocket.OPEN) {
+                console.log("CGHAT", message)
                 const json = JSON.parse(message);
                 if (json.type === "chat") {
                     setChat((prev) => [...prev, json]);

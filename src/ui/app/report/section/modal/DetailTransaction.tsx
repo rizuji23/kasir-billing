@@ -23,6 +23,7 @@ import moment from "moment-timezone";
 
 export default function DetailTransaction({ open, setOpen }: { open: { open: boolean, row: Struk | null }, setOpen: Dispatch<SetStateAction<{ open: boolean, row: Struk | null }>> }) {
     const [detail, setDetail] = useState<Struk | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
 
     const getDetail = async () => {
         try {
@@ -36,6 +37,29 @@ export default function DetailTransaction({ open, setOpen }: { open: { open: boo
 
         } catch (err) {
             toast.error(`Error fetching detail transaction: ${err}`);
+        }
+    }
+
+    const handlePrintStruk = async () => {
+        setLoading(true)
+        try {
+            if (!detail?.id_struk) {
+                toast.error("ID Struk tidak ditemukan");
+                setLoading(false);
+                return;
+            }
+            const res = await window.api.print_struk(detail.id_struk || "");
+            setLoading(false);
+            if (res.status) {
+                toast.success("Struk berhasil diprint");
+            } else {
+                setLoading(false);
+                toast.error(res.detail_message || "");
+            }
+
+        } catch (err) {
+            setLoading(false);
+            toast.error(`Error print struk: ${err}`);
         }
     }
 
@@ -113,7 +137,7 @@ export default function DetailTransaction({ open, setOpen }: { open: { open: boo
                                             </div>
                                         </div>
                                         <div className="p-3 bg-default-100 rounded-md grid gap-2">
-                                            <Button size="sm" startContent={<Printer className="w-4 h-4" />} color="success">Print Struk</Button>
+                                            <Button isLoading={loading} size="sm" startContent={<Printer className="w-4 h-4" />} onPress={handlePrintStruk} color="success">Print Struk</Button>
                                         </div>
                                     </div>
                                     <div className="grid gap-3">
@@ -121,32 +145,34 @@ export default function DetailTransaction({ open, setOpen }: { open: { open: boo
                                             <div className="flex flex-col gap-3">
                                                 <h3 className="font-bold">Detail Pesanan</h3>
                                                 <Divider />
-                                                <div className="grid gap-2">
-                                                    <p className="font-bold text-sm">List Billing: </p>
-                                                    <div className="grid gap-3 mt-3">
+                                                {
+                                                    detail.type_struk === "TABLE" && <div className="grid gap-2">
+                                                        <p className="font-bold text-sm">List Billing: </p>
+                                                        <div className="grid gap-3 mt-3">
 
-                                                        <Table aria-label="Example static collection table">
-                                                            <TableHeader>
-                                                                <TableColumn>Jam Mulai</TableColumn>
-                                                                <TableColumn>Jam Berakhir</TableColumn>
-                                                                <TableColumn>Harga</TableColumn>
-                                                            </TableHeader>
-                                                            <TableBody>
-                                                                {
-                                                                    (detail.bookingId?.detail_booking || []).map((el, i) => {
-                                                                        return <TableRow key={i}>
-                                                                            <TableCell>{moment(el.start_duration).format("HH:mm:ss")}</TableCell>
-                                                                            <TableCell>{moment(el.end_duration).format("HH:mm:ss")}</TableCell>
-                                                                            <TableCell>{convertRupiah(el.price.toString() || "0")}</TableCell>
-                                                                        </TableRow>
-                                                                    })
-                                                                }
+                                                            <Table aria-label="Example static collection table">
+                                                                <TableHeader>
+                                                                    <TableColumn>Jam Mulai</TableColumn>
+                                                                    <TableColumn>Jam Berakhir</TableColumn>
+                                                                    <TableColumn>Harga</TableColumn>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {
+                                                                        (detail.bookingId?.detail_booking || []).map((el, i) => {
+                                                                            return <TableRow key={i}>
+                                                                                <TableCell>{moment(el.start_duration).format("HH:mm:ss")}</TableCell>
+                                                                                <TableCell>{moment(el.end_duration).format("HH:mm:ss")}</TableCell>
+                                                                                <TableCell>{convertRupiah(el.price.toString() || "0")}</TableCell>
+                                                                            </TableRow>
+                                                                        })
+                                                                    }
 
-                                                            </TableBody>
-                                                        </Table>
-                                                        <p className="font-bold text-sm">Total Durasi: {detail.bookingId?.duration || "0"}</p>
+                                                                </TableBody>
+                                                            </Table>
+                                                            <p className="font-bold text-sm">Total Durasi: {detail.bookingId?.duration || "0"}</p>
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                }
                                             </div>
                                             <div className="grid gap-2">
                                                 <p className="font-bold text-sm">List Menu: </p>
