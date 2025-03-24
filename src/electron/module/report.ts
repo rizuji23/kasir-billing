@@ -7,6 +7,15 @@ import {
   generatePDFReport,
 } from "./report/generate-report.js";
 
+export interface SalesItem {
+  menuName: string;
+  totalSold: number;
+}
+
+export interface SalesByCategory {
+  [category: string]: SalesItem[];
+}
+
 export default function ReportModule() {
   ipcMain.handle(
     "rincian_transaction",
@@ -286,6 +295,9 @@ export default function ReportModule() {
           include: {
             menucafe: true,
           },
+          orderBy: {
+            created_at: "desc",
+          },
         });
 
         const total_all = order_cafe.reduce((sum, item) => sum + item.total, 0);
@@ -310,4 +322,54 @@ export default function ReportModule() {
       }
     },
   );
+
+  ipcMain.handle("top_sale_cafe", async () => {
+    try {
+      const sales = await prisma.orderCafe.groupBy({
+        by: ["menu_cafe"],
+        where: { status: "PAID" }, // Filter only PAID orders
+        _sum: { qty: true }, // Sum total quantity sold
+        orderBy: { _sum: { qty: "desc" } }, // Order by highest quantity sold
+        take: 5, // Limit to top 5
+      });
+
+      const result = await Promise.all(
+        sales.map(async (item) => {
+          const menu = await prisma.menuCafe.findUnique({
+            where: { id: item.menu_cafe },
+            include: { category_menu: true },
+          });
+
+          return {
+            category: menu?.category_menu?.name || "Uncategorized",
+            menuName: menu?.name || "Unknown",
+            totalSold: item._sum.qty || 0,
+          };
+        }),
+      );
+
+      // Group results by category
+      const groupedResults = result.reduce((acc, item) => {
+        if (!acc[item.category]) {
+          acc[item.category] = [];
+        }
+        acc[item.category].push(item);
+        return acc;
+      }, {} as Record<string, { menuName: string; totalSold: number }[]>);
+
+      return Responses({
+        code: 200,
+        detail_message: "Success",
+        data: groupedResults,
+      });
+    } catch (err) {
+      if (err instanceof Error) {
+        return Responses({
+          code: 500,
+          detail_message: `Terjadi Kesalahan: ${err.message}`,
+        });
+      }
+      return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+    }
+  });
 }

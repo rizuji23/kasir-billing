@@ -292,6 +292,7 @@ export interface OrderCafe {
   menucafe: MenuCafe;
   total: number;
   subtotal: number;
+  name: string;
   cash: number;
   change: number;
   qty: number;

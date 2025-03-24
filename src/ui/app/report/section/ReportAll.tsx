@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import toast from 'react-hot-toast';
 import { LoadingComponent } from "../../../components/datatable/DataTableCustom";
 import { convertRupiah } from "../../../lib/utils";
+import TopSaleCafe from "./components/TopSaleCafe";
+import TopSaleTable from "./components/TopSaleTable";
 
 interface SummaryReportType {
     total: number;
@@ -62,7 +64,7 @@ export default function ReportAll() {
                                 </div>
                             </CardBody>
                         </Card>
-                        <div className="grid grid-cols-2 gap-5">
+                        <div className="grid md:grid-cols-2 grid-cols-1 gap-5">
                             <Card>
                                 <CardBody className="p-5">
                                     <div className="flex justify-between">
@@ -120,6 +122,8 @@ export default function ReportAll() {
                                 </CardBody>
                             </Card>
                         </div>
+                        <TopSaleCafe />
+                        <TopSaleTable />
                     </>
                 }
             </div>

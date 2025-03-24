@@ -4,7 +4,7 @@ import App from "./App.tsx";
 import { HeroUIProvider } from "@heroui/react";
 import { HashRouter, useLocation } from "react-router";
 import { Toaster } from "react-hot-toast";
-
+import { ToastProvider } from "@heroui/react";
 const MainWrapper = () => {
   const location = useLocation();
   const isStrukPage = location.pathname === "/struk";
@@ -23,6 +23,7 @@ createRoot(document.getElementById("root")!).render(
   <HashRouter>
     <Toaster position="top-right" />
     <HeroUIProvider>
+      <ToastProvider placement="top-right" toastOffset={60} />
       <MainWrapper />
     </HeroUIProvider>
   </HashRouter>

@@ -49,6 +49,7 @@ import UserModule from "./module/user.js";
 import PriceModule from "./module/price.js";
 import ShiftModule from "./module/shift.js";
 import { runMigration } from "./migrate.js";
+import { Server } from "socket.io";
 
 let mainWindow: BrowserWindow | null = null;
 let serialport: SerialPort | null = null;
@@ -56,8 +57,13 @@ let serialport: SerialPort | null = null;
 const gotTheLock = app.requestSingleInstanceLock();
 
 const port = 3321;
+const port_chat = 5321;
+
 const server = http.createServer();
 const wss = new WebSocketServer({ server });
+
+const server_chat = http.createServer();
+const io = new Server(server_chat);
 // let sockets = new Map<string, WebSocket>();
 
 async function listSerialPorts(): Promise<boolean> {
@@ -222,12 +228,30 @@ if (!gotTheLock) {
       });
     });
 
+    io.on("connection", (socket) => {
+      console.log("User connected:", socket.id);
+
+      socket.on("message", (data) => {
+        io.emit("message", data);
+      });
+
+      socket.on("disconnect", () => {
+        console.log("User disconnected:", socket.id);
+      });
+    });
+
     server.listen(port, () => {
       log.info(
         `WebSocket server running on ws://${getLocalIPAddress()}:${port}`,
       );
       console.log(
         `WebSocket server running on ws://${getLocalIPAddress()}:${port}`,
+      );
+    });
+
+    server_chat.listen(port_chat, () => {
+      console.log(
+        `Socket server running on ${getLocalIPAddress()}:${port_chat}`,
       );
     });
 

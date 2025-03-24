@@ -2,25 +2,34 @@ import { Popover, PopoverTrigger, PopoverContent, Input, Button } from "@heroui/
 import { Chip } from "@heroui/chip";
 import { MessageCircle, SendHorizonal } from "lucide-react";
 import { useWebsocketData } from "../context/WebsocketContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import moment from "moment-timezone";
+import { useChat } from "../context/ChatContext";
 
 export default function ChatTray() {
-    const chat = useWebsocketData();
+    const chat = useChat();
     const [message, setMessage] = useState<string>("");
 
     const sendChat = async () => {
-        if (message.length === 0) {
-            toast.error("Pesan harus diisi");
-            return;
-        }
+        try {
+            if (message.length === 0) {
+                toast.error("Pesan harus diisi");
+                return;
+            }
 
-        const data_message = await window.api.send_chat(message);
-        console.log("data_message", data_message.data)
-        chat.broadcastMessage(JSON.stringify(data_message.data));
-        setMessage("");
+            const data_message = await window.api.send_chat(message);
+            console.log("data_message", data_message.data)
+            chat.sendMessage(JSON.stringify(data_message.data));
+            setMessage("");
+        } catch (err) {
+            console.log(`Error sending chat: ${err}`);
+        }
     }
+
+    useEffect(() => {
+        console.log(chat.messages)
+    }, [chat.messages]);
 
     return (
         <>
@@ -32,7 +41,7 @@ export default function ChatTray() {
                                 <MessageCircle className={"w-5 h-5 self-center fill-white"} />
                                 <p className="font-bold">Pesan</p>
                             </div>
-                            <Chip size="sm" color="danger" className="self-center">5</Chip>
+                            <Chip size="sm" color="danger" className="self-center">{chat.messages.length}</Chip>
                         </div>
                     </div>
                 </PopoverTrigger>
@@ -41,8 +50,8 @@ export default function ChatTray() {
                         <div className="flex flex-col gap-3">
                             <div className="w-full">
                                 <div className="grid gap-3 w-full">
-                                    {
-                                        chat.chat.map((el, i) => {
+                                    {/* {
+                                        chat.messages.map((el, i) => {
                                             return <div key={i}>
                                                 <div className="w-full h-fit rounded-md bg-primary-500 p-2 text-white">
                                                     <small className="font-bold text-sm">{el.name}</small>
@@ -53,7 +62,7 @@ export default function ChatTray() {
                                                 </div>
                                             </div>
                                         })
-                                    }
+                                    } */}
                                 </div>
                             </div>
                         </div>

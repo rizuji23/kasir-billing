@@ -3,6 +3,7 @@ import { getPreloadPath } from "../pathResolver.js";
 import { isDev } from "../utils.js";
 import path from "path";
 import { prisma } from "../database.js";
+import Responses from "../lib/responses.js";
 
 export async function StrukWindow(id_struk: string) {
   try {
@@ -36,7 +37,7 @@ export async function StrukWindow(id_struk: string) {
     }
 
     const printWindow = new BrowserWindow({
-      show: false,
+      show: true,
       webPreferences: {
         preload: getPreloadPath(),
         contextIsolation: true,
@@ -106,6 +107,29 @@ export async function StrukWindow(id_struk: string) {
 
 export default function StrukModule() {
   ipcMain.handle("test_struk", async () => {
-    return await StrukWindow("STK-318VHAk5fn");
+    const struk = await prisma.struk.findFirst();
+
+    if (!struk) {
+      dialog.showErrorBox("Terjadi Kesalahan", "Struk tidak temukan");
+      return;
+    }
+
+    return await StrukWindow(struk.id_struk);
+  });
+
+  ipcMain.handle("print_struk", async (_, id_struk: string) => {
+    try {
+      await StrukWindow(id_struk);
+
+      return Responses({
+        code: 200,
+        detail_message: "Print struk berhasil dilakukan",
+      });
+    } catch (err) {
+      dialog.showErrorBox(
+        "Terjadi Kesalahan",
+        `Error print_struk: ${JSON.stringify(err)}`,
+      );
+    }
   });
 }

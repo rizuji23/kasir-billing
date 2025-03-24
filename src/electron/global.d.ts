@@ -20,6 +20,7 @@ import {
 } from "./types/index.js";
 import { IBookingCheckout } from "./module/booking.ts";
 import { IpcRendererEvent } from "electron";
+import { SalesByCategory } from "./module/report.ts";
 
 interface UpdateAPI {
   checkForUpdates: () => void;
@@ -268,6 +269,8 @@ interface ApiAPI {
     message: string,
   ) => void;
   run_migration: (migrationName: string) => Promise<string>;
+  top_sale_cafe: () => Promise<IResponses<SalesByCategory>>;
+  print_struk: (id_struk: string) => Promise<IResponses<unknown>>;
 }
 
 declare global {

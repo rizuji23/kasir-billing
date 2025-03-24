@@ -23,7 +23,7 @@ export default function ReportTitle({ title, setSelected }: { title: string, set
                             <DropdownItem key="custom" onPress={() => setSelected("custom")}>Custom</DropdownItem>
                         </DropdownMenu>
                     </Dropdown>
-                    <Button onPress={() => setOpen(true)} variant="bordered"><Printer className="w-4 h-4" /> Print Laporan</Button>
+                    <Button onPress={() => setOpen(true)} variant="bordered"><Printer className="w-4 h-4" /> Print Laporan Transaksi</Button>
                 </div>
             </div>
             <PrintReport open={open} setOpen={setOpen} />
