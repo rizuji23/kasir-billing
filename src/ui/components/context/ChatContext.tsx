@@ -1,9 +1,10 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { io, Socket } from "socket.io-client";
 import { ServersList } from "../../../electron/types";
+import { ISocket, ISocketChat } from "./WebsocketContext";
 
 interface SocketContextType {
-    messages: { [key: string]: string[] };
+    messages: ISocket<ISocketChat>[];
     sendMessage: (message: string) => void;
     servers: ServersList[];
 }
@@ -13,7 +14,7 @@ const ChatContext = createContext<SocketContextType | undefined>(undefined);
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [servers, setServers] = useState<ServersList[]>([]);
     const [sockets, setSockets] = useState<{ [key: string]: Socket }>({});
-    const [messages, setMessages] = useState<{ [key: string]: string[] }>({});
+    const [messages, setMessages] = useState<ISocket<ISocketChat>[]>([]);
 
     const getIpLocal = async () => {
         const res = await window.api.list_network();
@@ -37,11 +38,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 socket.on("disconnect", () => console.log(`Disconnected from ${server.ip}:5321`));
 
                 socket.on("message", (msg) => {
-                    console.log("msg", msg)
-                    setMessages((prev) => ({
-                        ...prev,
-                        [server.id]: [...(prev[server.id] || []), msg],
-                    }));
+                    console.log("Received message from server:", msg);
                 });
 
                 newSockets[server.id] = socket;
@@ -67,6 +64,25 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             Object.values(sockets).forEach((socket) => socket.disconnect());
         };
     }, []);
+
+    useEffect(() => {
+        window.api.onMessage((message: string) => {
+            console.log("M<ESSAGE", message);
+            try {
+                const data_message = JSON.parse(message);
+                console.log("data_message", data_message)
+                setMessages((prev) => [...prev, data_message as unknown as ISocket<ISocketChat>]);
+            } catch (err) {
+                console.error("Error handling message:", err);
+            }
+
+        });
+
+        return () => {
+            // Remove listener when unmounting
+            window.api.removeAllMessageListeners();
+        };
+    }, [])
 
     return (
         <ChatContext.Provider value={{ messages, sendMessage, servers }}>

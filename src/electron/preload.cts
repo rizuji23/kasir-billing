@@ -198,4 +198,9 @@ contextBridge.exposeInMainWorld("api", {
   top_sale_cafe: () => ipcRenderer.invoke("top_sale_cafe"),
   print_struk: (id_struk: string) =>
     ipcRenderer.invoke("print_struk", id_struk),
+  onMessage: (callback: (msg: string) => void) =>
+    ipcRenderer.on("message", (_: any, msg: string) => callback(msg)),
+  removeAllMessageListeners: () => {
+    ipcRenderer.removeAllListeners("message");
+  },
 });

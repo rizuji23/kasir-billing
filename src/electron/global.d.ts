@@ -271,6 +271,8 @@ interface ApiAPI {
   run_migration: (migrationName: string) => Promise<string>;
   top_sale_cafe: () => Promise<IResponses<SalesByCategory>>;
   print_struk: (id_struk: string) => Promise<IResponses<unknown>>;
+  onMessage: (callback: (msg: string) => void) => void;
+  removeAllMessageListeners: () => void;
 }
 
 declare global {

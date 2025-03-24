@@ -50,7 +50,7 @@ export default function ChatTray() {
                         <div className="flex flex-col gap-3">
                             <div className="w-full">
                                 <div className="grid gap-3 w-full">
-                                    {/* {
+                                    {
                                         chat.messages.map((el, i) => {
                                             return <div key={i}>
                                                 <div className="w-full h-fit rounded-md bg-primary-500 p-2 text-white">
@@ -62,7 +62,7 @@ export default function ChatTray() {
                                                 </div>
                                             </div>
                                         })
-                                    } */}
+                                    }
                                 </div>
                             </div>
                         </div>
