@@ -62,8 +62,13 @@ const port_chat = 5321;
 const server = http.createServer();
 const wss = new WebSocketServer({ server });
 
-const server_chat = http.createServer();
-const io = new Server(server_chat);
+const server_chat = http.createServer({});
+const io = new Server(server_chat, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
 // let sockets = new Map<string, WebSocket>();
 
 async function listSerialPorts(): Promise<boolean> {
