@@ -2,6 +2,8 @@ import React, { createContext, useState, useEffect, useContext } from "react";
 import { io, Socket } from "socket.io-client";
 import { ServersList } from "../../../electron/types";
 import { ISocket, ISocketChat } from "./WebsocketContext";
+import { addToast } from "@heroui/react";
+import { MessageCircleWarning } from "lucide-react";
 
 interface SocketContextType {
     messages: ISocket<ISocketChat>[];
@@ -69,8 +71,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         window.api.onMessage((message: string) => {
             console.log("M<ESSAGE", message);
             try {
-                const data_message = JSON.parse(message);
+                const data_message: ISocket<ISocketChat> = JSON.parse(message);
                 console.log("data_message", data_message)
+                addToast({
+                    title: data_message.name,
+                    description: data_message.data.message,
+                    icon: <MessageCircleWarning />,
+                    timeout: 8000
+                })
                 setMessages((prev) => [...prev, data_message as unknown as ISocket<ISocketChat>]);
             } catch (err) {
                 console.error("Error handling message:", err);

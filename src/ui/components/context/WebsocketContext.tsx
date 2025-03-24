@@ -96,9 +96,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
                         return updatedTables;
                     }
                 });
-            } else if (data_incoming.type === "chat") {
-                console.log("chat", data_incoming)
-                setChat((prev) => [...prev, data_incoming as unknown as ISocket<ISocketChat>]);
             }
 
             // console.log("MESSAGE", event.data)
@@ -140,11 +137,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         console.log("connections", connections.current)
         connections.current.forEach((ws, ip) => {
             if (ws.readyState === WebSocket.OPEN) {
-                console.log("CGHAT", message)
-                const json = JSON.parse(message);
-                if (json.type === "chat") {
-                    setChat((prev) => [...prev, json]);
-                }
                 ws.send(message);
             } else {
                 console.warn(`Cannot send message. No connection to ${ip}`);
