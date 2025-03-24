@@ -81,7 +81,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         }
 
         ws.onmessage = (event) => {
-            console.info("INCOMING", event.data)
 
             const data_incoming: ISocket<unknown> = JSON.parse(event.data);
 

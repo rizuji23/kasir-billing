@@ -237,7 +237,9 @@ if (!gotTheLock) {
       console.log("User connected:", socket.id);
 
       socket.on("message", (data) => {
+        console.log("messagessss", data);
         io.emit("message", data);
+        mainWindow!.webContents.send("message", data);
       });
 
       socket.on("disconnect", () => {
