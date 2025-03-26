@@ -25,7 +25,7 @@ export default function PrintReportCafe({ open, setOpen }: { open: boolean, setO
         setLoading(true)
         try {
 
-            const res = await window.api.export_report(type_export, date.start_date, date.end_date, shift);
+            const res = await window.api.export_report_cafe(type_export, date.start_date, date.end_date, shift);
             setLoading(false);
 
             if (res.status) {

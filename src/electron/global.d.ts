@@ -16,6 +16,7 @@ import {
   Shift,
   Struk,
   TableBilliard,
+  TableRevenue,
   User,
 } from "./types/index.js";
 import { IBookingCheckout } from "./module/booking.ts";
@@ -273,6 +274,13 @@ interface ApiAPI {
   print_struk: (id_struk: string) => Promise<IResponses<unknown>>;
   onMessage: (callback: (msg: string) => void) => void;
   removeAllMessageListeners: () => void;
+  top_sale_billiard: () => Promise<IResponses<TableRevenue[]>>;
+  export_report_cafe: (
+    type_export: string,
+    start_date: string,
+    end_date: string,
+    shift: string,
+  ) => Promise<IResponses<unknown>>;
 }
 
 declare global {

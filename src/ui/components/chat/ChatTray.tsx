@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import moment from "moment-timezone";
 import { useChat } from "../context/ChatContext";
+import { cn } from "../../lib/utils";
+import NotFound from "../NotFound";
 
 export default function ChatTray() {
     const chat = useChat();
@@ -50,17 +52,18 @@ export default function ChatTray() {
                             <div className="w-full">
                                 <div className="grid gap-3 w-full">
                                     {
-                                        chat.messages.map((el, i) => {
-                                            return <div key={i}>
-                                                <div className="w-full h-fit rounded-md bg-primary-500 p-2 text-white">
-                                                    <small className="font-bold text-sm">{el.name}</small>
-                                                    <p>{el.data.message}</p>
-                                                    <div className="mt-3">
-                                                        <small className="font-extralight">{moment(el.data.created_at).format("DD/MM/YYYY HH:mm:ss")}</small>
+                                        chat.messages.length === 0 ? <NotFound classNameImage="w-[50px]" classNameText="text-sm" title="Pesan Kosong" /> :
+                                            chat.messages.map((el, i) => {
+                                                return <div key={i}>
+                                                    <div className={cn("w-full h-fit rounded-md p-2", el.me ? "bg-slate-500 text-white" : "bg-primary-500 text-white")}>
+                                                        <small className="font-bold text-sm">{el.name}</small>
+                                                        <p>{el.data.message}</p>
+                                                        <div className="mt-3">
+                                                            <small className="font-extralight">{moment(el.data.created_at).format("DD/MM/YYYY HH:mm:ss")}</small>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        })
+                                            })
                                     }
                                 </div>
                             </div>
