@@ -551,3 +551,8 @@ export interface ServersList {
   created_at: Date;
   updated_at: Date;
 }
+
+export interface TableRevenue {
+  tableName: string;
+  totalRevenue: number;
+}

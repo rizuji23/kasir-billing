@@ -23,7 +23,7 @@ createRoot(document.getElementById("root")!).render(
   <HashRouter>
     <Toaster position="top-right" />
     <HeroUIProvider>
-      <ToastProvider placement="top-right" toastOffset={60} />
+      <ToastProvider placement="top-right" toastOffset={10} />
       <MainWrapper />
     </HeroUIProvider>
   </HashRouter>

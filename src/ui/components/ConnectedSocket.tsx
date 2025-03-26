@@ -35,7 +35,7 @@ export default function ConnectedSocket() {
                                 return <Card className="w-full" key={i}>
                                     <CardBody>
                                         <div className="flex justify-between">
-                                            <p className="self-center font-bold">{el}</p>
+                                            <p className="self-center font-bold">{el} <br />(Dapur)</p>
                                             <Chip size="sm" color="success">Terhubung</Chip>
                                         </div>
                                     </CardBody>
@@ -48,7 +48,7 @@ export default function ConnectedSocket() {
                                 return <Card className="w-full" key={i}>
                                     <CardBody>
                                         <div className="flex justify-between">
-                                            <p className="self-center font-bold">{el}</p>
+                                            <p className="self-center font-bold">{el}  <br />(Kasir)</p>
                                             <Chip size="sm" color="success">Terhubung</Chip>
                                         </div>
                                     </CardBody>

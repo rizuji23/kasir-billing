@@ -274,6 +274,11 @@ setTimeout(async () => {
   await initialStartLamp();
 }, 3000);
 
+app.on("quit", () => {
+  app.exit(0);
+  process.exit(0);
+});
+
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();

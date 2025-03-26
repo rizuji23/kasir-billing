@@ -2,8 +2,7 @@ import { CirclePower, Cog, FileChartColumn, Home, Utensils } from "lucide-react"
 import logo from "../../assets/logo-login.png";
 import { Link, useLocation } from "react-router";
 import { cn } from "../../lib/utils";
-import { User } from "@heroui/user";
-import { Button } from "@heroui/button";
+import HoursShift from "../../app/dashboard/HoursShift";
 
 const sidebar: { title: string, icon: React.ReactNode, href: string }[] = [
     {
@@ -84,7 +83,15 @@ export default function SidebarComponent() {
                     </div>
                 </div>
                 <div className="p-3 mt-5">
-                    <div className="w-full p-3 bg-muted rounded-md">
+
+                    {
+                        pathname.pathname !== "/dashboard" && <div className="w-full p-3 bg-muted rounded-md">
+                            <div className="flex flex-col justify-center gap-3">
+                                <HoursShift />
+                            </div>
+                        </div>
+                    }
+                    {/* <div className="w-full p-3 bg-muted rounded-md">
                         <div className="flex flex-col gap-3">
                             <div>
                                 <User
@@ -94,7 +101,7 @@ export default function SidebarComponent() {
                             </div>
                             <Button>Sign Out</Button>
                         </div>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </>

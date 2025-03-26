@@ -4,7 +4,9 @@ import { prisma } from "../database.js";
 import { strukFilter } from "../lib/utils.js";
 import {
   generateExcelReport,
+  generateExcelReportCafe,
   generatePDFReport,
+  generatePDFReportCafe,
 } from "./report/generate-report.js";
 
 export interface SalesItem {
@@ -30,7 +32,7 @@ export default function ReportModule() {
         const struk = await prisma.struk.findMany({
           where: { ...struk_filter.where, status: "PAID" },
           orderBy: {
-            created_at: "desc",
+            updated_at: "desc",
           },
         });
 
@@ -174,6 +176,63 @@ export default function ReportModule() {
   );
 
   ipcMain.handle(
+    "export_report_cafe",
+    async (
+      _,
+      type_export: string,
+      start_date: string,
+      end_date: string,
+      shift: string,
+    ) => {
+      try {
+        const startDateTime = new Date(`${start_date}T00:00:00Z`);
+        const endDateTime = new Date(`${end_date}T23:59:59.999Z`);
+
+        endDateTime.setUTCDate(endDateTime.getUTCDate() + 1);
+        endDateTime.setUTCHours(5, 0, 0, 0);
+
+        console.log("startDateTime", startDateTime.toISOString());
+        console.log("endDateTime", endDateTime.toISOString());
+
+        const check_data = await prisma.orderCafe.findMany({
+          where: {
+            updated_at: {
+              gte: startDateTime.toISOString(),
+              lte: endDateTime.toISOString(),
+            },
+          },
+        });
+
+        if (check_data.length === 0) {
+          return Responses({
+            code: 404,
+            detail_message: "Order Cafe tidak ditemukan",
+          });
+        }
+
+        if (type_export === "excel") {
+          await generateExcelReportCafe(start_date, end_date);
+        } else if (type_export === "pdf") {
+          await generatePDFReportCafe(start_date, end_date, shift);
+        }
+
+        return Responses({
+          code: 201,
+          detail_message: "Export berhasil dilakukan",
+        });
+      } catch (err) {
+        if (err instanceof Error) {
+          return Responses({
+            code: 500,
+            detail_message: `Terjadi Kesalahan: ${err.message}`,
+          });
+        }
+        return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+      }
+    },
+  );
+
+  ipcMain.handle(
     "summary_report",
     async (
       _,
@@ -296,7 +355,7 @@ export default function ReportModule() {
             menucafe: true,
           },
           orderBy: {
-            created_at: "desc",
+            updated_at: "desc",
           },
         });
 
@@ -361,6 +420,51 @@ export default function ReportModule() {
         code: 200,
         detail_message: "Success",
         data: groupedResults,
+      });
+    } catch (err) {
+      if (err instanceof Error) {
+        return Responses({
+          code: 500,
+          detail_message: `Terjadi Kesalahan: ${err.message}`,
+        });
+      }
+      return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+    }
+  });
+
+  ipcMain.handle("top_sale_billiard", async () => {
+    try {
+      // Fetch all tables first
+      const tables = await prisma.tableBilliard.findMany({
+        select: { id: true, name: true },
+      });
+
+      // Fetch total revenue per table from bookings
+      const bookings = await prisma.booking.groupBy({
+        by: ["tableId"],
+        _sum: { total_price: true },
+        where: {
+          status: "PAID",
+        },
+      });
+
+      // Create a lookup for booking revenue
+      const revenueMap = new Map(
+        bookings.map((b) => [b.tableId, b._sum.total_price || 0]),
+      );
+
+      // Format the final response by merging tables with their revenue
+      const tableResult = tables
+        .map((table) => ({
+          tableName: table.name,
+          totalRevenue: revenueMap.get(table.id) || 0, // If no bookings, show 0
+        }))
+        .sort((a, b) => b.totalRevenue - a.totalRevenue); // Sort by highest revenue
+
+      return Responses({
+        code: 200,
+        detail_message: "Success",
+        data: tableResult,
       });
     } catch (err) {
       if (err instanceof Error) {

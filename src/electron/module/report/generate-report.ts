@@ -5,6 +5,130 @@ import fs from "fs";
 import PDFDocument from "pdfkit";
 import { convertRupiah } from "../../lib/utils.js";
 
+export async function generateExcelReportCafe(
+  start_date: string,
+  end_date: string,
+) {
+  try {
+    const startDateTime = new Date(`${start_date}T00:00:00Z`);
+    const endDateTime = new Date(`${end_date}T23:59:59.999Z`);
+
+    endDateTime.setUTCDate(endDateTime.getUTCDate() + 1);
+    endDateTime.setUTCHours(5, 0, 0, 0);
+
+    const orderData = await prisma.orderCafe.findMany({
+      where: {
+        updated_at: {
+          gte: startDateTime.toISOString(),
+          lte: endDateTime.toISOString(),
+        },
+        status: "PAID",
+      },
+      orderBy: {
+        updated_at: "desc",
+      },
+      include: {
+        menucafe: true,
+      },
+    });
+
+    const workbook = new ExcelJS.Workbook();
+
+    const addWorksheet = (name: string, data: typeof orderData) => {
+      const worksheet = workbook.addWorksheet(name);
+      worksheet.columns = [
+        { header: "No", key: "no", width: 5 },
+        { header: "Nama Menu", key: "name", width: 20 },
+        { header: "Harga", key: "price", width: 20 },
+        { header: "Qty", key: "qty", width: 5 },
+        { header: "Total", key: "total_price", width: 20 },
+        { header: "Tanggal", key: "tanggal", width: 20 },
+      ];
+
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { bold: true };
+      headerRow.alignment = { horizontal: "center", vertical: "middle" };
+
+      data.forEach((order, i) => {
+        const row = worksheet.addRow({
+          no: i + 1,
+          name: order.menucafe.name,
+          price: order.menucafe.price,
+          qty: order.qty,
+          total_price: order.subtotal,
+          tanggal: new Date(order.updated_at).toLocaleString("id-ID", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          }),
+        });
+
+        row.getCell("no").alignment = {
+          horizontal: "center",
+          vertical: "middle",
+        };
+        row.getCell("tanggal").alignment = {
+          horizontal: "center",
+          vertical: "middle",
+        };
+      });
+
+      const total_all = data.reduce((sum, order) => sum + order.subtotal, 0);
+      const total_qty = data.reduce((sum, order) => sum + order.qty, 0);
+
+      const totalRow = worksheet.addRow({
+        no: "",
+        name: "",
+        price: "Total",
+        qty: total_qty,
+        total_price: total_all,
+        tanggal: "",
+      });
+
+      worksheet.addRow([]);
+
+      totalRow.font = { bold: true };
+      totalRow.eachCell((cell) => {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFFF00" },
+        };
+      });
+    };
+
+    addWorksheet("Semua Transaksi", orderData);
+    addWorksheet(
+      "Pagi",
+      orderData.filter((order) => order.shift === "Pagi"),
+    );
+    addWorksheet(
+      "Malam",
+      orderData.filter((order) => order.shift === "Malam"),
+    );
+
+    const { filePath } = await dialog.showSaveDialog({
+      title: "Save Excel File",
+      defaultPath: `Laporan Cafe ${start_date} - ${end_date}.xlsx`,
+      filters: [
+        { name: "Excel Files", extensions: ["xlsx"] },
+        { name: "All Files", extensions: ["*"] },
+      ],
+    });
+
+    if (!filePath) return;
+
+    await workbook.xlsx.writeFile(filePath);
+
+    return filePath;
+  } catch (err) {
+    return err;
+  }
+}
+
 export async function generateExcelReport(
   start_date: string,
   end_date: string,
@@ -19,8 +143,8 @@ export async function generateExcelReport(
     const strukData = await prisma.struk.findMany({
       where: {
         updated_at: {
-          gte: startDateTime,
-          lte: endDateTime,
+          gte: startDateTime.toISOString(),
+          lte: endDateTime.toISOString(),
         },
       },
       orderBy: {
@@ -66,7 +190,7 @@ export async function generateExcelReport(
           cash: struk.cash,
           change: struk.change,
           payment_method: struk.payment_method,
-          tanggal: new Date(struk.created_at).toLocaleString("id-ID", {
+          tanggal: new Date(struk.updated_at).toLocaleString("id-ID", {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
@@ -164,24 +288,27 @@ export async function generatePDFReport(
     const startDateTime = new Date(`${start_date}T00:00:00Z`);
     const endDateTime = new Date(`${end_date}T23:59:59.999Z`);
 
+    endDateTime.setUTCDate(endDateTime.getUTCDate() + 1);
+    endDateTime.setUTCHours(5, 0, 0, 0);
+
     let whereClause: {
-      created_at: {
-        gte: Date;
-        lte: Date;
+      updated_at: {
+        gte: Date | string;
+        lte: Date | string;
       };
       shift?: string;
     } = {
-      created_at: {
-        gte: startDateTime,
-        lte: endDateTime,
+      updated_at: {
+        gte: startDateTime.toISOString(),
+        lte: endDateTime.toISOString(),
       },
     };
 
     if (shift && shift !== "all") {
       whereClause = {
-        created_at: {
-          gte: startDateTime,
-          lte: endDateTime,
+        updated_at: {
+          gte: startDateTime.toISOString(),
+          lte: endDateTime.toISOString(),
         },
         shift: shift,
       };
@@ -190,7 +317,7 @@ export async function generatePDFReport(
     const strukData = await prisma.struk.findMany({
       where: whereClause,
       orderBy: {
-        created_at: "desc",
+        updated_at: "desc",
       },
       include: {
         orderId: true,
@@ -317,7 +444,7 @@ export async function generatePDFReport(
           convertRupiah(struk.cash.toString()),
           convertRupiah(struk.change.toString()),
           struk.payment_method,
-          new Date(struk.created_at).toLocaleString("id-ID", {
+          new Date(struk.updated_at).toLocaleString("id-ID", {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
@@ -344,6 +471,171 @@ export async function generatePDFReport(
         "",
         "",
         "",
+        "",
+      ],
+      rowY,
+    );
+
+    doc.end();
+    return filePath;
+  } catch (err) {
+    return err;
+  }
+}
+
+export async function generatePDFReportCafe(
+  start_date: string,
+  end_date: string,
+  shift: string = "all",
+) {
+  try {
+    const startDateTime = new Date(`${start_date}T00:00:00Z`);
+    const endDateTime = new Date(`${end_date}T23:59:59.999Z`);
+
+    endDateTime.setUTCDate(endDateTime.getUTCDate() + 1);
+    endDateTime.setUTCHours(5, 0, 0, 0);
+
+    const whereClause: {
+      updated_at: {
+        gte: Date | string;
+        lte: Date | string;
+      };
+      shift?: string;
+    } = {
+      updated_at: {
+        gte: startDateTime.toISOString(),
+        lte: endDateTime.toISOString(),
+      },
+    };
+
+    if (shift && shift !== "all") {
+      whereClause["shift"] = shift;
+    }
+
+    const orderData = await prisma.orderCafe.findMany({
+      where: {
+        ...whereClause,
+        status: "PAID",
+      },
+      orderBy: {
+        updated_at: "desc",
+      },
+      include: {
+        menucafe: true,
+      },
+    });
+
+    const { filePath } = await dialog.showSaveDialog({
+      title: "Save PDF File",
+      defaultPath: `Laporan Cafe ${start_date} - ${end_date} ${
+        shift === "all" ? "Semua" : shift
+      }.pdf`,
+      filters: [{ name: "PDF Files", extensions: ["pdf"] }],
+    });
+
+    if (!filePath) return null;
+
+    const doc = new PDFDocument({
+      size: "A4",
+      layout: "portrait",
+      margin: 30,
+    });
+    const stream = fs.createWriteStream(filePath);
+    doc.pipe(stream);
+
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(14)
+      .text(
+        `Laporan Cafe ${
+          shift === "all" ? "Semua" : shift === "Pagi" ? "Pagi" : "Malam"
+        }`,
+        {
+          align: "center",
+        },
+      );
+    doc.font("Helvetica").fontSize(12).text(`${start_date} - ${end_date}`, {
+      align: "center",
+    });
+    doc.moveDown(2);
+
+    const tableStartX = 30;
+    const colWidths = [30, 100, 60, 60, 80, 100];
+    const rowHeight = 18;
+
+    const drawTableHeader = (y: number) => {
+      let x = tableStartX;
+      doc.font("Helvetica-Bold").fontSize(9);
+      ["No", "Nama Menu", "Harga", "Qty", "Total", "Tanggal"].forEach(
+        (header, i) => {
+          doc.text(header, x, y, { width: colWidths[i], align: "center" });
+          x += colWidths[i];
+        },
+      );
+      doc
+        .moveTo(tableStartX, y + rowHeight)
+        .lineTo(550, y + rowHeight)
+        .stroke();
+    };
+
+    const drawTableRow = (data: string[], y: number) => {
+      let x = tableStartX;
+      doc.font("Helvetica").fontSize(8);
+      data.forEach((text, i) => {
+        doc.text(text, x, y, { width: colWidths[i], align: "center" });
+        x += colWidths[i];
+      });
+      doc
+        .moveTo(tableStartX, y + rowHeight)
+        .lineTo(550, y + rowHeight)
+        .stroke();
+    };
+
+    let rowY = doc.y;
+    drawTableHeader(rowY);
+    rowY += rowHeight + 5;
+
+    const total_all = orderData.reduce((sum, order) => sum + order.subtotal, 0);
+    const total_qty = orderData.reduce((sum, order) => sum + order.qty, 0);
+
+    orderData.forEach((order, index) => {
+      if (rowY > 750) {
+        doc.addPage();
+        rowY = doc.y;
+        drawTableHeader(rowY);
+        rowY += rowHeight + 5;
+      }
+
+      drawTableRow(
+        [
+          (index + 1).toString(),
+          order.menucafe.name,
+          convertRupiah(order.menucafe.price.toString() || "0"),
+          order.qty.toString(),
+          convertRupiah(order.subtotal.toString()),
+          new Date(order.updated_at).toLocaleString("id-ID", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          }),
+        ],
+        rowY,
+      );
+
+      rowY += rowHeight + 5;
+    });
+
+    doc.moveDown(1);
+    drawTableRow(
+      [
+        "TOTAL",
+        "",
+        "",
+        convertRupiah(total_qty.toString()),
+        convertRupiah(total_all.toString()),
         "",
       ],
       rowY,

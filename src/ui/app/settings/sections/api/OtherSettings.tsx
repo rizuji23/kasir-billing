@@ -2,12 +2,19 @@ import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { addToast } from "@heroui/react";
 import { Bell, MessageCircleWarning, Printer } from "lucide-react";
+import notif_sound from "../../../../assets/notification.wav";
 
 export default function OtherSettings() {
     const handleTestNotif = () => {
+        const sound = new Howl({
+            src: [notif_sound],
+            volume: 1
+        });
+
+        sound.play()
         addToast({
-            title: "Lantai Satu",
-            description: "Order 1 mie goreng",
+            title: "Chat Title",
+            description: "Chat Description",
             icon: <MessageCircleWarning />
         });
     }

@@ -203,4 +203,18 @@ contextBridge.exposeInMainWorld("api", {
   removeAllMessageListeners: () => {
     ipcRenderer.removeAllListeners("message");
   },
+  top_sale_billiard: () => ipcRenderer.invoke("top_sale_billiard"),
+  export_report_cafe: (
+    type_export: string,
+    start_date: string,
+    end_date: string,
+    shift: string,
+  ) =>
+    ipcRenderer.invoke(
+      "export_report_cafe",
+      type_export,
+      start_date,
+      end_date,
+      shift,
+    ),
 });

@@ -7,6 +7,7 @@ export interface ISocket<T> {
     type: WebsocketResponseType,
     ip: string,
     data: T,
+    me?: boolean,
     name: string
 }
 
@@ -23,7 +24,6 @@ interface WebSocketContextProps {
         kitchen: ServersList[];
     },
     broadcastMessage: (message: string) => void;
-    chat: ISocket<ISocketChat>[];
     connectedKitchens: string[];
 }
 
@@ -42,7 +42,6 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     const [connectedKitchens, setConnectedKitchens] = useState<string[]>([]);
 
     const [tableRemote, setTableRemote] = useState<ISocket<TableBilliard[]>[]>([]);
-    const [chat, setChat] = useState<ISocket<ISocketChat>[]>([]);
 
     const getIpLocal = async () => {
         const res = await window.api.list_network();
@@ -157,7 +156,7 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     //     console.log("Table", tableRemote)
     // }, [tableRemote])
     return (
-        <WebsocketContext.Provider value={{ tableRemote, connectedCashiers, list_servers, broadcastMessage, chat, connectedKitchens }}>
+        <WebsocketContext.Provider value={{ tableRemote, connectedCashiers, list_servers, broadcastMessage, connectedKitchens }}>
             <div>
                 {children}
             </div>

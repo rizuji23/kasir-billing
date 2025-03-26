@@ -8,6 +8,7 @@ import { LoadingComponent } from "../../../components/datatable/DataTableCustom"
 import { convertRupiah } from "../../../lib/utils";
 import TopSaleCafe from "./components/TopSaleCafe";
 import TopSaleTable from "./components/TopSaleTable";
+import { Tabs, Tab } from "@heroui/react";
 
 interface SummaryReportType {
     total: number;
@@ -122,8 +123,16 @@ export default function ReportAll() {
                                 </CardBody>
                             </Card>
                         </div>
-                        <TopSaleCafe />
-                        <TopSaleTable />
+                        <Tabs aria-label="Options">
+                            <Tab key="cafe" title="Cafe">
+                                <TopSaleCafe />
+                            </Tab>
+                            <Tab key="table" title="Table Billiard">
+                                <TopSaleTable />
+                            </Tab>
+                        </Tabs>
+
+
                     </>
                 }
             </div>

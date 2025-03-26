@@ -5,6 +5,8 @@ import { ISocket, ISocketChat } from "./WebsocketContext";
 import { addToast } from "@heroui/react";
 import { MessageCircleWarning } from "lucide-react";
 import toast from "react-hot-toast";
+import { Howl } from "howler";
+import notif_sound from "../../assets/notification.wav";
 
 interface SocketContextType {
     messages: ISocket<ISocketChat>[];
@@ -81,6 +83,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
                 const data_message: ISocket<ISocketChat> = JSON.parse(message);
                 console.log("data_message", data_message)
+                const sound = new Howl({
+                    src: [notif_sound],
+                    volume: 1
+                });
+
+                sound.play()
                 addToast({
                     title: data_message.name,
                     description: data_message.data.message,
@@ -93,6 +101,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
 
         });
+
+
+
 
         return () => {
             // Remove listener when unmounting
