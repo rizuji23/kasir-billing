@@ -75,36 +75,38 @@ export default function Menu() {
                     </div>
                     <div className="grid grid-cols-3 gap-5">
                         <div className="col-span-2">
-                            <div className="flex flex-col gap-3">
-                                <div className="">
-                                    <Input autoFocus onChange={(e) => setSearchTerm(e.target.value)} value={searchTerm} startContent={<Search className="w-5 h-5" />} placeholder="Cari menu disini..." />
-                                </div>
-                                {
-                                    loading ? <div className="flex gap-3">
-                                        {
-                                            Array.from({ length: 5 }).map((_, i) => {
-                                                return <Skeleton className="w-[80px] h-8 rounded-md" key={i} />
-                                            })
-                                        }
-                                    </div> : <Tabs variant="light" selectedKey={category} onSelectionChange={(e) => setCategory(e.toString())}>
-                                        <Tab key="all" title="Semua" className="capitalize" />
-                                        {
-                                            list_category.map((el) => {
-                                                return <Tab key={el.id} title={el.name} className="capitalize" />
-                                            })
-                                        }
-                                    </Tabs>
-                                }
-                                <Divider />
-                                {loading ? <LoadingComponent /> :
-                                    filteredData.length !== 0 ? <div className="gap-4 grid grid-cols-2 sm:grid-cols-4 max-h-[80vh] overflow-y-auto pe-3">
-                                        {
-                                            filteredData.map((item, index) => (
-                                                <BoxMenu key={index} item={item} cart={cart} />
-                                            ))
-                                        }
+                            <div>
+                                <div className="flex flex-col gap-3">
+                                    <div className="">
+                                        <Input autoFocus onChange={(e) => setSearchTerm(e.target.value)} value={searchTerm} startContent={<Search className="w-5 h-5" />} placeholder="Cari menu disini..." />
                                     </div>
-                                        : <NotFound title="Menu Tidak Ditemukan" />}
+                                    {
+                                        loading ? <div className="flex gap-3">
+                                            {
+                                                Array.from({ length: 5 }).map((_, i) => {
+                                                    return <Skeleton className="w-[80px] h-8 rounded-md" key={i} />
+                                                })
+                                            }
+                                        </div> : <Tabs variant="light" selectedKey={category} onSelectionChange={(e) => setCategory(e.toString())}>
+                                            <Tab key="all" title="Semua" className="capitalize" />
+                                            {
+                                                list_category.map((el) => {
+                                                    return <Tab key={el.id} title={el.name} className="capitalize" />
+                                                })
+                                            }
+                                        </Tabs>
+                                    }
+                                    <Divider />
+                                    {loading ? <LoadingComponent /> :
+                                        filteredData.length !== 0 ? <div className="gap-4 grid grid-cols-2 sm:grid-cols-4 max-h-[80vh] overflow-y-auto pe-3">
+                                            {
+                                                filteredData.map((item, index) => (
+                                                    <BoxMenu key={index} item={item} cart={cart} />
+                                                ))
+                                            }
+                                        </div>
+                                            : <NotFound title="Menu Tidak Ditemukan" />}
+                                </div>
                             </div>
                         </div>
                         <div>

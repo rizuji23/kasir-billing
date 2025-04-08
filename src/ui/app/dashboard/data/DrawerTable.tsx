@@ -40,22 +40,49 @@ export default function DrawerTable({ open, setOpen, table }: { open: boolean, s
                                         <Radio value="REGULAR">Regular</Radio>
                                         {/* <Radio value="LOSS">Loss</Radio> */}
                                     </RadioGroup>
-                                    <div>
-                                        <Input
-                                            isRequired
-                                            label="Nama Lengkap"
-                                            name="full_name"
-                                            errorMessage={"Silakan isi kolom ini."}
-                                            placeholder="Masukan nama lengkap disini"
-                                            type="text"
-                                            autoFocus
-                                            onChange={(e) => booking.setDataBooking((prevState) => ({
-                                                ...prevState,
-                                                name: e.target.value
-                                            }))}
-                                            value={booking.data_booking.name}
-                                        />
-                                    </div>
+                                    <RadioGroup orientation="horizontal" size="sm" label="Pilih Pelanggan" classNames={{
+                                        label: "text-sm"
+                                    }} value={booking.data_booking.is_member} onValueChange={(e) => booking.setDataBooking((prevState) => ({
+                                        ...prevState,
+                                        is_member: e
+                                    }))}>
+                                        <Radio value="BIASA">Biasa</Radio>
+                                        <Radio value="MEMBER">Member</Radio>
+                                    </RadioGroup>
+
+                                    {
+                                        booking.data_booking.is_member === "BIASA" ? <div>
+                                            <Input
+                                                isRequired
+                                                label="Nama Lengkap"
+                                                name="full_name"
+                                                errorMessage={"Silakan isi kolom ini."}
+                                                placeholder="Masukan nama lengkap disini"
+                                                type="text"
+                                                autoFocus
+                                                onChange={(e) => booking.setDataBooking((prevState) => ({
+                                                    ...prevState,
+                                                    name: e.target.value
+                                                }))}
+                                                value={booking.data_booking.name}
+                                            />
+                                        </div> : <div>
+                                            <Input
+                                                isRequired
+                                                label="Kode Member"
+                                                name="full_name"
+                                                errorMessage={"Silakan isi kolom ini."}
+                                                placeholder="Masukan kode member"
+                                                type="text"
+                                                autoFocus
+                                                onChange={(e) => booking.setDataBooking((prevState) => ({
+                                                    ...prevState,
+                                                    kode_member: e.target.value
+                                                }))}
+                                                value={booking.data_booking.kode_member}
+                                            />
+                                        </div>
+                                    }
                                 </div>
                             </div>
                             <Divider />

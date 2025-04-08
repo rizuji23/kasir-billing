@@ -184,6 +184,7 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
       payment_method: string,
       name: string,
       no_meja: string,
+      keterangan: string,
     ) => {
       try {
         const currentTime = new Date();
@@ -208,7 +209,7 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
           },
         });
 
-        const order_cafe = await prisma.orderCafe.createMany({
+        await prisma.orderCafe.createMany({
           data: data.map((item) => ({
             id_order,
             id_order_cafe: `ORD-${generateShortUUID()}`,
@@ -225,6 +226,7 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
             qty: Number(item.qty),
             id_struk: struk.id,
             shift: shift || "Pagi",
+            keterangan: keterangan,
           })),
         });
 
@@ -234,7 +236,7 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
 
         return Responses({
           code: 201,
-          data: order_cafe,
+          data: struk,
           detail_message: "Pesanan berhasil dibuat",
         });
       } catch (err: unknown) {

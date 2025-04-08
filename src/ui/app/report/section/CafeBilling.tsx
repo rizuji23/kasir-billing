@@ -18,6 +18,11 @@ import TopSaleCafe from "./components/TopSaleCafe";
 
 const columns: TableColumn<OrderCafe>[] = [
     {
+        name: "No",
+        selector: row => row?.no || "0",
+        width: "60px"
+    },
+    {
         name: "ID Order",
         selector: row => row.id_order_cafe,
         cell: row => <Chip color="success" size="sm" classNames={{
@@ -25,7 +30,7 @@ const columns: TableColumn<OrderCafe>[] = [
         }}>{row.id_order_cafe}</Chip>
     },
     {
-        name: "Nama Pelanggan",
+        name: "Pelanggan",
         selector: row => row.name,
         sortable: true
     },
@@ -48,7 +53,7 @@ const columns: TableColumn<OrderCafe>[] = [
         name: "Shift",
         selector: row => row.shift,
         sortable: true,
-        cell: row => <Chip size="sm" className={cn("capitalize", row.shift === "pagi" ? "bg-yellow-600" : "bg-slate-500")}>{row.shift}</Chip>
+        cell: row => <Chip size="sm" className={cn("capitalize", row.shift === "Pagi" ? "bg-yellow-600" : "bg-slate-500")}>{row.shift}</Chip>
     },
     {
         name: "Tanggal",
@@ -73,7 +78,7 @@ function CafeTable({ cafe, searchTerm, setSearchTerm, loading, filteredCafe }: {
                             <h3 className="text-xl font-bold">Total Transaksi Cafe</h3>
                             <h3 className="text-xl font-bold">Rp. {convertRupiah(cafe?.total_all.toString() || "0")}</h3>
                         </div>
-                        <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+
                     </div>
                     <div>
                         <Coins />
@@ -101,26 +106,34 @@ export default function CafeBilling() {
     const [filteredCafe, setFilterdCafe] = useState<OrderCafe[]>([]);
     const [searchTerm, setSearchTerm] = useState<string>("");
 
-    const getDataRincian = async (filter: string = "today") => {
+    const getDataRincian = async ({ filter = "today", start_date = "", end_date = "" }: { filter?: string; start_date?: string; end_date?: string }) => {
         setLoading(true);
         try {
 
             console.log("shift", shift)
-            const res = await window.api.cafe_report({ period: filter }, shift);
+            const res = await window.api.cafe_report({ period: filter, start_date, end_date }, shift);
             setLoading(false);
 
             if (res.status && res.data) {
                 console.log("res.data", res.data)
-                setCafe(res.data);
+                const data_cafe = {
+                    ...res.data,
+                    order_cafe: res.data.order_cafe.map((el, i) => ({ ...el, no: i + 1 })),
+                }
+                setCafe(data_cafe);
+                return true;
             }
         } catch (err) {
             setLoading(false);
             toast.error(`Error fetching tables: ${err}`);
+            return false;
         }
     }
 
     useEffect(() => {
-        getDataRincian(selected);
+        if (selected !== "customs") {
+            getDataRincian({ filter: selected });
+        }
     }, [selected, shift]);
 
 
@@ -144,7 +157,7 @@ export default function CafeBilling() {
     return (
         <>
             <div className="grid gap-3">
-                <ReportTitle title={`Rincian Transaksi Cafe ${cafe?.period}`} setSelected={setSelected} />
+                <ReportTitle title={`Rincian Transaksi Cafe`} desc={cafe?.period} setSelected={setSelected} getDataRincian={getDataRincian} loading={loading} />
                 <Tabs aria-label="Options" onSelectionChange={(key) => setShift(key as unknown as string)}>
                     <Tab key="analytics" title="Analisis">
                         <TopSaleCafe />

@@ -9,6 +9,7 @@ import { Button } from "@heroui/button";
 import { PlusCircle } from "lucide-react";
 import { IResponses } from "../../../../electron/lib/responses";
 import toast from 'react-hot-toast';
+import InputQty from "../../../components/InputQty";
 
 interface IOrderData {
     id_menu: number,
@@ -177,19 +178,19 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
         }
     }
 
-    // const handleQtyItem = async (id_order: number, type_qty: "plus" | "minus") => {
-    //     try {
-    //         const res = await window.api.menu_table_qty(id_order, type_qty);
+    const handleQtyItem = async (id_order: number, type_qty: "plus" | "minus") => {
+        try {
+            const res = await window.api.menu_table_qty(id_order, type_qty);
 
-    //         if (res.status) {
-    //             await getMenu();
-    //             await getMenuTable();
-    //         }
+            if (res.status) {
+                await getMenu();
+                await getMenuTable();
+            }
 
-    //     } catch (err) {
-    //         toast.error(`Terjadi kesalahan saat tambah/kurang menu: ${err}`);
-    //     }
-    // }
+        } catch (err) {
+            toast.error(`Terjadi kesalahan saat tambah/kurang menu: ${err}`);
+        }
+    }
 
     return (
         <>
@@ -221,10 +222,7 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
                                                     </div>
                                                     <div className="flex flex-col gap-2">
                                                         <p className="text-sm font-bold self-center">Rp. {convertRupiah(el.total.toString())}</p>
-                                                        <div className="text-center bg-slate-300/50 rounded-md px-3 py-1">
-                                                            <span className="text-sm">Qty: {el.qty.toString()}</span>
-                                                        </div>
-                                                        {/* <InputQty value={el.qty.toString()} onPressMinus={() => handleQtyItem(el.id, "minus")} onPressPlus={() => handleQtyItem(el.id, "plus")} /> */}
+                                                        <InputQty value={el.qty.toString()} onPressMinus={() => handleQtyItem(el.id, "minus")} onPressPlus={() => handleQtyItem(el.id, "plus")} show_plus={false} />
                                                     </div>
                                                 </div>
                                                 <Divider />

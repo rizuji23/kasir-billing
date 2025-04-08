@@ -5,7 +5,6 @@ import CategoryMenu from "./sections/CategoryMenu";
 import ApiSection from "./sections/ApiSection";
 import AboutPage from "./sections/About";
 import NetworkSection from "./sections/networks/Network";
-import MemberPage from "../member/Member";
 
 export default function SettingsPage() {
     return (
@@ -21,9 +20,9 @@ export default function SettingsPage() {
                     {/* <Tab key="voucher" title="Voucher">
                         <VoucherSection />
                     </Tab> */}
-                    <Tab key={"member"} title="Member">
+                    {/* <Tab key={"member"} title="Member">
                         <MemberPage />
-                    </Tab>
+                    </Tab> */}
                     <Tab key="network" title="Jaringan">
                         <NetworkSection />
                     </Tab>

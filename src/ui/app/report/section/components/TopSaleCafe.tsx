@@ -1,10 +1,7 @@
-import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Divider } from "@heroui/divider";
-import { Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import PrintReportCafe from "../modal/PrintReportCafe";
 import { LoadingComponent } from "../../../../components/datatable/DataTableCustom";
 import NotFound from "../../../../components/NotFound";
 
@@ -20,7 +17,6 @@ interface SalesByCategory {
 export default function TopSaleCafe() {
     const [loading, setLoading] = useState<boolean>(true);
     const [topSales, setTopSales] = useState<SalesByCategory | null>(null);
-    const [open, setOpen] = useState<boolean>(false);
 
     const getAnalyticsCafe = async () => {
         setLoading(true);
@@ -48,9 +44,6 @@ export default function TopSaleCafe() {
             <div className="flex flex-col gap-4">
                 <div className="flex justify-between">
                     <h3 className="text-xl font-bold self-center">Penjualan Cafe Terbanyak Berdasarkan Kategori</h3>
-                    <div className="flex gap-3">
-                        <Button onPress={() => setOpen(true)} startContent={<Printer className="w-4 h-4" />}>Print Laporan Cafe</Button>
-                    </div>
                 </div>
 
                 {
@@ -91,7 +84,6 @@ export default function TopSaleCafe() {
                 }
 
             </div>
-            <PrintReportCafe open={open} setOpen={setOpen} />
         </>
     )
 }

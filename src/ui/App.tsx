@@ -14,6 +14,7 @@ import KitchenPage from './app/kitchen/Kitchen'
 import { useEffect } from 'react'
 import AdminPage from './app/admin/Admin'
 import { ChatProvider } from './components/context/ChatContext'
+import Login from './app/Login'
 
 function App() {
   const navigate = useNavigate();
@@ -36,10 +37,10 @@ function App() {
         <WebSocketProvider>
           <ChatProvider>
             <Routes>
-              {/* <Route path="/" element={<Login />}></Route> */}
+              <Route path="/" element={<Login />}></Route>
 
               <Route path="/dashboard" element={<DashboardPage />}></Route>
-              <Route path="/" element={<DashboardPage />}></Route>
+              {/* <Route path="/" element={<DashboardPage />}></Route> */}
               <Route path="/order" element={<OrderPage />}></Route>
               <Route path="/menu" element={<Menu />}></Route>
               <Route path="/member" element={<MemberPage />}></Route>

@@ -128,14 +128,20 @@ export default function ReportModule() {
       shift: string,
     ) => {
       try {
-        const startDateTime = new Date(`${start_date}T00:00:00Z`);
-        const endDateTime = new Date(`${end_date}T23:59:59.999Z`);
+        const timezoneOffset = new Date().getTimezoneOffset() * 60000; // Convert to milliseconds
 
-        endDateTime.setUTCDate(endDateTime.getUTCDate() + 1);
-        endDateTime.setUTCHours(5, 0, 0, 0);
+        const startDateTime = new Date(`${start_date}T00:00:00`);
+        const endDateTime = new Date(`${end_date}T23:59:59.999`);
 
-        console.log("startDateTime", startDateTime.toISOString());
-        console.log("endDateTime", endDateTime.toISOString());
+        endDateTime.setDate(endDateTime.getDate() + 1);
+        endDateTime.setHours(5, 0, 0, 0);
+
+        // Convert to local time by subtracting timezone offset
+        const localStart = new Date(startDateTime.getTime() - timezoneOffset);
+        const localEnd = new Date(endDateTime.getTime() - timezoneOffset);
+
+        console.log("Start Time (Local):", localStart);
+        console.log("End Time (Local):", localEnd);
 
         const check_data = await prisma.struk.findMany({
           where: {

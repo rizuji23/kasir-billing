@@ -125,10 +125,28 @@ export default function DetailTransaction({ open, setOpen }: { open: { open: boo
                                                 </div>
                                             </div>
                                             <div className="grid grid-cols-3">
+                                                <div>
+                                                    <small>Diskon Billing</small>
+                                                    <p className="text-sm font-bold">{detail.discount_billing || "0"}%</p>
+                                                </div>
+                                                <div>
+                                                    <small>Diskon Cafe</small>
+                                                    <p className="text-sm font-bold">{detail.discount_cafe || "0"}%</p>
+                                                </div>
+                                                <div>
+                                                    <small>Subtotal Semua</small>
+                                                    <p className="text-sm font-bold">Rp. {convertRupiah(detail.subtotal?.toString() || "0")}</p>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-3">
 
                                                 <div>
                                                     <small>Total Semua</small>
                                                     <p className="text-sm font-bold">Rp. {convertRupiah(detail.total.toString() || "0")}</p>
+                                                </div>
+                                                <div>
+                                                    <small>Pembayaran</small>
+                                                    <p className="text-sm font-bold">Rp. {convertRupiah(detail.cash.toString() || "0")}</p>
                                                 </div>
                                                 <div>
                                                     <small>Kembalian</small>

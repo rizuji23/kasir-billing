@@ -65,6 +65,7 @@ contextBridge.exposeInMainWorld("api", {
     payment_method: string,
     name: string,
     no_meja: string,
+    keterangan: string,
   ) =>
     ipcRenderer.invoke(
       "checkout_menu",
@@ -73,6 +74,7 @@ contextBridge.exposeInMainWorld("api", {
       payment_method,
       name,
       no_meja,
+      keterangan,
     ),
   get_printer: () => ipcRenderer.invoke("get_printer"),
   get_serialport: () => ipcRenderer.invoke("get_serialport"),
@@ -217,4 +219,5 @@ contextBridge.exposeInMainWorld("api", {
       end_date,
       shift,
     ),
+  middleware: () => ipcRenderer.invoke("get_user"),
 });

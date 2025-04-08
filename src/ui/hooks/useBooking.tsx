@@ -12,6 +12,8 @@ interface IDataBookingInput {
     blink: string,
     id_table: string,
     id_booking?: string,
+    is_member?: string,
+    kode_member?: string,
 }
 
 interface IItemDuration {
@@ -42,6 +44,8 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
         blink: "tidak",
         id_table: "",
         id_booking: "",
+        is_member: "BIASA",
+        kode_member: "",
     })
 
     const tableList = useTableBilliard();

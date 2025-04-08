@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { TableBilliard } from "../../../electron/types";
 import { IResponses } from "../../../electron/lib/responses";
 import toast from 'react-hot-toast';
-import { Chip } from "@heroui/chip";
 
 interface ExtendsTableBilliard extends TableBilliard {
     getTables: () => Promise<void>,
@@ -68,7 +67,6 @@ function BoxLamp(props: ExtendsTableBilliard) {
             <div className="grid gap-2">
                 <div>
                     <h3 className="font-bold text-lg">{props.name}</h3>
-                    <small>Status: <Chip color={props.power === "ON" ? "success" : "danger"} size="sm">{props.power}</Chip></small>
                 </div>
                 <div className="grid gap-3 grid-cols-2">
                     <Button onPress={handleOn} size="sm">Turn On</Button>

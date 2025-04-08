@@ -118,6 +118,24 @@ export default function StrukView() {
                         </div>
                         <StripDivider />
                         {
+                            struk.discount_billing !== "0" && (<div className="text-[10px] !font-black grid gap-1.5 px-2">
+                                <div className="flex justify-between">
+                                    <p>Diskon Billing: </p>
+                                    <p className="text-end">{struk.discount_billing}%</p>
+                                </div>
+                            </div>)
+                        }
+                        {
+                            struk.discount_cafe !== "0" && (
+                                <div className="text-[10px] !font-black grid gap-1.5 px-2">
+                                    <div className="flex justify-between">
+                                        <p>Diskon Cafe: </p>
+                                        <p className="text-end">{struk.discount_cafe}%</p>
+                                    </div>
+                                </div>
+                            )
+                        }
+                        {
                             struk.type_struk === "TABLE" && (
                                 <>
                                     <div className="text-[10px] !font-black grid gap-1.5 px-2">
@@ -134,6 +152,7 @@ export default function StrukView() {
                                 </>
                             )
                         }
+
                         <div className="text-[10px] !font-black grid gap-1.5 px-2">
                             <div className="flex justify-between">
                                 <p>Total: </p>

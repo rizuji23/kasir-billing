@@ -1,7 +1,7 @@
 import { Card, CardBody } from "@heroui/card"
 import BoxItem from "./BoxItem"
 import { Divider } from "@heroui/divider"
-import { Input } from "@heroui/input"
+import { Input, Textarea } from "@heroui/input"
 import moment from "moment-timezone"
 import { Button } from "@heroui/button"
 import { UseCartResult } from "../../hooks/useCart"
@@ -16,6 +16,7 @@ export default function DetailPayment({ cart }: { cart: UseCartResult }) {
     const [payment_method, setPaymentMethod] = useState<"CASH" | "TRANSFER" | "QRIS" | string>("CASH");
     const [name, setName] = useState<string>("");
     const [no_meja, setNoMeja] = useState<string>("");
+    const [keterangan, setKeterangan] = useState<string>("");
 
     const total = cart.getTotal();
     const change = Math.max(0, Number(cash) - total);
@@ -62,11 +63,15 @@ export default function DetailPayment({ cart }: { cart: UseCartResult }) {
                                         }}
                                     />
                                 </div>
+                                <div className="mt-2">
+                                    <Textarea label="Keterangan" onChange={(e) => setKeterangan(e.target.value)} value={keterangan} />
+                                </div>
                                 <RadioGroup value={payment_method} onValueChange={(e) => setPaymentMethod(e)} orientation="horizontal" isRequired className="mt-2" label="Cara Pembayaran">
                                     <Radio classNames={{ label: "text-sm" }} value={"CASH"}>Cash</Radio>
                                     <Radio classNames={{ label: "text-sm" }} value={"TRANSFER"}>Transfer</Radio>
                                     <Radio classNames={{ label: "text-sm" }} value={"QRIS"}>QRIS</Radio>
                                 </RadioGroup>
+
                             </div>
                             <div className="flex flex-col gap-1">
                                 <h3>Total:</h3>
@@ -89,7 +94,7 @@ export default function DetailPayment({ cart }: { cart: UseCartResult }) {
                                     toast.error("Silakan isi uang cash terlebih dahulu")
                                     return;
                                 } else if (await window.api.confirm("Apakah anda yakin ingin memesan?")) {
-                                    cart.checkout(convertToInteger(cash), payment_method, name, no_meja);
+                                    cart.checkout(convertToInteger(cash), payment_method, name, no_meja, keterangan);
                                     setCash("");
                                     setName("");
                                     setNoMeja("");

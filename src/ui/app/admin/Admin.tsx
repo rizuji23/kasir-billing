@@ -1,16 +1,21 @@
-import MainLayout from "../../components/MainLayout";
 import { Tabs, Tab } from "@heroui/tabs";
 import UserList from "./section/UserList";
 import PriceList from "./section/PriceList";
 import ShiftList from "./section/ShiftList";
+import { Button } from "@heroui/button";
+import { ChevronLeft } from "lucide-react";
+import { useNavigate } from "react-router";
 
 export default function AdminPage() {
+    const history = useNavigate();
+
     return (
         <>
-            <MainLayout>
+            <div className="container mx-auto mt-4">
                 <div className="flex flex-col gap-5">
-                    <div className="flex justify-between">
-                        <h1 className="text-2xl font-bold">Pengaturan Admin</h1>
+                    <div className="flex gap-3">
+                        <Button onPress={() => history("/")} isIconOnly ><ChevronLeft /></Button>
+                        <h1 className="text-2xl font-bold">Pengaturan Tambahan</h1>
                     </div>
 
                     <Tabs aria-label="Options">
@@ -25,7 +30,8 @@ export default function AdminPage() {
                         </Tab>
                     </Tabs>
                 </div>
-            </MainLayout>
+            </div>
+
         </>
     )
 }

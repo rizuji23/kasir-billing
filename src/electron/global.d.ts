@@ -18,6 +18,7 @@ import {
   TableBilliard,
   TableRevenue,
   User,
+  UserData,
 } from "./types/index.js";
 import { IBookingCheckout } from "./module/booking.ts";
 import { IpcRendererEvent } from "electron";
@@ -76,7 +77,8 @@ interface ApiAPI {
     payment_method: string,
     name: string,
     no_meja: string,
-  ) => Promise<IResponses<{ cash: number; data: ICart[] }>>;
+    keterangan: string,
+  ) => Promise<IResponses<Struk>>;
   get_printer: () => Promise<IResponses<unknown>>;
   get_serialport: () => Promise<IResponses<unknown>>;
   list_member: () => Promise<IResponses<Array[]>>;
@@ -135,7 +137,9 @@ interface ApiAPI {
     id_booking: string;
     name: string;
   }) => Promise<IResponses<Booking>>;
-  payment_booking: (data: IPaymentData) => Promise<IResponses<unknown>>;
+  payment_booking: (
+    data: IPaymentData,
+  ) => Promise<IResponses<{ id_struk: string }>>;
   test_struk: () => Promise<void>;
   network_scan: (port: number) => Promise<{ ip: string; hostname: string }[]>;
   my_ip: () => Promise<string | null>;
@@ -281,6 +285,7 @@ interface ApiAPI {
     end_date: string,
     shift: string,
   ) => Promise<IResponses<unknown>>;
+  midleware: () => Promise<IResponses<UserData>>;
 }
 
 declare global {

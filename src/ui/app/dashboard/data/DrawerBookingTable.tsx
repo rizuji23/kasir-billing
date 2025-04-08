@@ -20,6 +20,7 @@ import {
 } from "@heroui/table";
 import usePaymentTable from "../../../hooks/usePaymentTable";
 import ModalChangeTable from "./ModalChangeTable";
+import SelectCustom from "../../../components/SelectCustom";
 
 
 export default function DrawerBookingTable({ open, setOpen, table }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, table: TableBilliard }) {
@@ -168,6 +169,20 @@ export default function DrawerBookingTable({ open, setOpen, table }: { open: boo
                                                         <p className="text-sm font-bold">{payment.duration} Jam</p>
                                                     </div>
                                                     <Divider />
+                                                    <div className="grid grid-cols-3">
+                                                        <div>
+                                                            <small>Diskon Billing</small>
+                                                            <p className=" font-bold">{payment.discount_billing}%</p>
+                                                        </div>
+                                                        <div>
+                                                            <small>Diskon Menu</small>
+                                                            <p className=" font-bold">{payment.discount_cafe}%</p>
+                                                        </div>
+                                                        <div>
+                                                            <small>Subtotal Semua</small>
+                                                            <p className=" font-bold">Rp. {convertRupiah(payment.total?.subtotal.toString() || "0")}</p>
+                                                        </div>
+                                                    </div>
                                                     <div>
                                                         <small>Total Semua</small>
                                                         <p className=" font-bold">Rp. {convertRupiah(payment.total?.total_all.toString() || "0")}</p>
@@ -239,6 +254,13 @@ export default function DrawerBookingTable({ open, setOpen, table }: { open: boo
                                                             </TableBody>
                                                         </Table>
                                                     </div>
+                                                    <SelectCustom label="Diskon Billing" onChange={(e) => payment.setDiscountBilling(e.target.value)} value={payment.discount_billing}>
+                                                        {
+                                                            Array.from({ length: 101 }).map((_, i) => {
+                                                                return <SelectCustom.Option key={i} value={i.toString()}>{i}%</SelectCustom.Option>
+                                                            })
+                                                        }
+                                                    </SelectCustom>
                                                 </div>
                                                 <div className="grid gap-2">
                                                     <p className="font-bold text-sm">List Menu: </p>
@@ -271,6 +293,13 @@ export default function DrawerBookingTable({ open, setOpen, table }: { open: boo
                                                                 }
                                                             </TableBody>
                                                         </Table>
+                                                        <SelectCustom label="Diskon Menu" onChange={(e) => payment.setDiscountCafe(e.target.value)} value={payment.discount_cafe}>
+                                                            {
+                                                                Array.from({ length: 101 }).map((_, i) => {
+                                                                    return <SelectCustom.Option key={i} value={i.toString()}>{i}%</SelectCustom.Option>
+                                                                })
+                                                            }
+                                                        </SelectCustom>
                                                     </div>
                                                 </div>
                                             </div>

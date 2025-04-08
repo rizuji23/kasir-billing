@@ -38,7 +38,7 @@ export async function generateExcelReportCafe(
       const worksheet = workbook.addWorksheet(name);
       worksheet.columns = [
         { header: "No", key: "no", width: 5 },
-        { header: "Nama Menu", key: "name", width: 20 },
+        { header: "Nama Menu", key: "name", width: 50 },
         { header: "Harga", key: "price", width: 20 },
         { header: "Qty", key: "qty", width: 5 },
         { header: "Total", key: "total_price", width: 20 },
@@ -134,11 +134,20 @@ export async function generateExcelReport(
   end_date: string,
 ) {
   try {
-    const startDateTime = new Date(`${start_date}T00:00:00Z`);
-    const endDateTime = new Date(`${end_date}T23:59:59.999Z`);
+    const timezoneOffset = new Date().getTimezoneOffset() * 60000; // Convert to milliseconds
 
-    endDateTime.setUTCDate(endDateTime.getUTCDate() + 1);
-    endDateTime.setUTCHours(5, 0, 0, 0);
+    const startDateTime = new Date(`${start_date}T00:00:00`);
+    const endDateTime = new Date(`${end_date}T23:59:59.999`);
+
+    endDateTime.setDate(endDateTime.getDate() + 1);
+    endDateTime.setHours(5, 0, 0, 0);
+
+    // Convert to local time by subtracting timezone offset
+    const localStart = new Date(startDateTime.getTime() - timezoneOffset);
+    const localEnd = new Date(endDateTime.getTime() - timezoneOffset);
+
+    console.log("Start Time (Local):", localStart);
+    console.log("End Time (Local):", localEnd);
 
     const strukData = await prisma.struk.findMany({
       where: {
@@ -164,8 +173,13 @@ export async function generateExcelReport(
         { header: "No", key: "no", width: 5 },
         { header: "ID Order", key: "id_struk", width: 15 },
         { header: "Nama", key: "name", width: 20 },
+        { header: "Subtotal Billing", key: "subtotal_billing", width: 15 },
+        { header: "Subtotal Cafe", key: "subtotal_cafe", width: 15 },
+        { header: "Diskon Billing", key: "discount_billing", width: 9 },
+        { header: "Diskon Cafe", key: "discount_cafe", width: 9 },
         { header: "Total Billing", key: "total_billing", width: 15 },
         { header: "Total Cafe", key: "total_cafe", width: 15 },
+        { header: "Subtotal", key: "subtotal", width: 15 },
         { header: "Total", key: "total", width: 15 },
         { header: "Pembayaran", key: "cash", width: 15 },
         { header: "Kembalian", key: "change", width: 15 },
@@ -184,8 +198,13 @@ export async function generateExcelReport(
           no: index + 1,
           id_struk: struk.id_struk,
           name: struk.name,
+          subtotal_billing: struk.subtotal_billing || "0",
+          subtotal_cafe: struk.subtotal_cafe || "0",
+          discount_billing: struk.discount_billing || "0",
+          discount_cafe: struk.discount_cafe || "0",
           total_billing: struk.total_billing,
           total_cafe: struk.total_cafe,
+          subtotal: struk.subtotal,
           total: struk.total,
           cash: struk.cash,
           change: struk.change,
@@ -221,13 +240,32 @@ export async function generateExcelReport(
         0,
       );
 
+      const subtotal_cafe = data.reduce(
+        (sum, struk) => sum + (struk.subtotal_cafe || 0),
+        0,
+      );
+      const subtotal_billing = data.reduce(
+        (sum, struk) => sum + (struk.subtotal_billing || 0),
+        0,
+      );
+
+      const subtotal = data.reduce(
+        (sum, struk) => sum + (struk.subtotal || 0),
+        0,
+      );
+
       // Insert TOTAL row
       const totalRow = worksheet.addRow({
         no: "",
         id_struk: "TOTAL",
         name: "",
+        subtotal_billing: subtotal_billing,
+        subtotal_cafe: subtotal_cafe,
+        discount_billing: "",
+        discount_cafe: "",
         total_billing: total_billing,
         total_cafe: total_cafe,
+        subtotal: subtotal,
         total: total,
         cash: "",
         change: "",

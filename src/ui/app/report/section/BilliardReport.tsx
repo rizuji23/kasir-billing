@@ -15,6 +15,11 @@ import { debounce } from "lodash";
 
 const columns: TableColumn<Booking>[] = [
     {
+        name: "No",
+        selector: row => row?.no || "0",
+        width: "60px"
+    },
+    {
         name: "ID Booking",
         selector: row => row.id_booking,
         cell: row => <Chip color="success" size="sm" classNames={{
@@ -22,7 +27,7 @@ const columns: TableColumn<Booking>[] = [
         }}>{row.id_booking}</Chip>
     },
     {
-        name: "Nama Pelanggan",
+        name: "Pelanggan",
         selector: row => row.name,
         sortable: true
     },
@@ -47,7 +52,7 @@ const columns: TableColumn<Booking>[] = [
         name: "Shift",
         selector: row => row?.shift || "" as unknown as string,
         sortable: true,
-        cell: row => <Chip size="sm" className={cn("capitalize", row.shift === "pagi" ? "bg-yellow-600" : "bg-slate-500")}>{row.shift}</Chip>
+        cell: row => <Chip size="sm" className={cn("capitalize", row.shift === "Pagi" ? "bg-yellow-600" : "bg-slate-500")}>{row.shift}</Chip>
     },
     {
         name: "Tanggal",
@@ -71,25 +76,33 @@ export default function BilliardReport() {
     const [filteredBilling, setFilterdBilling] = useState<Booking[]>([]);
     const [searchTerm, setSearchTerm] = useState<string>("");
 
-    const getDataRincian = async (filter: string = "today") => {
+    const getDataRincian = async ({ filter = "today", start_date = "", end_date = "" }: { filter?: string; start_date?: string; end_date?: string }) => {
         setLoading(true);
         try {
             console.log("shift", shift)
-            const res = await window.api.billing_report({ period: filter }, shift);
+            const res = await window.api.billing_report({ period: filter, start_date, end_date }, shift);
             setLoading(false);
 
             if (res.status && res.data) {
-                console.log("res.data", res.data)
-                setBilling(res.data);
+                console.log("res.data", res.data);
+                const data_booking = {
+                    ...res.data,
+                    booking: res.data.booking.map((el, i) => ({ ...el, no: i + 1 })),
+                }
+                setBilling(data_booking);
+                return true;
             }
         } catch (err) {
             setLoading(false);
             toast.error(`Error fetching tables: ${err}`);
+            return false;
         }
     }
 
     useEffect(() => {
-        getDataRincian(selected);
+        if (selected !== "customs") {
+            getDataRincian({ filter: selected });
+        }
     }, [selected, shift]);
 
     const handleSearch = useCallback(debounce((term: string) => {
@@ -114,7 +127,7 @@ export default function BilliardReport() {
     return (
         <>
             <div className="grid gap-3">
-                <ReportTitle title={`Rincian Transaksi Billing ${billing?.period}`} setSelected={setSelected} />
+                <ReportTitle title={`Rincian Transaksi Billing`} desc={billing?.period} setSelected={setSelected} getDataRincian={getDataRincian} loading={loading} />
                 <Tabs aria-label="Options" onSelectionChange={(key) => setShift(key as unknown as string)}>
                     <Tab key="all" title="Semua" />
                     <Tab key="Pagi" title="Shift Siang" />
@@ -129,7 +142,7 @@ export default function BilliardReport() {
                                         <h3 className="text-xl font-bold">Total Transaksi Billiard</h3>
                                         <h3 className="text-xl font-bold">Rp. {convertRupiah(billing?.total_all.toString() || "0")}</h3>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+
                                 </div>
                                 <div>
                                     <Coins />
@@ -145,7 +158,7 @@ export default function BilliardReport() {
                                         <h3 className="text-xl font-bold">Total Durasi</h3>
                                         <h3 className="text-xl font-bold">{billing?.total_duration || "0"} Jam</h3>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+
                                 </div>
                                 <div>
                                     <Timer />
