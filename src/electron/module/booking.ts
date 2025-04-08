@@ -273,6 +273,11 @@ async function createUpdateStruk(
         ? ("PAID" as StatusTransaction)
         : ("NOPAID" as StatusTransaction),
       shift: shift || "Pagi",
+      subtotal: data.total?.subtotal || 0,
+      subtotal_cafe: data.total?.subtotal_cafe || 0,
+      subtotal_billing: data.total?.subtotal_billing || 0,
+      discount_billing: data?.discount_billing || "0",
+      discount_cafe: data?.discount_cafe || "0",
     };
 
     if (types === "create") {
@@ -407,6 +412,7 @@ export default function BookingModule() {
   ipcMain.handle("payment_booking", async (_, data: IPaymentData) => {
     try {
       console.log("Data", data);
+      let id_struk = "";
       const [booking, table] = await Promise.all([
         prisma.booking.findFirst({
           where: {
@@ -495,6 +501,8 @@ export default function BookingModule() {
             });
           }
 
+          id_struk = (struk_create as unknown as Struk).id_struk;
+
           await StrukWindow((struk_create as unknown as Struk).id_struk);
         } else {
           // update struk
@@ -512,6 +520,7 @@ export default function BookingModule() {
             });
           }
 
+          id_struk = (struk_update as unknown as Struk).id_struk;
           await StrukWindow((struk_update as unknown as Struk).id_struk);
         }
 
@@ -529,7 +538,9 @@ export default function BookingModule() {
 
       return Responses({
         code: 201,
-        data: null,
+        data: {
+          id_struk: id_struk,
+        },
       });
     } catch (err) {
       console.log("err", err);

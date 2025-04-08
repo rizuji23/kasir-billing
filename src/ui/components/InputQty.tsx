@@ -3,7 +3,7 @@ import { Input } from "@heroui/input";
 import { PressEvent } from "@react-types/shared";
 import { Minus, Plus } from "lucide-react";
 
-export default function InputQty({ onPressPlus, onPressMinus, value }: { onPressPlus: (e: PressEvent) => void, onPressMinus: (e: PressEvent) => void, value: string | (readonly string[] & string) }) {
+export default function InputQty({ onPressPlus, onPressMinus, value, show_plus = true }: { onPressPlus: (e: PressEvent) => void, onPressMinus: (e: PressEvent) => void, value: string | (readonly string[] & string), show_plus?: boolean }) {
     return (
         <>
             <Input
@@ -23,7 +23,7 @@ export default function InputQty({ onPressPlus, onPressMinus, value }: { onPress
                     </Button>
                 }
                 endContent={
-                    <Button
+                    show_plus && <Button
                         size="sm"
                         color="success"
                         isIconOnly

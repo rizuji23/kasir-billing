@@ -2,6 +2,10 @@ import { useState } from "react";
 import { ICart } from "../../electron/types";
 import toast from 'react-hot-toast';
 import { useWebsocketData } from "../components/context/WebsocketContext";
+import Swal from 'sweetalert2'
+import withReactContent from 'sweetalert2-react-content'
+
+const Swals = withReactContent(Swal)
 
 export interface UseCartResult {
     cart: ICart[];
@@ -11,7 +15,7 @@ export interface UseCartResult {
     getTotal: () => number;
     getChange: (cash: number) => number;
     cancelOrder: () => void;
-    checkout: (cash: number, payment_method: string, name: string, no_meja: string) => void;
+    checkout: (cash: number, payment_method: string, name: string, no_meja: string, keterangan: string) => void;
     loading: boolean;
 }
 
@@ -70,7 +74,7 @@ export default function useCart(): UseCartResult {
         return cash - getTotal();
     };
 
-    const checkout = async (cash: number, payment_method: "CASH" | "TRANSFER" | "QRIS" | string, name: string, no_meja: string) => {
+    const checkout = async (cash: number, payment_method: "CASH" | "TRANSFER" | "QRIS" | string, name: string, no_meja: string, keterangan: string) => {
         setLoading(true);
 
         if (name.length === 0) {
@@ -86,15 +90,29 @@ export default function useCart(): UseCartResult {
         }
 
         try {
-            const res = await window.api.checkout_menu(cash, cart, payment_method, name, no_meja);
+            const res = await window.api.checkout_menu(cash, cart, payment_method, name, no_meja, keterangan);
             setLoading(false)
             if (res.status && res.data) {
-                console.log("connectedKitchens.length", socket.connectedKitchens.length)
                 cancelOrder()
                 toast.success(res.detail_message || "");
+
+                Swals.fire({
+                    title: "Apakah ingin print struk lagi?",
+                    icon: "info",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Iya"
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        await window.api.print_struk(res.data?.id_struk || "");
+                    }
+                });
+
                 if (socket.connectedKitchens.length === 0) {
                     window.api.show_message_box("warning", "Dapur tidak terkoneksi, maka struk dapur tidak akan terkirim.");
                 }
+
             } else {
                 toast.error(`Gagal melakukan pembayaran: ${res.detail_message}`);
             }

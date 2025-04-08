@@ -1,7 +1,6 @@
 import { Card, CardBody } from "@heroui/card";
 import { Coins, Moon, Sun, Utensils } from "lucide-react";
 import ReportTitle from "./ReportTitle";
-import moment from "moment-timezone";
 import { useEffect, useState } from "react";
 import toast from 'react-hot-toast';
 import { LoadingComponent } from "../../../components/datatable/DataTableCustom";
@@ -24,25 +23,29 @@ export default function ReportAll() {
     const [selected, setSelected] = useState<string>("today");
     const [total, setTotal] = useState<SummaryReportType | null>(null);
 
-    const getDataSummary = async (filter: string = "today") => {
+    const getDataSummary = async ({ filter = "today", start_date = "", end_date = "" }: { filter?: string; start_date?: string; end_date?: string }) => {
         setLoading(true);
         try {
-            const res = await window.api.summary_report({ period: filter });
+            const res = await window.api.summary_report({ period: filter, start_date, end_date });
             setLoading(false);
 
             if (res.status && res.data) {
                 console.log("res.data", res.data)
                 setTotal(res.data);
+                return true;
             }
 
         } catch (err) {
             setLoading(false);
             toast.error(`Error fetching tables: ${err}`);
+            return false;
         }
     }
 
     useEffect(() => {
-        getDataSummary(selected)
+        if (selected !== "customs") {
+            getDataSummary({ filter: selected })
+        }
     }, [selected]);
 
     return (
@@ -50,7 +53,7 @@ export default function ReportAll() {
             <div className="grid gap-5">
                 {
                     loading ? <LoadingComponent /> : <>
-                        <ReportTitle title={`Total Transaksi (${total?.period || ""})`} setSelected={setSelected} />
+                        <ReportTitle title={`Total Transaksi`} desc={total?.period || ""} setSelected={setSelected} getDataRincian={getDataSummary} loading={loading} />
                         <Card>
                             <CardBody className="p-5">
                                 <div className="flex justify-between">
@@ -59,7 +62,7 @@ export default function ReportAll() {
                                             <h3 className="text-xl font-bold">Total Semua</h3>
                                             <h3 className="text-xl font-bold">Rp. {convertRupiah(total?.total.toString() || "0")}</h3>
                                         </div>
-                                        <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+
                                     </div>
                                     <Coins />
                                 </div>
@@ -74,7 +77,7 @@ export default function ReportAll() {
                                                 <h3 className="text-xl font-bold">Total Billing Billiard</h3>
                                                 <h3 className="text-xl font-bold">Rp. {convertRupiah(total?.total_billing.toString() || "0")}</h3>
                                             </div>
-                                            <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+
                                         </div>
                                         <Coins />
                                     </div>
@@ -88,7 +91,7 @@ export default function ReportAll() {
                                                 <h3 className="text-xl font-bold">Total Cafe</h3>
                                                 <h3 className="text-xl font-bold">Rp. {convertRupiah(total?.total_cafe.toString() || "0")}</h3>
                                             </div>
-                                            <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+
                                         </div>
                                         <Utensils />
                                     </div>
@@ -102,7 +105,7 @@ export default function ReportAll() {
                                                 <h3 className="text-xl font-bold">Total Shift Pagi</h3>
                                                 <h3 className="text-xl font-bold">Rp. {convertRupiah(total?.total_pagi.toString() || "0")}</h3>
                                             </div>
-                                            <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+
                                         </div>
                                         <Sun />
                                     </div>
@@ -116,7 +119,7 @@ export default function ReportAll() {
                                                 <h3 className="text-xl font-bold">Total Shift Malam</h3>
                                                 <h3 className="text-xl font-bold">Rp. {convertRupiah(total?.total_malam.toString() || "0")}</h3>
                                             </div>
-                                            <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+
                                         </div>
                                         <Moon />
                                     </div>

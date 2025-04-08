@@ -3,6 +3,10 @@ import { Booking, DetailBooking, IPaymentData, OrderCafe, TableBilliard } from "
 import { Selection } from "@heroui/react";
 import { convertToInteger } from "../lib/utils";
 import toast from 'react-hot-toast';
+import Swal from 'sweetalert2'
+import withReactContent from 'sweetalert2-react-content'
+
+const Swals = withReactContent(Swal)
 
 interface IPaymentTableDetail {
     table: TableBilliard,
@@ -31,6 +35,10 @@ export interface UsePaymentTableResult {
     checkOut: () => Promise<void>;
     loading: boolean,
     printStruk: () => Promise<void>;
+    setDiscountCafe: Dispatch<SetStateAction<string>>,
+    setDiscountBilling: Dispatch<SetStateAction<string>>,
+    discount_cafe: string,
+    discount_billing: string
 }
 
 export interface UsePaymentTable {
@@ -45,6 +53,9 @@ interface TotalPayment {
     total_all: number;
     total_cafe: number;
     total_billing: number;
+    subtotal_billing: number;
+    subtotal_cafe: number;
+    subtotal: number;
 }
 
 export default function usePaymentTable({ getDetailBookingTable, detail, open, setOpen, table }: UsePaymentTable): UsePaymentTableResult {
@@ -57,6 +68,9 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
 
     const [total, setTotal] = useState<TotalPayment | null>(null);
     const [payment_cash, setPaymentCash] = useState<string>("");
+
+    const [discount_cafe, setDiscountCafe] = useState<string>("0");
+    const [discount_billing, setDiscountBilling] = useState<string>("0");
 
     const [change, setChange] = useState<number>(0);
 
@@ -93,44 +107,72 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
 
 
     const getTotalAll = async () => {
+        const discount_cafe_percent = (Number(discount_cafe) || 0);
+        const discount_billing_percent = (Number(discount_billing) || 0);
+
         const total_billing = list_booking.reduce((sum, item) => sum + item.price, 0);
         const total_cafe = list_cafe.reduce((sum, item) => sum + item.total, 0);
-        const total_all = total_billing + total_cafe;
+
+        const discount_billings = (total_billing * discount_billing_percent) / 100;
+        const discount_cafes = (total_cafe * discount_cafe_percent) / 100;
+
+        const subtotal_billing = total_billing;
+        const subtotal_cafe = total_cafe;
+
+        const subtotal_all = subtotal_billing + subtotal_cafe;
+
+        const total_billing_after_discount = total_billing - discount_billings;
+        const total_cafe_after_discount = total_cafe - discount_cafes;
+
+        const total_all = total_billing_after_discount + total_cafe_after_discount;
+
         console.log({
+            subtotal_billing,
+            subtotal_cafe,
+            subtotal_all,
             total_billing,
             total_cafe,
+            discount_billings,
+            discount_cafes,
+            total_billing_after_discount,
+            total_cafe_after_discount,
             total_all
-        })
+        });
+
+        // Menyimpan total dalam state
         setTotal({
-            total_billing,
-            total_cafe,
+            subtotal_billing,   // Menyimpan subtotal billing
+            subtotal_cafe,      // Menyimpan subtotal cafe
+            subtotal: subtotal_all,       // Menyimpan subtotal semua
+            total_billing: total_billing_after_discount,
+            total_cafe: total_cafe_after_discount,
             total_all
-        })
+        });
     }
 
-    const getTotalSplit = () => {
-        const selected_booking_data = Array.from(selected_booking);
-        const selected_cafe_data = Array.from(selected_cafe);
+    // const getTotalSplit = () => {
+    //     const selected_booking_data = Array.from(selected_booking);
+    //     const selected_cafe_data = Array.from(selected_cafe);
 
-        const data_booking = list_booking.filter((el) => selected_booking_data.includes(el.id.toString()));
-        const data_cafe = list_cafe.filter((el) => selected_cafe_data.includes(el.id.toString()));
+    //     const data_booking = list_booking.filter((el) => selected_booking_data.includes(el.id.toString()));
+    //     const data_cafe = list_cafe.filter((el) => selected_cafe_data.includes(el.id.toString()));
 
 
-        const total_billing = data_booking.reduce((sum, item) => sum + item.price, 0);
-        const total_cafe = data_cafe.reduce((sum, item) => sum + item.total, 0);
-        const total_all = total_billing + total_cafe;
-        console.log({
-            total_billing,
-            total_cafe,
-            total_all
-        })
+    //     const total_billing = data_booking.reduce((sum, item) => sum + item.price, 0);
+    //     const total_cafe = data_cafe.reduce((sum, item) => sum + item.total, 0);
+    //     const total_all = total_billing + total_cafe;
+    //     console.log({
+    //         total_billing,
+    //         total_cafe,
+    //         total_all
+    //     })
 
-        setTotal({
-            total_billing,
-            total_cafe,
-            total_all
-        })
-    }
+    //     setTotal({
+    //         total_billing,
+    //         total_cafe,
+    //         total_all
+    //     })
+    // }
 
     const checkOut = async () => {
         setLoading(true);
@@ -146,6 +188,8 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
                     payment_method: payment_method,
                     is_split_bill: is_split_bill,
                     splitbill: null,
+                    discount_billing: discount_billing,
+                    discount_cafe: discount_cafe
                 };
 
                 if (is_split_bill === true) {
@@ -184,12 +228,25 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
                 const res = await window.api.payment_booking(data);
                 setLoading(false);
 
-                console.log("DAta", data);
+                console.log("DAta", res);
 
-                if (res.status) {
+                if (res.status && res.data) {
                     toast.success("Pembayaran berhasil dilakukan");
                     await getDetailBookingTable();
                     setOpen(false);
+
+                    Swals.fire({
+                        title: "Apakah ingin print struk lagi?",
+                        icon: "info",
+                        showCancelButton: true,
+                        confirmButtonColor: "#3085d6",
+                        cancelButtonColor: "#d33",
+                        confirmButtonText: "Iya"
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            await window.api.print_struk(res.data?.id_struk || "");
+                        }
+                    });
                 } else {
                     toast.error("Pembayaran gagal dilakukan");
                 }
@@ -215,9 +272,12 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
                     payment_method: payment_method,
                     is_split_bill: is_split_bill,
                     splitbill: null,
+                    discount_billing: discount_billing,
+                    discount_cafe: discount_cafe
                 };
 
                 const res = await window.api.print_struk_temp(data);
+
 
                 if (res.status) {
                     toast.success("Struk berhasil diprint");
@@ -256,7 +316,7 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
             setSelectedCafe(new Set([]));
             setIsSplitBill(false);
         }
-    }, [open, list_booking, list_cafe]);
+    }, [open, list_booking, list_cafe, discount_billing, discount_cafe]);
 
     useEffect(() => {
         if (open === true) {
@@ -264,7 +324,7 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
             const selected_cafe_data = Array.from(selected_cafe);
 
             if (selected_booking_data.length !== 0 || selected_cafe_data.length !== 0) {
-                getTotalSplit();
+                // getTotalSplit();
                 setIsSplitBill(true);
             } else {
                 setChange(0);
@@ -275,5 +335,5 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
         }
     }, [selected_cafe, selected_booking]);
 
-    return { list_booking, list_cafe, setSelectedBooking, setSelectedCafe, selected_cafe, selected_booking, total, change, payment_cash, setPaymentCash, handlePaymentChange, payment_method, setPaymentMethod, duration, setIsSplitBill, is_split_bill, setNameSplit, name_split, checkOut, loading, printStruk };
+    return { list_booking, list_cafe, setSelectedBooking, setSelectedCafe, selected_cafe, selected_booking, total, change, payment_cash, setPaymentCash, handlePaymentChange, payment_method, setPaymentMethod, duration, setIsSplitBill, is_split_bill, setNameSplit, name_split, checkOut, loading, printStruk, setDiscountBilling, setDiscountCafe, discount_billing, discount_cafe };
 }

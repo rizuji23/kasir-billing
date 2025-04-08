@@ -96,15 +96,15 @@ export default function HardwareApi() {
                             </SelectCustom>
                             <Divider />
                             <div className="grid gap-3">
-                                <Alert color="danger" description={`"Reconnect Box Billing" atau Mengganti COM Port akan menyebabkan Lampu mati sesaat.
+                                <Alert color="danger" description={`"Simpan Perubahan" atau Mengganti COM Port akan menyebabkan Lampu mati sesaat.
 `} title={"PERHATIAN"} />
-                                <div>
+                                {/* <div>
                                     <Button color="danger" onPress={async () => {
                                         if (await window.api.confirm()) {
                                             handleReconnectBox();
                                         }
                                     }}>Reconnect Box Billing</Button>
-                                </div>
+                                </div> */}
                             </div>
                         </div>
                     </CardBody>

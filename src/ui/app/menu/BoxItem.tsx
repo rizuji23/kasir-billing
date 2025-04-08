@@ -10,11 +10,11 @@ export default function BoxItem({ item, cart }: { item: ICart, cart: UseCartResu
     return (
         <>
             <div className="flex justify-between">
-                <div className="p-3 flex gap-3">
+                <div className="p-3 flex gap-3 justify-between">
                     <div className="grid gap-1">
-                        <p className="font-bold">{item.name}</p>
+                        <p className="font-bold text-sm">{item.name}</p>
                         <div>
-                            <p className="">Rp. {convertRupiah(item.price.toString())}</p>
+                            <p className="text-sm">Rp. {convertRupiah(item.price.toString())}</p>
                         </div>
                     </div>
                 </div>

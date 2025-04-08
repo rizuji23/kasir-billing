@@ -155,6 +155,7 @@ export interface Members {
 
 export interface Booking {
   id: number;
+  no?: number;
   id_booking: string;
   memberId: number;
   member: Members;
@@ -287,6 +288,7 @@ export interface IOrderCafeNew {
 
 export interface OrderCafe {
   id: number;
+  no?: number;
   id_order_cafe: string;
   menu_cafe: number;
   menucafe: MenuCafe;
@@ -477,19 +479,25 @@ export interface IPaymentData {
   id_table: string;
   id_booking: string;
   total: {
-    total_billing: number;
-    total_cafe: number;
     total_all: number;
+    total_cafe: number;
+    total_billing: number;
+    subtotal_billing: number;
+    subtotal_cafe: number;
+    subtotal: number;
   } | null;
   payment_cash: string;
   change: number;
   payment_method: "CASH" | "TRANSFER" | "QRIS" | string;
   is_split_bill: boolean;
   splitbill?: IPaymentSplitBill | null;
+  discount_billing: string;
+  discount_cafe: string;
 }
 
 export interface Struk {
   id: number;
+  no?: number;
   id_struk: string;
   id_order?: number;
   id_order_in?: number;
@@ -510,6 +518,11 @@ export interface Struk {
   created_at: Date;
   updated_at: Date;
   shift?: string;
+  subtotal?: number;
+  subtotal_cafe?: number;
+  subtotal_billing?: number;
+  discount_billing?: string;
+  discount_cafe?: string;
 }
 
 export interface PriceBilling {
@@ -555,4 +568,9 @@ export interface ServersList {
 export interface TableRevenue {
   tableName: string;
   totalRevenue: number;
+}
+
+export interface UserData {
+  username: string;
+  name: string;
 }

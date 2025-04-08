@@ -118,8 +118,10 @@ export const strukFilter = async (
   };
 
   const today = new Date();
-  const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-  const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+  const startOfDay = new Date(today.setHours(0, 0, 0, 0)); // Today at 00:00
+  const endOfDay = new Date(today);
+  endOfDay.setDate(endOfDay.getDate() + 1); // Move to the next day
+  endOfDay.setHours(3, 0, 0, 0); // Set time to 03:00 AM
 
   let period = ""; // Variable to store the period string
 
@@ -130,8 +132,8 @@ export const strukFilter = async (
   switch (filter.period) {
     case "today": {
       whereClause["updated_at"] = {
-        gte: startOfDay,
-        lte: endOfDay,
+        gte: startOfDay, // Start of today at 00:00
+        lte: endOfDay, // End of today at 03:00 AM next day
       };
       period = `Hari Ini (${formatDate(today)})`; // e.g., "Hari Ini (15/02/2023)"
       break;
@@ -139,12 +141,14 @@ export const strukFilter = async (
 
     case "yesterday": {
       const yesterday = new Date(today);
-      yesterday.setDate(today.getDate() - 1);
-      const startOfYesterday = new Date(yesterday.setHours(0, 0, 0, 0));
-      const endOfYesterday = new Date(yesterday.setHours(23, 59, 59, 999));
+      yesterday.setDate(today.getDate() - 1); // Move to yesterday
+
+      const startOfYesterday = new Date(yesterday.setHours(0, 0, 0, 0)); // 00:00 yesterday
+      const endOfYesterday = new Date(today.setHours(3, 0, 0, 0)); // Today at 03:00 AM
+
       whereClause["updated_at"] = {
-        gte: startOfYesterday,
-        lte: endOfYesterday,
+        gte: startOfYesterday, // Start of yesterday at 00:00
+        lte: endOfYesterday, // End of yesterday at 03:00 AM today
       };
       period = `Kemarin (${formatDate(yesterday)})`; // e.g., "Kemarin (14/02/2023)"
       break;

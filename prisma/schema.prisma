@@ -322,6 +322,7 @@ model OrderCafe {
   booking     Booking?             @relation(fields: [bookingId], references: [id], onDelete: Cascade) // Make relation optional
   payment_method PaymentMethodCasier @default(CASH)
   no_meja Int?
+  keterangan String?
   status      StatusTransaction    @default(NOPAID)
   status_kitchen StatusKitchen @default(PENDING)
   userId      Int?
@@ -456,10 +457,15 @@ model Struk {
   bookingId Booking? @relation(fields: [id_booking], references: [id])
   name String
   total Int
+  subtotal Int? @default(0)
   total_cafe Int?
   total_billing Int?
   cash Int
   change Int
+  discount_billing String? @default("0")
+  discount_cafe String? @default("0")
+  subtotal_cafe Int? @default(0)
+  subtotal_billing Int? @default(0)
   payment_method PaymentMethodCasier @default(CASH)
   is_split_bill Boolean @default(false)
   type_struk TypeStruk

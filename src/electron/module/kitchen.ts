@@ -32,7 +32,11 @@ export const sendToKitchen = async (
         id_order,
       },
       include: {
-        menucafe: true,
+        menucafe: {
+          include: {
+            category_menu: true,
+          },
+        },
         booking: {
           include: {
             table: true,

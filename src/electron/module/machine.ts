@@ -245,10 +245,7 @@ export default function MachineModule() {
     async (_, data: { id_table: string; number: string }) => {
       try {
         await sendMessageToMachine(`on ${data.number}`);
-        const tables = await prisma.tableBilliard.update({
-          where: { id_table: data.id_table },
-          data: { power: "ON" },
-        });
+        const tables = await prisma.tableBilliard.findMany();
         return Responses({
           code: 201,
           data: tables,
@@ -268,10 +265,7 @@ export default function MachineModule() {
     async (_, data: { id_table: string; number: string }) => {
       try {
         await sendMessageToMachine(`off ${data.number}`);
-        const tables = await prisma.tableBilliard.update({
-          where: { id_table: data.id_table },
-          data: { power: "OFF" },
-        });
+        const tables = await prisma.tableBilliard.findMany();
         return Responses({
           code: 201,
           data: tables,
@@ -304,9 +298,7 @@ export default function MachineModule() {
   ipcMain.handle("on_off_all", async (_, status: string) => {
     try {
       await sendMessageToMachine(`${status === "ON_ALL" ? "on" : "off"} all`);
-      const tables = await prisma.tableBilliard.updateMany({
-        data: { power: status === "ON_ALL" ? "ON" : "OFF" },
-      });
+      const tables = await prisma.tableBilliard.findMany();
       return Responses({
         code: 201,
         data: tables,

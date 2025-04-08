@@ -148,6 +148,8 @@ if (!gotTheLock) {
       focusable: true,
     });
 
+    mainWindow.maximize();
+
     if (isDev()) {
       mainWindow.loadURL("http://localhost:5123");
     } else {
@@ -429,7 +431,8 @@ ipcMain.handle(
           },
         });
       }
-
+      app.relaunch(); // Relaunch the app
+      app.exit(0); // Close the current instance
       return Responses({
         code: 200,
         data: res,

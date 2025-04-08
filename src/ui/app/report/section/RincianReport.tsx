@@ -13,32 +13,40 @@ import moment from "moment-timezone";
 import { cn, convertRupiah } from "../../../lib/utils";
 import DetailTransaction from "./modal/DetailTransaction";
 import { debounce } from "lodash";
+import { Button } from "@heroui/button";
 
 const columns = (setOpen: Dispatch<SetStateAction<{ open: boolean, row: Struk | null }>>): TableColumn<Struk>[] => {
     return [
         {
+            name: "No",
+            selector: row => row?.no || "0",
+            width: "60px"
+        },
+        {
             name: "ID Order",
             selector: row => row.id_struk,
-            cell: row => <button onClick={() => setOpen({
+            cell: row => <Button onPress={() => setOpen({
                 open: true,
                 row: row
-            })} color="success" className="text-blue-500 hover:underline font-semibold">{row.id_struk}</button>
+            })} color="success" className="font-bold text-xs py-2" size="sm">{row.id_struk}</Button>,
+            width: "200px"
         },
         {
             name: "Pelanggan",
             selector: row => row.name,
-            cell: row => <span className="font-bold">{row.name}</span>
+            cell: row => <span className="font-bold">{row.name}</span>,
+            wrap: true
         },
         {
             name: "Billing",
             selector: row => row.total_billing || 0,
-            cell: row => convertRupiah(row.total_billing?.toString() || "0"),
+            cell: row => row.total_billing ? convertRupiah(row.total_billing?.toString() || "0") : "-",
             sortable: true
         },
         {
             name: "Cafe",
             selector: row => row.total_cafe || 0,
-            cell: row => convertRupiah(row.total_cafe?.toString() || "0"),
+            cell: row => row.total_cafe ? convertRupiah(row.total_cafe?.toString() || "0") : "-",
             sortable: true
         },
         {
@@ -67,8 +75,9 @@ const columns = (setOpen: Dispatch<SetStateAction<{ open: boolean, row: Struk | 
         },
         {
             name: "Tanggal",
-            selector: row => moment(row.created_at).format("DD/MM/YYYY HH:mm"),
-            sortable: true
+            sortable: true,
+            wrap: true,
+            cell: row => <p className="text-center text-xs">{moment(row.created_at).format("DD/MM/YYYY HH:mm")}</p>
         },
     ]
 }
@@ -93,25 +102,36 @@ export default function RincianReport() {
     const [filteredStruk, setFilterdStruk] = useState<Struk[]>([]);
     const [searchTerm, setSearchTerm] = useState<string>("");
 
-    const getDataRincian = async (filter: string = "today") => {
+    const getDataRincian = async ({ filter = "today", start_date = "", end_date = "" }: { filter?: string; start_date?: string; end_date?: string }) => {
         setLoading(true);
         try {
             console.log("shift", shift)
-            const res = await window.api.rincian_transaction({ period: filter }, shift);
+            const res = await window.api.rincian_transaction({ period: filter, start_date, end_date }, shift);
             setLoading(false);
 
             if (res.status && res.data) {
                 console.log("res.data", res.data)
-                setRincian(res.data);
+                const data_struk = {
+                    ...res.data,
+                    struk: res.data.struk.map((el, i) => {
+                        return { ...el, no: i + 1 }
+                    })
+                }
+                setRincian(data_struk);
+                return true
             }
         } catch (err) {
             setLoading(false);
             toast.error(`Error fetching tables: ${err}`);
+            return false
         }
-    }
+    };
+
 
     useEffect(() => {
-        getDataRincian(selected);
+        if (selected !== "customs") {
+            getDataRincian({ filter: selected });
+        }
     }, [selected, shift]);
 
     const handleSearch = useCallback(debounce((term: string) => {
@@ -134,7 +154,7 @@ export default function RincianReport() {
     return (
         <>
             <div className="grid gap-3">
-                <ReportTitle title={`Rincian Transaksi ${rincian?.period}`} setSelected={setSelected} />
+                <ReportTitle title={`Rincian Transaksi`} desc={`(${rincian?.period})`} setSelected={setSelected} loading={loading} getDataRincian={getDataRincian} />
                 <Tabs aria-label="Options" onSelectionChange={(key) => setShift(key as unknown as string)}>
                     <Tab key="all" title="Semua" />
                     <Tab key="Pagi" title="Shift Siang" />
@@ -149,7 +169,7 @@ export default function RincianReport() {
                                         <h3 className="text-xl font-bold">Total Semua</h3>
                                         <h3 className="text-xl font-bold">Rp. {convertRupiah(rincian?.total_all.toString() || "0")}</h3>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+
                                 </div>
                                 <div>
                                     <Coins />
@@ -165,7 +185,7 @@ export default function RincianReport() {
                                         <h3 className="text-xl font-bold">Total Billing</h3>
                                         <h3 className="text-xl font-bold">Rp. {convertRupiah(rincian?.total_booking.toString() || "0")}</h3>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+
                                 </div>
                                 <div>
                                     <Joystick />
@@ -181,7 +201,7 @@ export default function RincianReport() {
                                         <h3 className="text-xl font-bold">Total Cafe</h3>
                                         <h3 className="text-xl font-bold">Rp. {convertRupiah(rincian?.total_cafe.toString() || "0")}</h3>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">Diupdate pada tanggal: <b>{moment().format("DD/MM/YYYY")}</b></p>
+
                                 </div>
                                 <div>
                                     <GlassWater />
@@ -201,6 +221,7 @@ export default function RincianReport() {
                 </div>
             </div>
             <DetailTransaction open={detail} setOpen={setDetail} />
+
         </>
     )
 }
