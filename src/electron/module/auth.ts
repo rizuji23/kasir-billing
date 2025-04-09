@@ -10,22 +10,22 @@ export default function AuthModule() {
       where: { username, password },
     });
 
-    if (user !== null) {
-      const store = new Store();
-
-      store.set(
-        "userdata",
-        JSON.stringify({
-          username: user.username,
-          name: user.name,
-        }),
-      );
-
+    if (user === null) {
       return Responses({
         code: 400,
         detail_message: "Username atau Password Salah",
       });
     }
+
+    const store = new Store();
+
+    store.set(
+      "userdata",
+      JSON.stringify({
+        username: user.username,
+        name: user.name,
+      }),
+    );
 
     return Responses({ code: 200, detail_message: "Login successful" });
   });
