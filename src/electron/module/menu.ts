@@ -451,7 +451,7 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
             code: 404,
             detail_message: "Order tidak ditemukan",
           });
-        }
+        } 
 
         const currentTime = new Date();
         const shift = await getShift(currentTime);
