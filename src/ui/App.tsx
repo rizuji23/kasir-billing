@@ -15,6 +15,7 @@ import { useEffect } from 'react'
 import AdminPage from './app/admin/Admin'
 import { ChatProvider } from './components/context/ChatContext'
 import Login from './app/Login'
+import { EtcComponent } from './components/context/EtcContext'
 
 function App() {
   const navigate = useNavigate();
@@ -34,27 +35,29 @@ function App() {
   return (
     <>
       <TableBilliardProvider>
-        <WebSocketProvider>
-          <ChatProvider>
-            <Routes>
-              <Route path="/" element={<Login />}></Route>
+        <EtcComponent>
+          <WebSocketProvider>
+            <ChatProvider>
+              <Routes>
+                <Route path="/" element={<Login />}></Route>
 
-              <Route path="/dashboard" element={<DashboardPage />}></Route>
-              {/* <Route path="/" element={<DashboardPage />}></Route> */}
-              <Route path="/order" element={<OrderPage />}></Route>
-              <Route path="/menu" element={<Menu />}></Route>
-              <Route path="/member" element={<MemberPage />}></Route>
-              <Route path="/report" element={<ReportPage />}></Route>
-              <Route path="/stock" element={<StockPage />}></Route>
-              <Route path="/manual" element={<ManualLamp />}></Route>
-              <Route path="/settings" element={<SettingsPage />}></Route>
-              <Route path="/struk" element={<StrukView />}></Route>
-              <Route path="/kitchen" element={<KitchenPage />}></Route>
-              <Route path='/admin' element={<AdminPage />}></Route>
+                <Route path="/dashboard" element={<DashboardPage />}></Route>
+                {/* <Route path="/" element={<DashboardPage />}></Route> */}
+                <Route path="/order" element={<OrderPage />}></Route>
+                <Route path="/menu" element={<Menu />}></Route>
+                <Route path="/member" element={<MemberPage />}></Route>
+                <Route path="/report" element={<ReportPage />}></Route>
+                <Route path="/stock" element={<StockPage />}></Route>
+                <Route path="/manual" element={<ManualLamp />}></Route>
+                <Route path="/settings" element={<SettingsPage />}></Route>
+                <Route path="/struk" element={<StrukView />}></Route>
+                <Route path="/kitchen" element={<KitchenPage />}></Route>
+                <Route path='/admin' element={<AdminPage />}></Route>
 
-            </Routes>
-          </ChatProvider>
-        </WebSocketProvider>
+              </Routes>
+            </ChatProvider>
+          </WebSocketProvider>
+        </EtcComponent>
       </TableBilliardProvider>
 
     </>

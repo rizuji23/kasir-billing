@@ -220,4 +220,6 @@ contextBridge.exposeInMainWorld("api", {
       shift,
     ),
   middleware: () => ipcRenderer.invoke("get_user"),
+  save_url: (id: string | null, label_settings: string, content: string) =>
+    ipcRenderer.invoke("save_url", id, label_settings, content),
 });

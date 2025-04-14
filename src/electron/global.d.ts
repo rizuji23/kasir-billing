@@ -286,6 +286,11 @@ interface ApiAPI {
     shift: string,
   ) => Promise<IResponses<unknown>>;
   midleware: () => Promise<IResponses<UserData>>;
+  save_url: (
+    id: string,
+    label_settings: string,
+    content: string,
+  ) => Promise<IResponses<unknown>>;
 }
 
 declare global {

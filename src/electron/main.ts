@@ -369,6 +369,55 @@ ipcMain.handle(
   },
 );
 
+ipcMain.handle(
+  "save_url",
+  async (_, id: string, label_settings: string, content: string) => {
+    try {
+      const check_id = await prisma.settings.findFirst({
+        where: {
+          id_settings: id || undefined,
+        },
+      });
+
+      let res;
+
+      if (check_id) {
+        res = await prisma.settings.update({
+          where: { id_settings: check_id?.id_settings },
+          data: {
+            id_settings: id,
+            label_settings: label_settings,
+            content: content,
+          },
+        });
+      } else {
+        res = await prisma.settings.create({
+          data: {
+            id_settings: id,
+            label_settings: label_settings,
+            content: content,
+            url: "",
+          },
+        });
+      }
+
+      return Responses({
+        code: 200,
+        data: res,
+        detail_message: "Printer berhasil disimpan atau diperbarui",
+      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        return Responses({
+          code: 500,
+          detail_message: `Gagal mengupdate data: ${err.message}`,
+        });
+      }
+      return Responses({ code: 500, detail_message: "Gagal mengupdate data" });
+    }
+  },
+);
+
 const getSerialPorts = async () => {
   try {
     const ports = await SerialPort.list();
