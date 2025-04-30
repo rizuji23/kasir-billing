@@ -451,13 +451,25 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
             code: 404,
             detail_message: "Order tidak ditemukan",
           });
-        } 
+        }
 
         const currentTime = new Date();
         const shift = await getShift(currentTime);
 
         const newQty = type_qty === "plus" ? order.qty + 1 : order.qty - 1;
         const newTotal = order.menucafe.price * newQty;
+
+        if (newQty <= 0) {
+          await prisma.orderCafe.delete({
+            where: {
+              id: order.id,
+            },
+          });
+          return Responses({
+            code: 201,
+            detail_message: "Pesanan berhasil ditambah",
+          });
+        }
 
         const update_order_item = await prisma.orderCafe.update({
           where: { id: order.id },

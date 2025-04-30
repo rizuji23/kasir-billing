@@ -11,8 +11,10 @@ import { convertRupiah } from "../../../lib/utils";
 import { Form } from "@heroui/form";
 import SelectCustom from "../../../components/SelectCustom";
 
+
 export default function DrawerTable({ open, setOpen, table }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, table: TableBilliard }) {
-    const booking = useBooking({ open, setOpen, table })
+
+    const booking = useBooking({ open, setOpen, table });
 
     const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -42,31 +44,59 @@ export default function DrawerTable({ open, setOpen, table }: { open: boolean, s
                                     </RadioGroup>
                                     <RadioGroup orientation="horizontal" size="sm" label="Pilih Pelanggan" classNames={{
                                         label: "text-sm"
-                                    }} value={booking.data_booking.is_member} onValueChange={(e) => booking.setDataBooking((prevState) => ({
+                                    }} value={booking.data_booking.type_customer} onValueChange={(e) => booking.setDataBooking((prevState) => ({
                                         ...prevState,
-                                        is_member: e
+                                        type_customer: e
                                     }))}>
                                         <Radio value="BIASA">Biasa</Radio>
-                                        <Radio value="MEMBER">Member</Radio>
+                                        <Radio value="PAKET">Paket</Radio>
+                                        {/* <Radio value="MEMBER">Member</Radio> */}
                                     </RadioGroup>
-
                                     {
-                                        booking.data_booking.is_member === "BIASA" ? <div>
-                                            <Input
-                                                isRequired
-                                                label="Nama Lengkap"
-                                                name="full_name"
-                                                errorMessage={"Silakan isi kolom ini."}
-                                                placeholder="Masukan nama lengkap disini"
-                                                type="text"
-                                                autoFocus
-                                                onChange={(e) => booking.setDataBooking((prevState) => ({
-                                                    ...prevState,
-                                                    name: e.target.value
-                                                }))}
-                                                value={booking.data_booking.name}
-                                            />
-                                        </div> : <div>
+                                        booking.data_booking.type_customer !== "MEMBER" && <Input
+                                            isRequired
+                                            label="Nama Lengkap"
+                                            name="full_name"
+                                            errorMessage={"Silakan isi kolom ini."}
+                                            placeholder="Masukan nama lengkap disini"
+                                            type="text"
+                                            autoFocus
+                                            onChange={(e) => booking.setDataBooking((prevState) => ({
+                                                ...prevState,
+                                                name: e.target.value
+                                            }))}
+                                            value={booking.data_booking.name}
+                                        />
+                                    }
+                                    {
+                                        booking.data_booking.type_customer === "BIASA" ? <div>
+
+                                        </div> : booking.data_booking.type_customer === "PAKET" ? <>
+                                            <div className="grid gap-3">
+
+                                                <SelectCustom label="Paket Segment" value={booking.selected_segment} onChange={(e) => booking.setSelectedSegment(e.target.value)}>
+                                                    <SelectCustom.Option value="">Pilih Paket Segment</SelectCustom.Option>
+                                                    {
+                                                        booking.paket_segment.map((el) => {
+                                                            return <SelectCustom.Option value={el.id_paket_segment}>{el.name}</SelectCustom.Option>
+                                                        })
+                                                    }
+
+                                                </SelectCustom>
+                                                {
+                                                    booking.paket && (
+                                                        <SelectCustom label="Paket" value={booking.selected_paket} onChange={(e) => booking.setSelectedPaket(e.target.value)}>
+                                                            <SelectCustom.Option value="">Pilih Paket</SelectCustom.Option>
+                                                            {
+                                                                booking.paket.map((el) => {
+                                                                    return <SelectCustom.Option value={el.id_paket_price}>{el.name}</SelectCustom.Option>
+                                                                })
+                                                            }
+                                                        </SelectCustom>
+                                                    )
+                                                }
+                                            </div>
+                                        </> : <div>
                                             <Input
                                                 isRequired
                                                 label="Kode Member"
@@ -89,36 +119,42 @@ export default function DrawerTable({ open, setOpen, table }: { open: boolean, s
                             <div className="flex flex-col gap-3">
                                 <h3 className="font-bold">Detail Pesanan</h3>
                                 <div className="grid gap-4">
-                                    <SelectCustom label="Pilih Tipe Harga" value={booking.data_booking.type_price} onChange={(e) => booking.setDataBooking((prevState) => ({
-                                        ...prevState,
-                                        type_price: e.target.value
-                                    }))}>
-                                        {
-                                            booking.type_price.map((el) => {
-                                                return <SelectCustom.Option value={el.type_price} key={el.type_price}>{el.type_price}</SelectCustom.Option>
-                                            })
-                                        }
+                                    {
+                                        booking.data_booking.type_customer !== "PAKET" && (
+                                            <>
+                                                <SelectCustom label="Pilih Tipe Harga" value={booking.data_booking.type_price} onChange={(e) => booking.setDataBooking((prevState) => ({
+                                                    ...prevState,
+                                                    type_price: e.target.value
+                                                }))}>
+                                                    {
+                                                        booking.type_price.map((el) => {
+                                                            return <SelectCustom.Option value={el.type_price} key={el.type_price}>{el.type_price}</SelectCustom.Option>
+                                                        })
+                                                    }
 
-                                    </SelectCustom>
+                                                </SelectCustom>
 
-                                    <Input
-                                        isRequired
-                                        label="Durasi (Per Jam)"
-                                        name="username"
-                                        errorMessage={"Silakan isi kolom ini."}
-                                        placeholder="Masukan durasi disini"
-                                        type="text"
-                                        value={booking.data_booking.duration}
-                                        isDisabled={booking.data_booking.type_play === "LOSS"}
-                                        onChange={(e) => {
-                                            booking.setDataBooking((prevState) => ({
-                                                ...prevState,
-                                                duration: e.target.value
-                                            }));
+                                                <Input
+                                                    isRequired
+                                                    label="Durasi (Per Jam)"
+                                                    name="username"
+                                                    errorMessage={"Silakan isi kolom ini."}
+                                                    placeholder="Masukan durasi disini"
+                                                    type="text"
+                                                    value={booking.data_booking.duration}
+                                                    isDisabled={booking.data_booking.type_play === "LOSS"}
+                                                    onChange={(e) => {
+                                                        booking.setDataBooking((prevState) => ({
+                                                            ...prevState,
+                                                            duration: e.target.value
+                                                        }));
 
-                                            booking.handleItemPrice(e.target.value);
-                                        }}
-                                    />
+                                                        booking.handleItemPrice(e.target.value);
+                                                    }}
+                                                />
+                                            </>
+                                        )
+                                    }
                                     {
                                         booking.data_booking.type_play !== "LOSS" && (
                                             <div className="grid gap-2">
@@ -126,9 +162,18 @@ export default function DrawerTable({ open, setOpen, table }: { open: boolean, s
                                                 <div className="p-3 border-2 rounded-md">
                                                     <ol className="list-decimal pl-5 max-h-[100px] overflow-auto">
                                                         {
-                                                            booking.item_price.length === 0 ? <h3 className="text-center font-bold py-2">Item Tidak Ditemukan</h3> :
+                                                            booking.item_price.length === 0 ? <h3 className="text-center font-bold py-2 text-sm">Item Tidak Ditemukan</h3> :
                                                                 booking.item_price.map((el, i) => {
-                                                                    return <li className="text-sm font-medium" key={i}><b>({moment(el.start_duration).format("HH:mm:ss") + " - " + moment(el.end_duration).format("HH:mm:ss")})</b> = Rp. {convertRupiah(el.price.toString())}</li>
+                                                                    return <li className="text-sm font-medium" key={i}>
+                                                                        <b>
+                                                                            ({moment(el.start_duration).format("HH:mm:ss") + " - " + moment(el.end_duration).format("HH:mm:ss")})
+                                                                        </b>
+                                                                        <span> </span>
+                                                                        {
+                                                                            booking.data_booking.type_customer === "PAKET" ? <></> : <span>= Rp. {convertRupiah(el.price.toString())}</span>
+                                                                        }
+
+                                                                    </li>
                                                                 })
                                                         }
 

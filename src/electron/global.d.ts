@@ -10,6 +10,7 @@ import {
   ITableBilliard,
   IVoucher,
   OrderCafe,
+  PaketSegment,
   PriceBilling,
   ServersList,
   Settings,
@@ -285,12 +286,47 @@ interface ApiAPI {
     end_date: string,
     shift: string,
   ) => Promise<IResponses<unknown>>;
-  midleware: () => Promise<IResponses<UserData>>;
+  middleware: () => Promise<IResponses<UserData>>;
   save_url: (
     id: string,
     label_settings: string,
     content: string,
   ) => Promise<IResponses<unknown>>;
+  logout: () => Promise<IResponses<null>>;
+  get_paket: () => Promise<IResponses<PaketSegment[]>>;
+  get_paket_by_id: (
+    id: string,
+  ) => Promise<IResponses<PaketSegment | null | undefined>>;
+  save_paket_segment: (data: {
+    name: string;
+    start_hours: string;
+    end_hours: string;
+  }) => Promise<IResponses<unknown>>;
+  update_paket_segment: (data: {
+    id_paket_segment: string;
+    name: string;
+    start_hours: string;
+    end_hours: string;
+  }) => Promise<IResponses<unknown>>;
+  save_paket: (data: {
+    id_paket_segment: string;
+    name: string;
+    duration: number;
+    price: number;
+    is_last_call?: boolean;
+    last_call_hours?: string;
+  }) => Promise<IResponses<unknown>>;
+  update_paket: (data: {
+    id_paket: string;
+    id_paket_segment: string;
+    name: string;
+    duration: number;
+    price: number;
+    is_last_call?: boolean;
+    last_call_hours?: string;
+  }) => Promise<IResponses<unknown>>;
+  delete_paket_segment: (id: string) => Promise<IResponses<unknown>>;
+  delete_paket: (id: string) => Promise<IResponses<unknown>>;
 }
 
 declare global {

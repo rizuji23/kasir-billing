@@ -41,6 +41,12 @@ enum StatusBooking {
   NOPAID
 }
 
+enum TypeCustomer {
+  BIASA
+  MEMBER
+  PAKET
+}
+
 enum TypeBill {
   ALL
   SPLITBILL
@@ -164,6 +170,33 @@ model TableBilliard {
   bookings   Booking[]
 }
 
+model PaketSegment {
+  id Int @id @default(autoincrement())
+  id_paket_segment String @unique
+  name String
+  start_hours String
+  end_hours String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  paketPrice PaketPrice[]
+}
+
+model PaketPrice {
+  id Int @id @default(autoincrement())
+  id_paket_price String @unique
+  paket_segment_id Int
+  paket_segment PaketSegment @relation(fields: [paket_segment_id], references: [id], onDelete: Cascade)
+  name String
+  duration Int
+  price Int
+  is_last_call Boolean @default(false)
+  last_call_hours String? @default("")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  booking Booking[]
+  detailBooking DetailBooking[]
+}
+
 model Machine {
   id Int @id @default(autoincrement())
   id_machine String @unique
@@ -230,6 +263,9 @@ model Booking {
   idPriceType Int?
   price_type   PriceBillingType? @relation(fields: [idPriceType], references: [id], onDelete: Cascade)
   shift String @default("Pagi")
+  idPaketPrice Int?
+  paket PaketPrice? @relation(fields: [idPaketPrice], references: [id], onDelete: Cascade)
+  type_customer TypeCustomer @default(BIASA)
   created_at   DateTime    @default(now())
   updated_at   DateTime    @updatedAt
   detail_booking DetailBooking[]
@@ -248,6 +284,8 @@ model DetailBooking {
   start_duration DateTime
   end_duration   DateTime
   type_bill      TypeBill       @default(ALL)
+  idPaketPrice Int?
+  paket PaketPrice? @relation(fields: [idPaketPrice], references: [id], onDelete: Cascade)
   shift String @default("Pagi")
   created_at     DateTime       @default(now())
   updated_at     DateTime       @updatedAt

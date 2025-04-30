@@ -32,7 +32,7 @@ export default function DashboardPage() {
                             {
                                 tableList.loading ? <div className="flex justify-center h-[20vh]">
                                     <Spinner size="lg" />
-                                </div> : <div className="grid grid-cols-5 gap-5">
+                                </div> : <div className="grid xl:grid-cols-5 md:grid-cols-4 grid-cols-2 gap-5">
                                     {
                                         tableList.tableList.map((el, i) => {
                                             return <BoxTable key={i} {...el} />
@@ -53,7 +53,7 @@ export default function DashboardPage() {
                                 </div>
                                 <div className="flex gap-5">
                                     <div className="w-full">
-                                        <div className="grid grid-cols-5 gap-5">
+                                        <div className="grid xl:grid-cols-5 md:grid-cols-4 grid-cols-2 gap-5">
                                             {
                                                 el.data.map((table, table_i) => {
                                                     return <BoxTable key={table_i} {...table} is_remote={true} />

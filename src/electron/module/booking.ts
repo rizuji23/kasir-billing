@@ -9,6 +9,7 @@ import {
   StatusTransaction,
   Struk,
   TableBilliard,
+  TypeCustomer,
   TypePlay,
   TypeStruk,
 } from "../types/index.js";
@@ -32,6 +33,10 @@ export interface IDataBooking {
   blink: string;
   id_table: string;
   id_booking?: string;
+  type_customer?: string;
+  kode_member?: string;
+  id_paket_segment?: string;
+  id_paket_price?: string;
 }
 
 export interface IBookingCheckout {
@@ -83,15 +88,18 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
         duration: (Number(tables.duration) + data.item_price.length).toString(),
         power: "ON",
         blink: data.data_booking.blink === "iya" ? true : false,
-        timer: data.item_price[data.item_price.length - 1].end_duration,
-        // timer: new Date(currentDate.getTime() + 10000),
+        // timer: data.item_price[data.item_price.length - 1].end_duration,
+        timer: new Date(currentDate.getTime() + 10000),
         // timer: new Date(currentDate.getTime() + 5.5 * 60 * 1000),
       },
     });
 
     console.log("data.data_booking.name", data);
 
-    const saveManyBooking = async (booking_data: Booking) => {
+    const saveManyBooking = async (
+      booking_data: Booking,
+      type_customer: "BIASA" | "MEMBER" | "PAKET",
+    ) => {
       try {
         const data_booking_many = await Promise.all(
           data.item_price.map(async (el) => {
@@ -104,6 +112,8 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
               start_duration: el.start_duration,
               end_duration: el.end_duration,
               shift: shift || "Pagi",
+              idPaketPrice:
+                type_customer === "PAKET" ? booking_data.idPaketPrice : null,
             };
           }),
         );
@@ -147,23 +157,49 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
           idPriceType: type_price.id,
         },
       });
-      await saveManyBooking(booking as unknown as Booking);
+
+      await saveManyBooking(booking as unknown as Booking, "BIASA");
     } else {
+      const booking_data = {
+        id_booking: generateShortUUID(),
+        name: data.data_booking.name,
+        tableId: tables.id,
+        duration: Number(data.data_booking.duration),
+        total_price: data.subtotal,
+        type_play: data.data_booking.type_play as unknown as TypePlay,
+        idPriceType: type_price.id,
+        shift: shift || "Pagi",
+        type_customer: data.data_booking
+          .type_customer as unknown as TypeCustomer,
+        idPaketPrice: null as unknown as number | null,
+      };
+
+      if (data.data_booking.type_customer === "PAKET") {
+        const get_paket = await prisma.paketPrice.findFirst({
+          where: {
+            id_paket_price: data.data_booking.id_paket_price,
+          },
+        });
+
+        if (!get_paket) {
+          return Responses({
+            code: 404,
+            detail_message: "Paket tidak ditemukan",
+          });
+        }
+
+        booking_data["idPaketPrice"] = get_paket.id;
+      }
+
       const booking = await prisma.booking.create({
-        data: {
-          id_booking: generateShortUUID(),
-          name: data.data_booking.name,
-          tableId: tables.id,
-          duration: Number(data.data_booking.duration),
-          total_price: data.subtotal,
-          type_play: data.data_booking.type_play as unknown as TypePlay,
-          idPriceType: type_price.id,
-          shift: shift || "Pagi",
-        },
+        data: booking_data,
       });
 
       if (data.data_booking.type_play !== "LOSS") {
-        await saveManyBooking(booking as unknown as Booking);
+        await saveManyBooking(
+          booking as unknown as Booking,
+          data.data_booking.type_customer as unknown as TypeCustomer,
+        );
       } else {
         const time = new Date();
         const formattedTime = time
@@ -367,7 +403,11 @@ export default function BookingModule() {
           tableId: table.id,
         },
         include: {
-          detail_booking: true,
+          detail_booking: {
+            include: {
+              paket: true,
+            },
+          },
           price_type: true,
           order_cafe: {
             include: {
@@ -378,6 +418,7 @@ export default function BookingModule() {
               created_at: "desc",
             },
           },
+          paket: true,
         },
         orderBy: {
           created_at: "desc",

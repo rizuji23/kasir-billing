@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import { IPriceType, TableBilliard } from "../../electron/types";
+import { IPriceType, PaketPrice, PaketSegment, TableBilliard } from "../../electron/types";
 import toast from 'react-hot-toast';
 import moment from "moment-timezone";
 import { useTableBilliard } from "../components/context/TableContext";
@@ -12,8 +12,10 @@ interface IDataBookingInput {
     blink: string,
     id_table: string,
     id_booking?: string,
-    is_member?: string,
+    type_customer?: string,
     kode_member?: string,
+    id_paket_segment?: string,
+    id_paket_price?: string,
 }
 
 interface IItemDuration {
@@ -32,7 +34,14 @@ export interface UseBookingResult {
     voucher: string,
     setVoucher: Dispatch<SetStateAction<string>>,
     subtotal: number,
-    checkOut: () => Promise<void>
+    checkOut: () => Promise<void>,
+    setSelectedSegment: Dispatch<SetStateAction<string>>,
+    setSelectedPaket: Dispatch<SetStateAction<string>>,
+    setSelectedDataPaket: Dispatch<SetStateAction<PaketPrice | null>>,
+    selected_segment: string,
+    selected_paket: string,
+    paket_segment: PaketSegment[],
+    paket: PaketPrice[] | undefined
 }
 
 export default function useBooking({ open, setOpen, table, add_duration = false }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, table: TableBilliard, add_duration?: boolean }): UseBookingResult {
@@ -44,17 +53,38 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
         blink: "tidak",
         id_table: "",
         id_booking: "",
-        is_member: "BIASA",
+        type_customer: "BIASA",
         kode_member: "",
     })
 
     const tableList = useTableBilliard();
+
+    const [selected_segment, setSelectedSegment] = useState<string>("");
+    const [selected_paket, setSelectedPaket] = useState<string>("");
+
+    const [selected_data_paket, setSelectedDataPaket] = useState<PaketPrice | null>(null);
+
+    const [paket_segment, setPaketSegment] = useState<PaketSegment[]>([]);
+    const [paket, setPaket] = useState<PaketPrice[] | undefined>([]);
 
     const [type_price, setTypePrice] = useState<IPriceType[]>([]);
     const [item_price, setItemPrice] = useState<IItemDuration[]>([]);
     const [subtotal, setSubtotal] = useState<number>(0);
     const [voucher, setVoucher] = useState<string>("");
     const [duration_billing, setDurationBilling] = useState<number>(0);
+
+    const getPaketSegment = async () => {
+        try {
+            const res = await window.api.get_paket();
+
+            if (res.status && res.data) {
+                setPaketSegment(res.data);
+            }
+
+        } catch (err) {
+            toast.error(`Terjadi kesalahan: ${err}`);
+        }
+    }
 
     const getTypePrice = async () => {
         try {
@@ -76,6 +106,9 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
         setItemPrice([]);
         setSubtotal(0);
         setDurationBilling(0);
+        setSelectedDataPaket(null);
+        setSelectedPaket("");
+        setSelectedSegment("");
     }
 
     const handleItemPrice = async (duration: string) => {
@@ -107,7 +140,17 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
 
         setItemPrice(newPrices);
         setDurationBilling(durations);
-        setSubtotal(newPrices.reduce((sum, item) => sum + item.price, 0));
+
+        if (data_booking.type_customer !== "PAKET") {
+            setSubtotal(newPrices.reduce((sum, item) => sum + item.price, 0));
+        } else {
+            if (!selected_data_paket?.price) {
+                toast.error("Durasi paket tidak ditemukan");
+                return;
+            }
+            setSubtotal(selected_data_paket.price)
+        }
+
     };
 
     const getPrice = async (time: moment.Moment) => {
@@ -139,10 +182,24 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
             if (data_booking.type_play === "REGULAR") {
                 if (item_price.length === 0) {
                     toast.error("Silahkan untuk isi terlebih dahulu durasi.");
+                    return;
                 }
 
                 if (!durations || isNaN(durations) || durations <= 0) {
                     toast.error("Durasi tidak boleh kosong atau minus.");
+                    return;
+                }
+            }
+
+            if (data_booking.type_customer === "PAKET") {
+                if (selected_paket.length === 0) {
+                    toast.error("Paket tidak boleh kosong.");
+                    return;
+                }
+
+                if (selected_segment.length === 0) {
+                    toast.error("Paket Segment tidak boleh kosong.");
+                    return;
                 }
             }
 
@@ -150,6 +207,12 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
                 item_price: item_price,
                 subtotal: subtotal,
                 data_booking: data_booking
+            }
+
+            if (data_booking.type_customer === "PAKET") {
+                data['data_booking'].id_paket_price = selected_paket;
+                data['data_booking'].id_paket_segment = selected_segment;
+                data['data_booking'].duration = selected_data_paket?.duration.toString() || "0"
             }
 
             console.log(data)
@@ -187,6 +250,44 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
         }
     }
 
+    const getPaketDuration = async () => {
+        console.log("selected_data_paket", selected_data_paket)
+        if (data_booking.type_customer === "PAKET") {
+            if (!selected_data_paket?.duration) {
+                toast.error("Paket durasi tidak ditemukan");
+                return;
+            }
+
+            const data_duration = selected_data_paket.duration;
+
+            return await handleItemPrice(data_duration.toString());
+        } else {
+            return;
+        }
+    }
+
+    useEffect(() => {
+        setPaket(paket_segment.filter((el) => el.id_paket_segment === selected_segment)[0]?.paketPrice);
+    }, [selected_segment]);
+
+    useEffect(() => {
+        const paket_segment_data = paket_segment.filter((el) => el.id_paket_segment === selected_segment)[0]?.paketPrice
+
+        if (!paket_segment_data) {
+            setSelectedDataPaket(null);
+            return;
+        }
+        console.log(paket_segment_data.filter((el) => el.id_paket_price === selected_paket)[0])
+        setSelectedDataPaket(paket_segment_data.filter((el) => el.id_paket_price === selected_paket)[0]);
+    }, [selected_paket]);
+
+    useEffect(() => {
+        if (open === true) {
+            getPaketDuration();
+        }
+
+    }, [open, selected_data_paket]);
+
     useEffect(() => {
         if (open) {
             handleItemPrice(duration_billing.toString());
@@ -200,6 +301,7 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
                 ...prevState,
                 id_table: table.id_table
             }))
+            getPaketSegment();
         }
     }, [open]);
 
@@ -215,5 +317,11 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
         }
     }, [open, data_booking.type_play])
 
-    return { data_booking, setDataBooking, type_price, item_price, handleItemPrice, voucher, setVoucher, subtotal, checkOut }
+    useEffect(() => {
+        if (open === true) {
+            clearState();
+        }
+    }, [data_booking.type_customer])
+
+    return { data_booking, setDataBooking, type_price, item_price, handleItemPrice, voucher, setVoucher, subtotal, checkOut, selected_paket, selected_segment, setSelectedDataPaket, setSelectedPaket, setSelectedSegment, paket, paket_segment }
 }

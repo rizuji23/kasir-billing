@@ -1,12 +1,22 @@
 import { useState, useEffect } from "react";
 import { Chip } from "@heroui/chip";
-import { Check, RefreshCcw, X } from "lucide-react";
+import { Check, ChevronDown, RefreshCcw, X } from "lucide-react";
 import { useTableBilliard } from "../../components/context/TableContext";
+import {
+    Dropdown,
+    DropdownTrigger,
+    DropdownMenu,
+    DropdownItem,
+    Button
+} from "@heroui/react";
+import { useGetUserInfo } from "../../components/context/MiddlewareContext";
+import toast from "react-hot-toast";
 
 export default function HoursShift() {
     const [time, setTime] = useState(new Date());
     const [shift, setShift] = useState<string>("");
     const tableList = useTableBilliard();
+    const [user] = useGetUserInfo();
 
     useEffect(() => {
         const interval = setInterval(async () => {
@@ -22,6 +32,19 @@ export default function HoursShift() {
     const formatTime = (date: Date) => {
         return date.toLocaleTimeString("en-US", { hour12: true });
     };
+
+    const handleLogout = async () => {
+        try {
+            const res = await window.api.logout();
+
+            if (res.code === 200) {
+                window.location.reload();
+            }
+
+        } catch (err) {
+            toast.error(`Error while logout: ${err}`);
+        }
+    }
 
     return (
         <>
@@ -47,6 +70,16 @@ export default function HoursShift() {
                 <Chip size="md" classNames={{ content: "font-bold" }}>
                     {formatTime(time)}
                 </Chip>
+            </div>
+            <div className="self-center">
+                <Dropdown>
+                    <DropdownTrigger>
+                        <Button variant="bordered" size="sm" endContent={<ChevronDown className="w-4" />}>{user?.name}</Button>
+                    </DropdownTrigger>
+                    <DropdownMenu aria-label="Static Actions">
+                        <DropdownItem key="copy" onPress={handleLogout}>Keluar</DropdownItem>
+                    </DropdownMenu>
+                </Dropdown>
             </div>
         </>
     );

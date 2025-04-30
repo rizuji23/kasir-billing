@@ -5,6 +5,7 @@ import ShiftList from "./section/ShiftList";
 import { Button } from "@heroui/button";
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router";
+import PaketAdmin from "./section/Paket";
 
 export default function AdminPage() {
     const history = useNavigate();
@@ -27,6 +28,9 @@ export default function AdminPage() {
                         </Tab>
                         <Tab key="shift" title="Shift">
                             <ShiftList />
+                        </Tab>
+                        <Tab key={"paket"} title="Paket">
+                            <PaketAdmin />
                         </Tab>
                     </Tabs>
                 </div>

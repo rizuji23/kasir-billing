@@ -19,13 +19,18 @@ export async function StrukWindow(id_struk: string) {
         },
         bookingId: {
           include: {
-            detail_booking: true,
+            detail_booking: {
+              include: {
+                paket: true,
+              },
+            },
             table: true,
             order_cafe: {
               include: {
                 menucafe: true,
               },
             },
+            paket: true,
           },
         },
       },

@@ -174,28 +174,34 @@ export const strukFilter = async (
     }
 
     case "quarterly": {
-      const quarterStartMonth = Math.floor(today.getMonth() / 3) * 3;
-      const startOfQuarter = new Date(
-        today.getFullYear(),
-        quarterStartMonth,
-        1,
-      );
+      const currentMonth = today.getMonth(); // April = 3
+      const startMonth = currentMonth - 2; // April (3) - 2 = January (1)
+
+      // Handle year wrap-around if needed (for Jan/Feb)
+      const adjustedYear =
+        startMonth < 0 ? today.getFullYear() - 1 : today.getFullYear();
+      const adjustedStartMonth = startMonth < 0 ? 12 + startMonth : startMonth;
+
+      const startOfQuarter = new Date(adjustedYear, adjustedStartMonth, 1);
+
       const endOfQuarter = new Date(
         today.getFullYear(),
-        quarterStartMonth + 3,
-        0,
+        currentMonth,
+        today.getDate(), // Use current day of month
         23,
         59,
         59,
         999,
       );
+
       whereClause["updated_at"] = {
         gte: startOfQuarter,
         lte: endOfQuarter,
       };
-      const startMonth = getMonthName(startOfQuarter);
-      const endMonth = getMonthName(endOfQuarter);
-      period = `${startMonth} - ${endMonth}`; // e.g., "Februari - April"
+
+      const startMonthName = getMonthName(startOfQuarter);
+      const endMonthName = getMonthName(endOfQuarter);
+      period = `${startMonthName} - ${endMonthName}`; // e.g., "Januari - April"
       break;
     }
 

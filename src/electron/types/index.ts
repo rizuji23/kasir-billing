@@ -77,6 +77,12 @@ export enum TypePlay {
   NONE = "NONE",
 }
 
+export enum TypeCustomer {
+  BIASA = "BIASA",
+  MEMBER = "MEMBER",
+  PAKET = "PAKET",
+}
+
 export enum StatusMachine {
   CONNECTED = "CONNECTED",
   RECONNECTED = "RECONNECTED",
@@ -172,6 +178,9 @@ export interface Booking {
   order_cafe?: OrderCafe[];
   split_bill?: SplitBill[];
   shift?: string;
+  idPaketPrice?: number;
+  paket?: PaketPrice;
+  type_customer?: TypeCustomer;
 }
 
 export interface DetailBooking {
@@ -184,6 +193,8 @@ export interface DetailBooking {
   start_duration: Date;
   end_duration: Date;
   type_bill: TypeBill;
+  idPaketPrice?: number;
+  paket?: PaketPrice;
   created_at: Date;
   updated_at: Date;
   split_bill_detail: SplitBillDetail[];
@@ -573,4 +584,31 @@ export interface TableRevenue {
 export interface UserData {
   username: string;
   name: string;
+}
+
+export interface PaketSegment {
+  id: number;
+  id_paket_segment: string;
+  name: string;
+  start_hours: string;
+  end_hours: string;
+  created_at: Date;
+  updated_at: Date;
+  paketPrice?: PaketPrice[];
+}
+
+export interface PaketPrice {
+  id: number;
+  id_paket_price: string;
+  paket_segment_id: number;
+  paket_segment?: PaketSegment;
+  name: string;
+  duration: number;
+  price: number;
+  is_last_call: boolean;
+  last_call_hours: string | null;
+  created_at: Date;
+  updated_at: Date;
+  booking?: Booking[];
+  detailBooking?: DetailBooking[];
 }

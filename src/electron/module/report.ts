@@ -83,13 +83,18 @@ export default function ReportModule() {
           },
           bookingId: {
             include: {
-              detail_booking: true,
+              detail_booking: {
+                include: {
+                  paket: true,
+                },
+              },
               table: true,
               order_cafe: {
                 include: {
                   menucafe: true,
                 },
               },
+              paket: true,
             },
           },
         },

@@ -68,6 +68,7 @@
     "exceljs": "^4.4.0",
     "framer-motion": "^12.4.2",
     "howler": "^2.2.4",
+    "jotai": "^2.12.3",
     "lodash": "^4.17.21",
     "lucide-react": "^0.475.0",
     "moment-timezone": "^0.5.47",

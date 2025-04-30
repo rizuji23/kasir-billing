@@ -219,7 +219,19 @@ contextBridge.exposeInMainWorld("api", {
       end_date,
       shift,
     ),
-  middleware: () => ipcRenderer.invoke("get_user"),
+  middleware: () => ipcRenderer.invoke("middleware"),
+  logout: () => ipcRenderer.invoke("logout"),
   save_url: (id: string | null, label_settings: string, content: string) =>
     ipcRenderer.invoke("save_url", id, label_settings, content),
+  get_paket: () => ipcRenderer.invoke("get_paket"),
+  save_paket_segment: (data: any) =>
+    ipcRenderer.invoke("save_paket_segment", data),
+  update_paket_segment: (data: any) =>
+    ipcRenderer.invoke("update_paket_segment", data),
+  save_paket: (data: any) => ipcRenderer.invoke("save_paket", data),
+  update_paket: (data: any) => ipcRenderer.invoke("update_paket", data),
+  delete_paket_segment: (id: string) =>
+    ipcRenderer.invoke("delete_paket_segment", id),
+  delete_paket: (id: string) => ipcRenderer.invoke("delete_paket", id),
+  get_paket_by_id: (id: string) => ipcRenderer.invoke("get_paket_by_id", id),
 });

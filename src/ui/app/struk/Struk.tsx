@@ -80,7 +80,7 @@ export default function StrukView() {
                                     <div className="flex flex-col gap-1 py-2 text-center">
                                         {
                                             (struk.bookingId?.detail_booking || []).map((el, i) => {
-                                                return <p className="text-[10px] !font-black" key={i}>{moment(el.end_duration).format("HH:mm:ss")} = Rp. {convertRupiah(el.price.toString() || "0")}</p>
+                                                return <p className="text-[10px] !font-black" key={i}>{moment(el.end_duration).format("HH:mm:ss")} {el.idPaketPrice ? "(PAKET)" : `= Rp. ${convertRupiah(el.price.toString() || "0")}`}</p>
                                             })
                                         }
                                     </div>

@@ -102,6 +102,8 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
             return;
         }
 
+        console.log("change_total", change_total)
+
         setChange(change_total)
     }
 
@@ -110,8 +112,14 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
         const discount_cafe_percent = (Number(discount_cafe) || 0);
         const discount_billing_percent = (Number(discount_billing) || 0);
 
-        const total_billing = list_booking.reduce((sum, item) => sum + item.price, 0);
+        let total_billing = list_booking.reduce((sum, item) => sum + item.price, 0);
+
+        if (detail?.booking.type_customer === "PAKET") {
+            total_billing = detail?.booking.total_price || 0;
+        }
+
         const total_cafe = list_cafe.reduce((sum, item) => sum + item.total, 0);
+        console.log("list_cafe", list_cafe)
 
         const discount_billings = (total_billing * discount_billing_percent) / 100;
         const discount_cafes = (total_cafe * discount_cafe_percent) / 100;
@@ -215,20 +223,20 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
 
                 if (!total) {
                     toast.error("Total kosong.");
-                    setLoading(false);
+                    return;
+                }
+
+                if (Number(payment_cash) <= Number(total.total_all)) {
+                    toast.error("Jumlah pembayaran kurang dari total.");
                     return;
                 }
 
                 if (payment_cash.length === 0) {
                     toast.error("Jumlah pembayaran tidak boleh kosong.");
-                    setLoading(false);
                     return;
                 }
 
-                const res = await window.api.payment_booking(data);
-                setLoading(false);
-
-                console.log("DAta", res);
+                const res = await window.api.payment_booking(data)
 
                 if (res.status && res.data) {
                     toast.success("Pembayaran berhasil dilakukan");
@@ -257,6 +265,8 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
         } catch (err) {
             toast.error(`Error save payment_booking: ${err}`);
             setLoading(false);
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -303,7 +313,7 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
                 }
 
                 if (cafe) {
-                    setListCafe(cafe);
+                    setListCafe(cafe.filter((el) => el.qty !== 0));
                 }
             }
         }

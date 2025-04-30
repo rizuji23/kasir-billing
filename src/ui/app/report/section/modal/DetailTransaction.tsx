@@ -180,7 +180,7 @@ export default function DetailTransaction({ open, setOpen }: { open: { open: boo
                                                                             return <TableRow key={i}>
                                                                                 <TableCell>{moment(el.start_duration).format("HH:mm:ss")}</TableCell>
                                                                                 <TableCell>{moment(el.end_duration).format("HH:mm:ss")}</TableCell>
-                                                                                <TableCell>{convertRupiah(el.price.toString() || "0")}</TableCell>
+                                                                                <TableCell>{el.idPaketPrice !== null ? `${el.paket?.name} (Paket)` : `Rp. ${convertRupiah(el.price.toString() || "0")}`}</TableCell>
                                                                             </TableRow>
                                                                         })
                                                                     }

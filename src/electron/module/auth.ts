@@ -30,6 +30,34 @@ export default function AuthModule() {
     return Responses({ code: 200, detail_message: "Login successful" });
   });
 
+  ipcMain.handle("logout", async () => {
+    try {
+      const store = new Store();
+
+      if (!store.has("userdata")) {
+        return Responses({
+          code: 400,
+          detail_message: "Data user tidak ditemukan",
+        });
+      }
+
+      store.delete("userdata");
+
+      return Responses({ code: 200, detail_message: "Login successful" });
+    } catch (err) {
+      if (err instanceof Error) {
+        return Responses({
+          code: 500,
+          detail_message: `Gagal mengambil data user: ${err.message}`,
+        });
+      }
+      return Responses({
+        code: 500,
+        detail_message: "Gagal mengambil data user",
+      });
+    }
+  });
+
   ipcMain.handle("middleware", async () => {
     try {
       const store = new Store();

@@ -50,6 +50,7 @@ import PriceModule from "./module/price.js";
 import ShiftModule from "./module/shift.js";
 import { runMigration } from "./migrate.js";
 import { Server } from "socket.io";
+import PaketModule from "./module/paket.js";
 
 let mainWindow: BrowserWindow | null = null;
 let serialport: SerialPort | null = null;
@@ -301,6 +302,7 @@ ReportModule();
 UserModule();
 PriceModule();
 ShiftModule();
+PaketModule();
 
 ipcMain.handle("get_printer", async (_, id: number | null) => {
   const printers = await mainWindow?.webContents.getPrintersAsync();

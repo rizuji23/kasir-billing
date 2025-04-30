@@ -236,7 +236,6 @@ export default function DrawerBookingTable({ open, setOpen, table }: { open: boo
                                                                 <TableColumn>Jam Mulai</TableColumn>
                                                                 <TableColumn>Jam Berakhir</TableColumn>
                                                                 <TableColumn>Harga</TableColumn>
-                                                                <TableColumn>Status</TableColumn>
                                                             </TableHeader>
                                                             <TableBody>
                                                                 {
@@ -244,10 +243,10 @@ export default function DrawerBookingTable({ open, setOpen, table }: { open: boo
                                                                         return <TableRow key={el.id}>
                                                                             <TableCell>{moment(el.start_duration).format("HH:mm:ss")}</TableCell>
                                                                             <TableCell>{moment(el.end_duration).format("HH:mm:ss")}</TableCell>
-                                                                            <TableCell>Rp. {convertRupiah(el.price.toString() || "0")}</TableCell>
-                                                                            <TableCell>
+                                                                            <TableCell>{el.idPaketPrice !== null ? `${el.paket?.name} (Paket)` : `Rp. ${convertRupiah(el.price.toString() || "0")}`}</TableCell>
+                                                                            {/* <TableCell>
                                                                                 <Chip color={el.status === "PAID" ? "success" : "danger"} size="sm">{el.status === "PAID" ? "Sudah Dibayar" : "Belum Dibayar"}</Chip>
-                                                                            </TableCell>
+                                                                            </TableCell> */}
                                                                         </TableRow>
                                                                     }) : <></>
                                                                 }

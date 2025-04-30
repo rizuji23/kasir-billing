@@ -10,6 +10,7 @@ import { PlusCircle } from "lucide-react";
 import { IResponses } from "../../../../electron/lib/responses";
 import toast from 'react-hot-toast';
 import InputQty from "../../../components/InputQty";
+import { useWebsocketData } from "../../../components/context/WebsocketContext";
 
 interface IOrderData {
     id_menu: number,
@@ -20,6 +21,7 @@ interface IOrderData {
 }
 
 export default function DrawerCafeTable({ open, setOpen, table }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, table: TableBilliard }) {
+    const socket = useWebsocketData();
     const [booking_data, setBookingData] = useState<Booking | null>(null);
     const [list_menu, setListMenu] = useState<{ value: string, label: string }[]>([]);
     const [menu, setMenu] = useState<IMenu[]>([]);
@@ -168,6 +170,10 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
                         total: 0,
                     }));
                     setSelectedMenu(null);
+
+                    if (socket.connectedKitchens.length === 0) {
+                        window.api.show_message_box("warning", "Dapur tidak terkoneksi, maka struk dapur tidak akan terkirim.");
+                    }
                 }
             } else {
                 setLoadingBtn(false);

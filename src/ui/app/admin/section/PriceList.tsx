@@ -173,7 +173,7 @@ export default function PriceList() {
                                 {
                                     price.map((el, i) => {
                                         return <TableRow key={i}>
-                                            <TableCell>{el.type_price.type_price}</TableCell>
+                                            <TableCell><span className="font-bold">{el.type_price.type_price}</span></TableCell>
                                             <TableCell>
                                                 <Chip size="sm" color={el.season === "Pagi" ? "default" : "warning"}>{el.season}</Chip>
                                             </TableCell>
