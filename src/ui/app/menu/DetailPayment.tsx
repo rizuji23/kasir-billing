@@ -98,6 +98,8 @@ export default function DetailPayment({ cart }: { cart: UseCartResult }) {
                                     setCash("");
                                     setName("");
                                     setNoMeja("");
+                                    setKeterangan("");
+                                    setPaymentMethod("CASH");
                                     return;
                                 }
                             }}>Pesan</Button>

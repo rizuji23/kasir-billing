@@ -18,6 +18,7 @@ interface ICheckoutMenuTable {
   qty: string;
   total: number;
   id_booking: string;
+  keterangan: string;
 }
 
 export default function MenuModule(mainWindow: BrowserWindow | null) {
@@ -380,6 +381,7 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
             qty: Number(data.qty || "0"),
             bookingId: booking.id,
             shift: shift || "Pagi",
+            keterangan: data.keterangan,
           },
         });
 

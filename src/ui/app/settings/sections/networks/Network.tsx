@@ -29,6 +29,7 @@ function CardNetwork({ title, type_server, my_ip, data, api }: { title: string; 
 
             if (res.status) {
                 api();
+                window.location.reload();
             }
         } catch (err) {
             setLoading(false);

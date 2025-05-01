@@ -4,7 +4,7 @@ import { Drawer, DrawerContent } from "@heroui/drawer";
 import { Divider } from "@heroui/divider";
 import { convertRupiah } from "../../../lib/utils";
 import Select from 'react-select'
-import { Input } from "@heroui/input";
+import { Input, Textarea } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { PlusCircle } from "lucide-react";
 import { IResponses } from "../../../../electron/lib/responses";
@@ -30,6 +30,7 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
 
     const [order_cafe, setOrderCafe] = useState<OrderCafe[]>([]);
     const [total, setTotal] = useState<number>(0);
+    const [keterangan, setKeterangan] = useState<string>("");
 
     const [order_data, setOrderData] = useState<IOrderData>({
         id_menu: 0,
@@ -153,7 +154,7 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
                     return;
                 }
 
-                const data = { ...order_data, id_booking: table.bookings[0].id_booking };
+                const data = { ...order_data, id_booking: table.bookings[0].id_booking, keterangan: keterangan };
 
                 const res = await window.api.checkout_menu_table(data);
                 console.log("res", res)
@@ -170,6 +171,7 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
                         total: 0,
                     }));
                     setSelectedMenu(null);
+                    setKeterangan("");
 
                     if (socket.connectedKitchens.length === 0) {
                         window.api.show_message_box("warning", "Dapur tidak terkoneksi, maka struk dapur tidak akan terkirim.");
@@ -251,6 +253,7 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
                                     handleMenu((e as unknown as { label: string, value: string })?.value || "")
                                     setSelectedMenu(e as unknown as { label: string, value: string });
                                 }} placeholder="Pilih menu..." isLoading={loading} />
+                                <Textarea label="Masukkan Keterangan" onChange={(e) => setKeterangan(e.target.value)} value={keterangan} />
                                 <Input label={"Jumlah"} isRequired placeholder="Masukan jumlah pesanan..." onChange={(e) => {
                                     setOrderData((prevState) => ({
                                         ...prevState,

@@ -235,7 +235,7 @@ export default function DrawerBookingTable({ open, setOpen, table }: { open: boo
                                                             <TableHeader>
                                                                 <TableColumn>Jam Mulai</TableColumn>
                                                                 <TableColumn>Jam Berakhir</TableColumn>
-                                                                <TableColumn>Harga</TableColumn>
+                                                                <TableColumn>Harga</TableColumn> 
                                                             </TableHeader>
                                                             <TableBody>
                                                                 {
