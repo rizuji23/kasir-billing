@@ -225,8 +225,10 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
                     toast.error("Total kosong.");
                     return;
                 }
+                console.log("Number(payment_cash)", Number(payment_cash));
+                console.log("Number(total.total_all)", Number(total.total_all));
 
-                if (Number(payment_cash) <= Number(total.total_all)) {
+                if (Number(payment_cash) < Number(total.total_all)) {
                     toast.error("Jumlah pembayaran kurang dari total.");
                     return;
                 }
