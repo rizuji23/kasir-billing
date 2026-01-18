@@ -7,16 +7,19 @@ import {
     DropdownTrigger,
     DropdownMenu,
     DropdownItem,
-    Button
+    Button,
 } from "@heroui/react";
 import { useGetUserInfo } from "../../components/context/MiddlewareContext";
 import toast from "react-hot-toast";
+import { useSocket } from "../../components/context/SocketContext";
 
 export default function HoursShift() {
     const [time, setTime] = useState(new Date());
     const [shift, setShift] = useState<string>("");
     const tableList = useTableBilliard();
     const [user] = useGetUserInfo();
+    const { connected } = useSocket();
+
 
     useEffect(() => {
         const interval = setInterval(async () => {
@@ -46,8 +49,17 @@ export default function HoursShift() {
         }
     }
 
+    useEffect(() => {
+        console.log("DD", connected)
+    }, [connected])
+
     return (
         <>
+            <div className="self-center">
+                <Chip size="md" classNames={{ content: "font-bold" }}>
+                    {formatTime(time)}
+                </Chip>
+            </div>
             <div className="self-center">
                 {
                     tableList.status_machine?.status === undefined ? <Chip size="md" color="danger" startContent={<X className="w-4 h-4" />}>
@@ -61,15 +73,16 @@ export default function HoursShift() {
                     </Chip>
                 }
             </div>
+
             <div className="self-center">
                 <Chip size="md" color="success">
                     <span>Shift: </span><span className="font-bold">{!shift ? "Loading..." : shift}</span>
                 </Chip>
             </div>
             <div className="self-center">
-                <Chip size="md" classNames={{ content: "font-bold" }}>
-                    {formatTime(time)}
-                </Chip>
+                {
+                    connected ? <Chip size="md" color="success">Dapur Terkoneksi</Chip> : <Chip size="md" color="danger">Dapur Tidak Terkoneksi</Chip>
+                }
             </div>
             <div className="self-center">
                 <Dropdown>

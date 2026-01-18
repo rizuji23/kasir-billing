@@ -533,7 +533,7 @@ model LocalServers {
   hostname String
   number String
   status StatusServer @default(DISCONNECTED)
-  type_server TypeServer @default(CASHIER)
+  type_server TypeServer @default(CASHIER) @unique
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }

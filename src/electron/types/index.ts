@@ -612,3 +612,87 @@ export interface PaketPrice {
   booking?: Booking[];
   detailBooking?: DetailBooking[];
 }
+
+export interface IKitchenIncoming {
+  id: number;
+  order_type: string;
+  ip: string;
+  name_cashier: string;
+  no_billiard: string;
+  no_meja: string;
+  status_kitchen: "NO_PROCESSED" | "PROCESSED" | "REJECT" | "DONE";
+  status_timer: "NO_STARTED" | "STARTED" | "REJECT" | "DONE";
+  start_timer?: Date | null;
+  end_timer?: Date | null;
+  created_at: Date;
+  updated_at: Date;
+
+  order: IOrderCafe[];
+  item: IItemOrder[];
+}
+
+export interface IOrderCafe {
+  id: number;
+  id_order_cafe: string;
+  menu_cafe: number;
+  menucafe: {
+    id: number;
+    name: string;
+    category_name: string;
+    price: number;
+    price_modal: number;
+    price_profit: number;
+    created_at: string; // ISO date string
+    updated_at: string; // ISO date string
+  };
+  name: string;
+  subtotal: number;
+  qty: number;
+  total: number;
+  cash: number;
+  change: number;
+  status: string;
+  shift: string;
+  keterangan?: string | null;
+  created_at: Date;
+  updated_at: Date;
+
+  kitchenDataId: number;
+  kitchenData?: IKitchenIncoming;
+}
+
+export interface IItemOrder {
+  id: number;
+  id_order_cafe_item: string;
+  name_menu: string;
+  qty: number;
+  created_at: Date;
+  updated_at: Date;
+
+  kitchenDataId: number;
+  kitchenData?: IKitchenIncoming;
+}
+
+export interface IRejectIncoming {
+  socket: string;
+  reason: string;
+  order: IKitchenIncoming;
+}
+
+export type RekapType = "rekap_penjualan_cafe";
+export type PeriodeType =
+  | "today"
+  | "yesterday"
+  | "monthly"
+  | "annual"
+  | "custom";
+export interface IDateRange {
+  start_date: string;
+  end_date: string;
+}
+export interface IRekapModuleParams {
+  periode: PeriodeType;
+  custom?: IDateRange;
+}
+
+export type TypePrint = "PDF" | "EXCEL";

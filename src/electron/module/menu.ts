@@ -8,7 +8,6 @@ import {
 import { prisma } from "../database.js";
 import Responses from "../lib/responses.js";
 import generateShortUUID from "../lib/random.js";
-import { StrukWindow } from "./struk.js";
 import { getShift } from "../lib/utils.js";
 import { sendToKitchen } from "./kitchen.js";
 
@@ -179,7 +178,7 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
   ipcMain.handle(
     "checkout_menu",
     async (
-      _,
+      _event,
       cash: number,
       data: ICart[],
       payment_method: string,
@@ -194,10 +193,14 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
         const total = data.reduce((acc, item) => acc + item.subtotal, 0);
         const id_order = generateShortUUID();
 
+        /* =======================
+         CREATE STRUK
+      ======================= */
+
         const struk = await prisma.struk.create({
           data: {
             id_struk: `STK-${generateShortUUID()}`,
-            name: name,
+            name,
             total,
             total_cafe: total,
             cash,
@@ -209,6 +212,10 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
             shift: shift || "Pagi",
           },
         });
+
+        /* =======================
+         CREATE ORDER
+      ======================= */
 
         await prisma.orderCafe.createMany({
           data: data.map((item) => ({
@@ -227,18 +234,39 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
             qty: Number(item.qty),
             id_struk: struk.id,
             shift: shift || "Pagi",
-            keterangan: keterangan,
+            keterangan,
           })),
         });
 
-        await StrukWindow(struk.id_struk);
+        /* =======================
+         PRINT STRUK
+      ======================= */
 
-        await sendToKitchen(mainWindow, id_order, "CAFE");
+        // await StrukWindow(struk.id_struk);
+
+        /* =======================
+         SEND TO KITCHEN
+      ======================= */
+
+        const kitchenResult = await sendToKitchen(mainWindow, id_order, "CAFE");
+
+        /* =======================
+         RETURN RESPONSE
+      ======================= */
 
         return Responses({
           code: 201,
-          data: struk,
-          detail_message: "Pesanan berhasil dibuat",
+          data: {
+            struk,
+            kitchen: {
+              status: kitchenResult?.kitchen_status ?? "OFFLINE",
+              orderId: kitchenResult?.orderId ?? null,
+            },
+          },
+          detail_message:
+            kitchenResult?.kitchen_status === "SENT"
+              ? "Pesanan berhasil dibuat & dikirim ke dapur"
+              : "Pesanan dibuat, namun dapur sedang offline",
         });
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -247,7 +275,11 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
             detail_message: `Terjadi Kesalahan: ${err.message}`,
           });
         }
-        return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+
+        return Responses({
+          code: 500,
+          detail_message: "Terjadi Kesalahan",
+        });
       }
     },
   );
@@ -417,12 +449,25 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
       }
 
       console.log("order_id", order_id);
-
-      await sendToKitchen(mainWindow, order_id, "TABLE", item_data);
+      const kitchenResult = await sendToKitchen(
+        mainWindow,
+        order_id,
+        "TABLE",
+        item_data,
+      );
 
       return Responses({
         code: 201,
-        detail_message: "Pesanan berhasil dibuat",
+        data: {
+          kitchen: {
+            status: kitchenResult?.kitchen_status ?? "OFFLINE",
+            orderId: kitchenResult?.orderId ?? null,
+          },
+        },
+        detail_message:
+          kitchenResult?.kitchen_status === "SENT"
+            ? "Pesanan berhasil dibuat & dikirim ke dapur"
+            : "Pesanan dibuat, namun dapur sedang offline",
       });
     } catch (err: unknown) {
       if (err instanceof Error) {

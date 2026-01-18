@@ -10,7 +10,6 @@ import { PlusCircle } from "lucide-react";
 import { IResponses } from "../../../../electron/lib/responses";
 import toast from 'react-hot-toast';
 import InputQty from "../../../components/InputQty";
-import { useWebsocketData } from "../../../components/context/WebsocketContext";
 
 interface IOrderData {
     id_menu: number,
@@ -21,7 +20,6 @@ interface IOrderData {
 }
 
 export default function DrawerCafeTable({ open, setOpen, table }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, table: TableBilliard }) {
-    const socket = useWebsocketData();
     const [booking_data, setBookingData] = useState<Booking | null>(null);
     const [list_menu, setListMenu] = useState<{ value: string, label: string }[]>([]);
     const [menu, setMenu] = useState<IMenu[]>([]);
@@ -134,7 +132,6 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
         setLoadingBtn(true);
         try {
             if (await window.api.confirm()) {
-                console.log("YES")
                 const qty = Number(order_data.qty);
                 if (!qty || isNaN(qty) || qty <= 0) {
                     toast.error("Jumlah tidak boleh kosong atau kurang dari 1");
@@ -173,9 +170,25 @@ export default function DrawerCafeTable({ open, setOpen, table }: { open: boolea
                     setSelectedMenu(null);
                     setKeterangan("");
 
-                    if (socket.connectedKitchens.length === 0) {
-                        window.api.show_message_box("warning", "Dapur tidak terkoneksi, maka struk dapur tidak akan terkirim.");
+                    const kitchenStatus = res.data.kitchen?.status;
+
+                    if (kitchenStatus === "OFFLINE") {
+                        window.api.show_message_box(
+                            "warning",
+                            "Pesanan berhasil disimpan, namun dapur sedang offline.\nPesanan akan dikirim ulang saat dapur online.",
+                        );
                     }
+
+                    if (kitchenStatus === "REJECTED") {
+                        window.api.show_message_box(
+                            "error",
+                            "Pesanan ditolak oleh dapur. Silakan hubungi staf dapur.",
+                        );
+                    }
+
+                    // if (socket.connectedKitchens.length === 0) {
+                    //     window.api.show_message_box("warning", "Dapur tidak terkoneksi, maka struk dapur tidak akan terkirim.");
+                    // }
                 }
             } else {
                 setLoadingBtn(false);

@@ -317,7 +317,59 @@ export default function ReportModule() {
             table: true,
           },
         });
-        console.log("booking", booking);
+
+        const total_all = booking.reduce(
+          (sum, item) => sum + item.total_price,
+          0,
+        );
+
+        const total_duration = booking.reduce(
+          (sum, item) => sum + item.duration,
+          0,
+        );
+
+        return Responses({
+          code: 200,
+          detail_message: "Success",
+          data: {
+            booking,
+            total_all,
+            period: struk_filter.period,
+            total_duration,
+          },
+        });
+      } catch (err) {
+        if (err instanceof Error) {
+          return Responses({
+            code: 500,
+            detail_message: `Terjadi Kesalahan: ${err.message}`,
+          });
+        }
+        return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "reset_report",
+    async (
+      _,
+      filter: { period: string; start_date?: string; end_date?: string },
+      shift: string,
+    ) => {
+      try {
+        const struk_filter = await strukFilter(filter, shift);
+
+        const booking = await prisma.booking.findMany({
+          where: { ...struk_filter.where, status: "RESET" },
+          include: {
+            table: true,
+          },
+          orderBy: {
+            id: "desc",
+          },
+        });
+
         const total_all = booking.reduce(
           (sum, item) => sum + item.total_price,
           0,

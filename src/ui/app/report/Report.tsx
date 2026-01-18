@@ -4,6 +4,7 @@ import ReportAll from "./section/ReportAll";
 import RincianReport from "./section/RincianReport";
 import BilliardReport from "./section/BilliardReport";
 import CafeBilling from "./section/CafeBilling";
+import ResetReport from "./section/ResetReport";
 
 export default function ReportPage() {
     return (
@@ -22,6 +23,9 @@ export default function ReportPage() {
                         </Tab>
                         <Tab key="rincian_cafe" title="Rincian Transaksi Cafe">
                             <CafeBilling />
+                        </Tab>
+                        <Tab key={"reset"} title="Rincian Reset">
+                            <ResetReport />
                         </Tab>
                     </Tabs>
                 </div>

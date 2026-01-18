@@ -15,6 +15,49 @@ export default function NetworkModule() {
     return await scanNetwork(getLocalSubnet(), port);
   });
 
+  ipcMain.handle("save_socket", async (_, socket: string) => {
+    try {
+      const check_ip_connection = await isAlive(socket);
+
+      if (!check_ip_connection) {
+        return Responses({
+          code: 400,
+          detail_message: "IP tidak tersambung oleh jaringan lokal",
+        });
+      }
+
+      await prisma.localServers.upsert({
+        where: {
+          type_server: "KITCHEN",
+        },
+        update: {
+          status: "CONNECTED",
+          ip: `http://${socket}:4321`,
+        },
+        create: {
+          id_local_server: generateShortUUID(),
+          ip: `http://${socket}:4321`,
+          hostname: "KITCHEN HOST PC",
+          number: "01",
+          status: "CONNECTED",
+          type_server: "KITCHEN",
+        },
+      });
+
+      return Responses({
+        code: 201,
+        detail_message: "Network berhasil disimpan",
+      });
+    } catch (err) {
+      return Responses({
+        code: 500,
+        detail_message: `Terjadi Kesalahan: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`,
+      });
+    }
+  });
+
   ipcMain.handle(
     "save_network",
     async (

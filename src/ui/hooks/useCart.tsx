@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ICart } from "../../electron/types";
 import toast from 'react-hot-toast';
-import { useWebsocketData } from "../components/context/WebsocketContext";
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
 
@@ -22,7 +21,6 @@ export interface UseCartResult {
 export default function useCart(): UseCartResult {
     const [cart, setCart] = useState<ICart[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
-    const socket = useWebsocketData();
 
     const cancelOrder = () => {
         setCart([]);
@@ -74,53 +72,95 @@ export default function useCart(): UseCartResult {
         return cash - getTotal();
     };
 
-    const checkout = async (cash: number, payment_method: "CASH" | "TRANSFER" | "QRIS" | string, name: string, no_meja: string, keterangan: string) => {
+    const checkout = async (
+        cash: number,
+        payment_method: "CASH" | "TRANSFER" | "QRIS" | string,
+        name: string,
+        no_meja: string,
+        keterangan: string,
+    ) => {
         setLoading(true);
 
-        if (name.length === 0) {
+        if (!name.trim()) {
             toast.error("Nama pemesan wajib diisi.");
-            setLoading(false)
+            setLoading(false);
             return;
         }
 
-        if (no_meja.length === 0) {
+        if (!no_meja.trim()) {
             toast.error("Nomor meja wajib diisi.");
-            setLoading(false)
+            setLoading(false);
             return;
         }
 
         try {
-            const res = await window.api.checkout_menu(cash, cart, payment_method, name, no_meja, keterangan);
-            setLoading(false)
-            if (res.status && res.data) {
-                cancelOrder()
-                toast.success(res.detail_message || "");
+            const res = await window.api.checkout_menu(
+                cash,
+                cart,
+                payment_method,
+                name,
+                no_meja,
+                keterangan,
+            );
 
-                Swals.fire({
-                    title: "Apakah ingin print struk lagi?",
-                    icon: "info",
-                    showCancelButton: true,
-                    confirmButtonColor: "#3085d6",
-                    cancelButtonColor: "#d33",
-                    confirmButtonText: "Iya"
-                }).then(async (result) => {
-                    if (result.isConfirmed) {
-                        await window.api.print_struk(res.data?.id_struk || "");
-                    }
-                });
+            setLoading(false);
 
-                if (socket.connectedKitchens.length === 0) {
-                    window.api.show_message_box("warning", "Dapur tidak terkoneksi, maka struk dapur tidak akan terkirim.");
-                }
-
-            } else {
+            if (!res.status || !res.data) {
                 toast.error(`Gagal melakukan pembayaran: ${res.detail_message}`);
+                return;
             }
+
+            /* =======================
+               SUCCESS CHECKOUT
+            ======================= */
+
+            cancelOrder();
+            toast.success(res.detail_message || "Checkout berhasil");
+
+            /* =======================
+               PRINT CONFIRMATION
+            ======================= */
+
+            Swals.fire({
+                title: "Apakah Anda ingin mencetak struk?",
+                icon: "info",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Iya",
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    await window.api.print_struk(res.data?.id_struk || "");
+                }
+            });
+
+            /* =======================
+               KITCHEN STATUS HANDLING
+            ======================= */
+
+            const kitchenStatus = res.data.kitchen?.status;
+
+            if (kitchenStatus === "OFFLINE") {
+                window.api.show_message_box(
+                    "warning",
+                    "Pesanan berhasil disimpan, namun dapur sedang offline.\nPesanan akan dikirim ulang saat dapur online.",
+                );
+            }
+
+            if (kitchenStatus === "REJECTED") {
+                window.api.show_message_box(
+                    "error",
+                    "Pesanan ditolak oleh dapur. Silakan hubungi staf dapur.",
+                );
+            }
+
+            // SENT → no popup needed
         } catch (err) {
-            setLoading(false)
-            toast.error(`Kesalahan dalam pemeriksaan: ${err}`);
+            setLoading(false);
+            toast.error("Terjadi kesalahan saat checkout.");
+            console.error(err);
         }
-    }
+    };
 
 
     return { cart, addToCart, removeFromCart, updateQuantity, getTotal, getChange, cancelOrder, checkout, loading };

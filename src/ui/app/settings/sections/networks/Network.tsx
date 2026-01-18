@@ -12,9 +12,11 @@ import {
 } from "@heroui/table";
 import { Chip } from "@heroui/chip";
 import ModalAddNetwork from "./ModalAddNetwork";
-import { ServersList } from "../../../../../electron/types";
+import { IIPList, ServersList } from "../../../../../electron/types";
 import toast from 'react-hot-toast';
 import { LoadingComponent } from "../../../../components/datatable/DataTableCustom";
+import SelectCustom from "../../../../components/SelectCustom";
+import { Alert } from "@heroui/alert";
 
 function CardNetwork({ title, type_server, my_ip, data, api }: { title: string; type_server: "cashier" | "kitchen", my_ip: string | null, data: ServersList[], api: () => Promise<void> }) {
     const [open, setOpen] = useState<boolean>(false);
@@ -39,7 +41,11 @@ function CardNetwork({ title, type_server, my_ip, data, api }: { title: string; 
 
     return <>
         <Card className="h-fit">
-            <CardHeader className="font-bold">{title}</CardHeader>
+            <CardHeader className="flex justify-between">
+                <span className="font-bold">{title}</span>
+                <Button onPress={() => setOpen(true)}>Tambah {type_server === "cashier" ? "Kasir" : "Dapur"}</Button>
+            </CardHeader>
+
             <CardBody>
                 <div className="grid gap-3">
                     <Table removeWrapper>
@@ -77,7 +83,7 @@ function CardNetwork({ title, type_server, my_ip, data, api }: { title: string; 
 
                         </TableBody>
                     </Table>
-                    <Button onPress={() => setOpen(true)}>Tambah {type_server === "cashier" ? "Kasir" : "Dapur"}</Button>
+
                 </div>
             </CardBody>
         </Card>
@@ -87,15 +93,27 @@ function CardNetwork({ title, type_server, my_ip, data, api }: { title: string; 
 
 export default function NetworkSection() {
     const [my_ip, setMyIp] = useState<string | null>(null);
+    const [ip_list, setIpList] = useState<IIPList[]>([]);
     const [list_network, setListNetwork] = useState<{
         cashier: ServersList[],
         kitchen: ServersList[]
     }>({
         cashier: [],
         kitchen: [],
-    })
+    });
+    const [selected, setSelected] = useState<string>("");
+    const [selected_kitchen, setSelectedKitchen] = useState<string>("Tidak Ada Jaringan");
 
     const [loading, setLoading] = useState<boolean>(false);
+
+    const getIpLocal = async () => {
+        setLoading(true)
+        const res = await window.api.network_scan(4321);
+
+        setIpList(res.filter((el) => el.ip !== my_ip));
+        setLoading(false);
+        console.log(res);
+    }
 
     const getListNetwork = async () => {
         setLoading(true)
@@ -105,6 +123,7 @@ export default function NetworkSection() {
             setLoading(false);
 
             if (res.status && res.data) {
+                setSelectedKitchen(res.data.kitchen[0].ip);
                 setListNetwork(res.data);
             } else {
                 toast.error("Gagal mengambil data network");
@@ -122,10 +141,35 @@ export default function NetworkSection() {
     }
 
     useEffect(() => {
-        getCurrentIp();
-        getListNetwork();
+        (async () => {
+            await getCurrentIp();
+            await getListNetwork();
+            await getIpLocal();
+        })();
     }, []);
 
+
+    const handleSubmit = async () => {
+        setLoading(true);
+        try {
+            if (selected.length === 0) {
+                toast.error("Socket IP wajib diisi");
+                return;
+            }
+
+            const res = await window.api.save_socket(selected);
+
+            if (res.status) {
+                toast.success("Jaringan berhasil disimpan");
+                window.location.reload();
+            }
+
+        } catch (err) {
+            toast.error(`Gagal menambahkan Network: ${err}`);
+        } finally {
+            setLoading(false);
+        }
+    }
 
     // for port is default 3321
 
@@ -143,8 +187,33 @@ export default function NetworkSection() {
                         </div>
                         {
                             loading ? <LoadingComponent /> : <>
-                                <CardNetwork type_server="cashier" data={list_network.cashier} api={getListNetwork} title="Jaringan Kasir" my_ip={my_ip} />
-                                <CardNetwork type_server="kitchen" data={list_network.kitchen} api={getListNetwork} title="Jaringan Dapur" my_ip={my_ip} />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <CardNetwork type_server="cashier" data={list_network.cashier} api={getListNetwork} title="Jaringan Kasir" my_ip={my_ip} />
+                                    </div>
+                                    <div>
+                                        <Card>
+                                            <CardHeader className="font-bold">Jaringan Dapur</CardHeader>
+                                            <CardBody className="grid gap-5">
+                                                <div>
+                                                    <Alert hideIcon color="success" description={selected_kitchen} title={"Jaringan Dapur Saat Ini: "} variant="faded" />
+                                                </div>
+                                                <div className="flex flex-col gap-3">
+                                                    <SelectCustom disabled={loading} label="IP Address" onChange={(e) => setSelected(e.target.value)} value={selected}>
+                                                        <SelectCustom.Option value="">Pilih IP...</SelectCustom.Option>
+                                                        {
+                                                            ip_list.map((item) => (
+                                                                <SelectCustom.Option value={item.ip}>{item.ip}</SelectCustom.Option>
+                                                            ))
+                                                        }
+
+                                                    </SelectCustom>
+                                                    <Button isLoading={loading} onPress={handleSubmit}>Simpan</Button>
+                                                </div>
+                                            </CardBody>
+                                        </Card>
+                                    </div>
+                                </div>
                             </>
                         }
                     </div>

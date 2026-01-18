@@ -2,11 +2,14 @@ import { IResponses } from "./lib/responses";
 import {
   Booking,
   CategoryMenu,
+  IKitchenIncoming,
   ILogs,
   IMachine,
   IMenu,
   IPaymentData,
   IPriceType,
+  IRejectIncoming,
+  IRekapModuleParams,
   ITableBilliard,
   IVoucher,
   OrderCafe,
@@ -18,6 +21,7 @@ import {
   Struk,
   TableBilliard,
   TableRevenue,
+  TypePrint,
   User,
   UserData,
 } from "./types/index.js";
@@ -79,7 +83,7 @@ interface ApiAPI {
     name: string,
     no_meja: string,
     keterangan: string,
-  ) => Promise<IResponses<Struk>>;
+  ) => Promise<IResponses<CheckoutResult>>;
   get_printer: () => Promise<IResponses<unknown>>;
   get_serialport: () => Promise<IResponses<unknown>>;
   list_member: () => Promise<IResponses<Array[]>>;
@@ -123,7 +127,7 @@ interface ApiAPI {
   get_logging: () => Promise<IResponses<ILogs[]>>;
   booking_regular: (data: IBookingCheckout) => Promise<IResponses<unknown>>;
   list_menu_table: (id_table: string) => Promise<IResponses<unknown>>;
-  checkout_menu_table: (data: unknown) => Promise<IResponses<unknown>>;
+  checkout_menu_table: (data: unknown) => Promise<IResponses<CheckoutResult>>;
   menu_table_qty: (
     id_order: number,
     type_qty: string,
@@ -143,6 +147,7 @@ interface ApiAPI {
   ) => Promise<IResponses<{ id_struk: string }>>;
   test_struk: () => Promise<void>;
   network_scan: (port: number) => Promise<{ ip: string; hostname: string }[]>;
+  save_socket: (socket: string) => Promise<IResponses<unknown>>;
   my_ip: () => Promise<string | null>;
   save_network: (data: {
     ip: string;
@@ -198,6 +203,21 @@ interface ApiAPI {
     }>
   >;
   billing_report: (
+    filter: {
+      period: string;
+      start_date?: string;
+      end_date?: string;
+    },
+    shift: string | null,
+  ) => Promise<
+    IResponses<{
+      booking: Booking[];
+      total_all: number;
+      period: string;
+      total_duration: number;
+    }>
+  >;
+  reset_report: (
     filter: {
       period: string;
       start_date?: string;
@@ -327,11 +347,28 @@ interface ApiAPI {
   }) => Promise<IResponses<unknown>>;
   delete_paket_segment: (id: string) => Promise<IResponses<unknown>>;
   delete_paket: (id: string) => Promise<IResponses<unknown>>;
+  reject_order: (order_id: string[]) => Promise<{
+    status: boolean;
+    data: { updatedOrders: number; updatedStruk: number } | null;
+  }>;
+  rekap_penjualan_cafe: (data: {
+    time: IRekapModuleParams;
+    type_print: TypePrint;
+  }) => Promise<void>;
+}
+
+interface ISocket {
+  onStatus: (cb: (connected: boolean) => void) => () => void;
+  getStatus: () => Promise<boolean>;
+  onKitchenUpdate: (cb: (data: IKitchenIncoming[]) => void) => () => void;
+  onKitchenReject: (cb: (data: IRejectIncoming) => void) => () => void;
+  rendererReady: () => void;
 }
 
 declare global {
   interface Window {
     update: UpdateAPI;
     api: ApiAPI;
+    socket: ISocket;
   }
 }

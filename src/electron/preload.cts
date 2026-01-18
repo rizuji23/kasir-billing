@@ -1,4 +1,61 @@
-const { contextBridge, ipcRenderer } = require("electron");
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
+
+export interface IKitchenIncoming {
+  id: number;
+  order_type: string;
+  ip: string;
+  name_cashier: string;
+  no_billiard: string;
+  no_meja: string;
+  status_kitchen: string;
+  status_timer: string;
+  start_timer?: Date | null;
+  end_timer?: Date | null;
+  created_at: Date;
+  updated_at: Date;
+
+  order: IOrderCafe[];
+  item: IItemOrder[];
+}
+
+export interface IOrderCafe {
+  id: number;
+  id_order_cafe: string;
+  menu_cafe: number;
+  name: string;
+  subtotal: number;
+  qty: number;
+  total: number;
+  cash: number;
+  change: number;
+  status: string;
+  shift: string;
+  keterangan?: string | null;
+  created_at: Date;
+  updated_at: Date;
+
+  kitchenDataId: number;
+  kitchenData?: IKitchenIncoming;
+}
+
+export interface IItemOrder {
+  id: number;
+  id_order_cafe_item: string;
+  name_menu: string;
+  qty: number;
+  created_at: Date;
+  updated_at: Date;
+
+  kitchenDataId: number;
+  kitchenData?: IKitchenIncoming;
+}
+
+export interface IRejectIncoming {
+  socket: string;
+  reason: string;
+  order: IKitchenIncoming;
+}
 
 contextBridge.exposeInMainWorld("update", {
   checkForUpdates: () => ipcRenderer.send("check-for-updates"),
@@ -58,6 +115,8 @@ contextBridge.exposeInMainWorld("api", {
   delete_menu: (id: number) => ipcRenderer.invoke("delete_menu", id),
   update_menu: (id: number, data: any) =>
     ipcRenderer.invoke("update_menu", id, data),
+  reject_order: (order_id: string[]) =>
+    ipcRenderer.invoke("reject_order", order_id),
   total_booking: () => ipcRenderer.invoke("total_booking"),
   checkout_menu: (
     cash: number,
@@ -109,7 +168,7 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("booking_regular", data),
   list_menu_table: (id_table: string) =>
     ipcRenderer.invoke("list_menu_table", id_table),
-  checkout_menu_table: (data: unknown) =>
+  checkout_menu_table: (data: any) =>
     ipcRenderer.invoke("checkout_menu_table", data),
   menu_table_qty: (id_order: number, type_qty: string) =>
     ipcRenderer.invoke("menu_table_qty", id_order, type_qty),
@@ -121,6 +180,7 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("payment_booking", data),
   test_struk: () => ipcRenderer.invoke("test_struk"),
   network_scan: (port: number) => ipcRenderer.invoke("network_scan", port),
+  save_socket: (socket: string) => ipcRenderer.invoke("save_socket", socket),
   my_ip: () => ipcRenderer.invoke("my_ip"),
   save_network: (data: unknown) => ipcRenderer.invoke("save_network", data),
   opsi_network: (ip: string, opsi: "delete" | "check") =>
@@ -147,6 +207,8 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("summary_report", filter),
   billing_report: (filter: string, shift: string) =>
     ipcRenderer.invoke("billing_report", filter, shift),
+  reset_report: (filter: string, shift: string) =>
+    ipcRenderer.invoke("reset_report", filter, shift),
   cafe_report: (filter: string, shift: string) =>
     ipcRenderer.invoke("cafe_report", filter, shift),
   cashier_name: (name: string) => ipcRenderer.invoke("cashier_name", name),
@@ -154,7 +216,7 @@ contextBridge.exposeInMainWorld("api", {
   confirm: (title?: string) => ipcRenderer.invoke("confirm", title),
   send_chat: (message: string) => ipcRenderer.invoke("send_chat", message),
   reconnect_box: () => ipcRenderer.invoke("reconnect_box"),
-  onNavigate: (callback: void) => ipcRenderer.on("navigate", callback),
+  onNavigate: (callback: () => void) => ipcRenderer.on("navigate", callback),
   get_user: () => ipcRenderer.invoke("get_user"),
   create_user: (data: { name: string; username: string; password: string }) =>
     ipcRenderer.invoke("create_user", data),
@@ -234,4 +296,56 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("delete_paket_segment", id),
   delete_paket: (id: string) => ipcRenderer.invoke("delete_paket", id),
   get_paket_by_id: (id: string) => ipcRenderer.invoke("get_paket_by_id", id),
+  rekap_penjualan_cafe: (data: {
+    time: {
+      periode: "today" | "yesterday" | "monthly" | "annual" | "custom";
+      custom?: { start_date: string; end_date: string };
+    };
+    type_print: "PDF" | "EXCEL";
+  }) => ipcRenderer.invoke("rekap_penjualan_cafe", data),
+});
+
+contextBridge.exposeInMainWorld("socket", {
+  onStatus: (cb: (connected: boolean) => void) => {
+    const handler = (_: IpcRendererEvent, status: boolean) => {
+      cb(status);
+    };
+
+    ipcRenderer.on("socket:status", handler);
+
+    return () => {
+      ipcRenderer.removeListener("socket:status", handler);
+    };
+  },
+
+  getStatus: () => ipcRenderer.invoke("socket:get-status"),
+
+  onKitchenUpdate: (cb: (data: IKitchenIncoming[]) => void) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      data: IKitchenIncoming[],
+    ) => {
+      cb(data);
+    };
+
+    ipcRenderer.on("kitchen:update", listener);
+
+    return () => {
+      ipcRenderer.removeListener("kitchen:update", listener);
+    };
+  },
+  rendererReady: () => {
+    ipcRenderer.send("renderer:ready");
+  },
+  onKitchenReject: (cb: (data: IRejectIncoming) => void) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      data: IRejectIncoming,
+    ) => cb(data);
+    ipcRenderer.on("kitchen:reject", listener);
+
+    return () => {
+      ipcRenderer.removeListener("kitchen:reject", listener);
+    };
+  },
 });

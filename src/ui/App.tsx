@@ -18,6 +18,8 @@ import Login from './app/Login'
 import { EtcComponent } from './components/context/EtcContext'
 import MiddlewareContext from './components/context/MiddlewareContext'
 import PublicRoute from './components/context/PublicContext'
+import { SocketProvider } from './components/context/SocketContext'
+import RekapPage from './app/rekap/Rekap'
 
 function App() {
   const navigate = useNavigate();
@@ -40,67 +42,72 @@ function App() {
         <EtcComponent>
           <WebSocketProvider>
             <ChatProvider>
-              <Routes>
-                <Route path="/" element={<PublicRoute><Login /></PublicRoute>}></Route>
-
-                <Route path="/dashboard" element={
-                  <MiddlewareContext>
-                    <DashboardPage />
-                  </MiddlewareContext>
-                }></Route>
-                {/* <Route path="/" element={<DashboardPage />}></Route> */}
-                <Route path="/order" element={
-                  <MiddlewareContext>
-                    <OrderPage />
-                  </MiddlewareContext>
-                }></Route>
-                <Route path="/menu" element={
-                  <MiddlewareContext>
-                    <Menu />
-                  </MiddlewareContext>
-                }></Route>
-                <Route path="/member" element={
-                  <MiddlewareContext>
-                    <MemberPage />
-                  </MiddlewareContext>
-                }></Route>
-                <Route path="/report" element={
-                  <MiddlewareContext>
-                    <ReportPage />
-                  </MiddlewareContext>
-                }></Route>
-                <Route path="/stock" element={
-                  <MiddlewareContext>
-                    <StockPage />
-                  </MiddlewareContext>
-                }></Route>
-                <Route path="/manual" element={
-                  <MiddlewareContext>
-                    <ManualLamp />
-                  </MiddlewareContext>
-                }></Route>
-                <Route path="/settings" element={
-                  <MiddlewareContext>
-                    <SettingsPage />
-                  </MiddlewareContext>
-                }></Route>
-                <Route path="/struk" element={
-                  <MiddlewareContext>
-                    <StrukView />
-                  </MiddlewareContext>
-                }></Route>
-                <Route path="/kitchen" element={
-                  <MiddlewareContext>
-                    <KitchenPage />
-                  </MiddlewareContext>
-                }></Route>
-                <Route path='/admin' element={
-                  <MiddlewareContext>
-                    <AdminPage />
-                  </MiddlewareContext>
-                }></Route>
-
-              </Routes>
+              <SocketProvider>
+                <Routes>
+                  <Route path="/" element={<PublicRoute><Login /></PublicRoute>}></Route>
+                  <Route path="/dashboard" element={
+                    <MiddlewareContext>
+                      <DashboardPage />
+                    </MiddlewareContext>
+                  }></Route>
+                  {/* <Route path="/" element={<DashboardPage />}></Route> */}
+                  <Route path="/order" element={
+                    <MiddlewareContext>
+                      <OrderPage />
+                    </MiddlewareContext>
+                  }></Route>
+                  <Route path="/menu" element={
+                    <MiddlewareContext>
+                      <Menu />
+                    </MiddlewareContext>
+                  }></Route>
+                  <Route path="/member" element={
+                    <MiddlewareContext>
+                      <MemberPage />
+                    </MiddlewareContext>
+                  }></Route>
+                  <Route path="/report" element={
+                    <MiddlewareContext>
+                      <ReportPage />
+                    </MiddlewareContext>
+                  }></Route>
+                  <Route path="/rekap" element={
+                    <MiddlewareContext>
+                      <RekapPage />
+                    </MiddlewareContext>
+                  }></Route>
+                  <Route path="/stock" element={
+                    <MiddlewareContext>
+                      <StockPage />
+                    </MiddlewareContext>
+                  }></Route>
+                  <Route path="/manual" element={
+                    <MiddlewareContext>
+                      <ManualLamp />
+                    </MiddlewareContext>
+                  }></Route>
+                  <Route path="/settings" element={
+                    <MiddlewareContext>
+                      <SettingsPage />
+                    </MiddlewareContext>
+                  }></Route>
+                  <Route path="/struk" element={
+                    <MiddlewareContext>
+                      <StrukView />
+                    </MiddlewareContext>
+                  }></Route>
+                  <Route path="/kitchen" element={
+                    <MiddlewareContext>
+                      <KitchenPage />
+                    </MiddlewareContext>
+                  }></Route>
+                  <Route path='/admin' element={
+                    <MiddlewareContext>
+                      <AdminPage />
+                    </MiddlewareContext>
+                  }></Route>
+                </Routes>
+              </SocketProvider>
             </ChatProvider>
           </WebSocketProvider>
         </EtcComponent>

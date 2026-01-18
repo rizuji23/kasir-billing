@@ -51,6 +51,9 @@ import ShiftModule from "./module/shift.js";
 import { runMigration } from "./migrate.js";
 import { Server } from "socket.io";
 import PaketModule from "./module/paket.js";
+import { initSocket, isSocketConnected, setMainWindow } from "./socket.js";
+import { rejectOrder } from "./module/kitchen.js";
+import RekapModule from "./module/rekap.js";
 
 let mainWindow: BrowserWindow | null = null;
 let serialport: SerialPort | null = null;
@@ -158,6 +161,21 @@ if (!gotTheLock) {
         path.join(app.getAppPath(), "/dist-react/index.html"),
       );
     }
+
+    setMainWindow(mainWindow);
+
+    const get_local = await prisma.localServers.findFirst({
+      where: {
+        type_server: "KITCHEN",
+      },
+    });
+
+    if (!get_local) {
+      console.warn("⚠️ Kitchen server not found");
+      return;
+    }
+
+    initSocket(get_local.ip);
 
     const template: Electron.MenuItemConstructorOptions[] = [
       {
@@ -303,6 +321,11 @@ UserModule();
 PriceModule();
 ShiftModule();
 PaketModule();
+RekapModule();
+
+ipcMain.handle("reject_order", async (_, order_id: string[]) => {
+  return await rejectOrder(order_id);
+});
 
 ipcMain.handle("get_printer", async (_, id: number | null) => {
   const printers = await mainWindow?.webContents.getPrintersAsync();
@@ -320,6 +343,10 @@ ipcMain.handle("get_printer", async (_, id: number | null) => {
       settings,
     },
   });
+});
+
+ipcMain.handle("socket:get-status", () => {
+  return isSocketConnected();
 });
 
 ipcMain.handle(

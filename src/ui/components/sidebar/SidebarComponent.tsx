@@ -1,4 +1,4 @@
-import { BookUser, CirclePower, Cog, FileChartColumn, Home, Utensils } from "lucide-react";
+import { ArrowDownToLine, BookUser, CirclePower, Cog, CookingPot, FileChartColumn, Home, Utensils } from "lucide-react";
 import logo from "../../assets/logo-login.png";
 import { Link, useLocation } from "react-router";
 import { cn } from "../../lib/utils";
@@ -10,34 +10,23 @@ const sidebar: { title: string, icon: React.ReactNode, href: string }[] = [
         icon: <Home className="w-5 h-5" />,
         href: "/dashboard"
     },
-    // {
-    //     title: "Order",
-    //     icon: <ShoppingCart className="w-5 h-5" />,
-    //     href: "/order"
-    // },
 
     {
         title: "Menu",
         icon: <Utensils className="w-5 h-5" />,
         href: "/menu"
     },
-    // {
-    //     title: "Dapur",
-    //     icon: <ChefHat className="w-5 h-5" />,
-    //     href: "/kitchen"
-    // },
 
     {
         title: "Laporan",
         icon: <FileChartColumn className="w-5 h-5" />,
         href: "/report"
     },
-    // {
-    //     title: "Stok",
-    //     icon: <Box className="w-5 h-5" />,
-    //     href: "/stock"
-    // },
-
+    {
+        title: "Unduh Rekap",
+        icon: <ArrowDownToLine className="w-5 h-5" />,
+        href: "/rekap"
+    },
     {
         title: "Manual Lampu",
         icon: <CirclePower className="w-5 h-5" />,
@@ -47,6 +36,11 @@ const sidebar: { title: string, icon: React.ReactNode, href: string }[] = [
         title: "Member",
         icon: <BookUser className="w-5 h-5" />,
         href: "/member"
+    },
+    {
+        title: "Dapur",
+        icon: <CookingPot className="w-5 h-5" />,
+        href: "/kitchen"
     },
     {
         title: "Pengaturan",

@@ -11,8 +11,9 @@ import toast from 'react-hot-toast';
 import { LoadingComponent } from "../../components/datatable/DataTableCustom";
 import NotFound from "../../components/NotFound";
 import DetailPayment from "./DetailPayment";
-import { Skeleton } from "@heroui/react";
+import { Alert, Skeleton } from "@heroui/react";
 import useCart from "../../hooks/useCart";
+import { useSocket } from "../../components/context/SocketContext";
 
 export default function Menu() {
     const [list_menu, setListMenu] = useState<IMenu[]>([]);
@@ -20,6 +21,7 @@ export default function Menu() {
     const [list_category, setListCategory] = useState<CategoryMenu[]>([]);
     const [category, setCategory] = useState<string>("all");
     const [searchTerm, setSearchTerm] = useState<string>("");
+    const { connected } = useSocket();
 
     const cart = useCart();
 
@@ -73,6 +75,11 @@ export default function Menu() {
                     <div className="flex justify-between">
                         <h1 className="text-2xl font-bold">Menu</h1>
                     </div>
+                    <Alert
+                        color={connected ? "success" : "danger"}
+                        title={connected ? `Dapur Terkoneksi` : `Dapur Tidak Terkoneksi`}
+                        description={connected ? `Saat ini Anda dapat menggunakan fitur Menu untuk membuat pesanan, dan pesanan tersebut akan otomatis terkirim ke Sistem Dapur.` : `Sistem Dapur saat ini tidak terkoneksi. Pesanan tidak dapat dikirim. Silakan periksa koneksi atau hubungi admin.`}
+                    />
                     <div className="grid grid-cols-3 gap-5">
                         <div className="col-span-2">
                             <div>
@@ -98,7 +105,7 @@ export default function Menu() {
                                     }
                                     <Divider />
                                     {loading ? <LoadingComponent /> :
-                                        filteredData.length !== 0 ? <div className="gap-4 grid grid-cols-2 sm:grid-cols-4 max-h-[80vh] overflow-y-auto pe-3">
+                                        filteredData.length !== 0 ? <div className="gap-4 grid grid-cols-2 sm:grid-cols-4 max-h-[95vh] overflow-y-auto pe-3">
                                             {
                                                 filteredData.map((item, index) => (
                                                     <BoxMenu key={index} item={item} cart={cart} />

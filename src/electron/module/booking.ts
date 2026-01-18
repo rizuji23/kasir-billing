@@ -544,7 +544,7 @@ export default function BookingModule() {
 
           id_struk = (struk_create as unknown as Struk).id_struk;
 
-          await StrukWindow((struk_create as unknown as Struk).id_struk);
+          // await StrukWindow((struk_create as unknown as Struk).id_struk);
         } else {
           // update struk
           const struk_update = await createUpdateStruk(
@@ -562,7 +562,7 @@ export default function BookingModule() {
           }
 
           id_struk = (struk_update as unknown as Struk).id_struk;
-          await StrukWindow((struk_update as unknown as Struk).id_struk);
+          // await StrukWindow((struk_update as unknown as Struk).id_struk);
         }
 
         const check_out_table = await checkoutTableDone(

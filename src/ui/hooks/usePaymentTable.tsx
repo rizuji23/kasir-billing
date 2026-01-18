@@ -246,7 +246,7 @@ export default function usePaymentTable({ getDetailBookingTable, detail, open, s
                     setOpen(false);
 
                     Swals.fire({
-                        title: "Apakah ingin print struk lagi?",
+                        title: "Apakah Anda ingin mencetak struk?",
                         icon: "info",
                         showCancelButton: true,
                         confirmButtonColor: "#3085d6",
