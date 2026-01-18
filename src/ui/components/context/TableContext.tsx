@@ -23,8 +23,7 @@ export const TableBilliardProvider = ({ children }: { children: React.ReactNode 
 
         try {
             const res: IResponses<TableBilliard[]> = await window.api.table_list();
-
-            if (res.status && res.data) {
+            if (res.code === 200 && res.data) {
                 setTableList(res.data);
 
             }
@@ -64,27 +63,25 @@ export const TableBilliardProvider = ({ children }: { children: React.ReactNode 
     }
 
     useEffect(() => {
-        setLoading(true)
-        getTables();
-        getStatusMachine();
-        window.api.onTableUpdate((updatedTables) => {
-            setTableList(updatedTables);
-            getTotal();
-        });
+        (async () => {
+            setLoading(true)
+            await getTables();
+            await getStatusMachine();
+            await window.api.onTableUpdate((updatedTables) => {
+                setTableList(updatedTables);
+                getTotal();
+            });
 
-        setInterval(() => {
-            getStatusMachine();
-        }, 5000);
+            setInterval(() => {
+                getStatusMachine();
+            }, 5000);
 
-        setLoading(false);
-        return () => {
-            window.api.removeTableUpdateListener();
-        }
+            setLoading(false);
+            return () => {
+                window.api.removeTableUpdateListener();
+            }
+        })()
     }, []);
-
-    // useEffect(() => {
-    //     console.log("Table List", tableList)
-    // }, [tableList])
 
     return (
         <TableBilliardContext.Provider value={{ tableList, getTables, loading, total, status_machine }}>

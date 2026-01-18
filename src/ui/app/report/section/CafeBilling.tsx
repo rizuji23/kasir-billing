@@ -12,9 +12,6 @@ import moment from "moment-timezone";
 import { useCallback, useEffect, useState } from "react";
 import toast from 'react-hot-toast';
 import { debounce } from "lodash";
-import TopSaleCafe from "./components/TopSaleCafe";
-
-
 
 const columns: TableColumn<OrderCafe>[] = [
     {
@@ -46,7 +43,7 @@ const columns: TableColumn<OrderCafe>[] = [
     },
     {
         name: "Total",
-        selector: row => convertRupiah(row.toString() || "0"),
+        selector: row => convertRupiah(row.subtotal.toString() || "0"),
         sortable: true
     },
     {
@@ -159,9 +156,9 @@ export default function CafeBilling() {
             <div className="grid gap-3">
                 <ReportTitle title={`Rincian Transaksi Cafe`} desc={cafe?.period} setSelected={setSelected} getDataRincian={getDataRincian} loading={loading} />
                 <Tabs aria-label="Options" onSelectionChange={(key) => setShift(key as unknown as string)}>
-                    <Tab key="analytics" title="Analisis">
+                    {/* <Tab key="analytics" title="Analisis">
                         <TopSaleCafe />
-                    </Tab>
+                    </Tab> */}
                     <Tab key="all" title="Semua">
                         <CafeTable loading={loading} filteredCafe={filteredCafe} searchTerm={searchTerm} setSearchTerm={setSearchTerm} cafe={cafe} />
                     </Tab>

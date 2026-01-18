@@ -422,7 +422,10 @@ export default function ReportModule() {
           },
         });
 
-        const total_all = order_cafe.reduce((sum, item) => sum + item.total, 0);
+        const total_all = order_cafe.reduce(
+          (sum, item) => sum + item.subtotal,
+          0,
+        );
 
         return Responses({
           code: 200,
@@ -471,13 +474,16 @@ export default function ReportModule() {
       );
 
       // Group results by category
-      const groupedResults = result.reduce((acc, item) => {
-        if (!acc[item.category]) {
-          acc[item.category] = [];
-        }
-        acc[item.category].push(item);
-        return acc;
-      }, {} as Record<string, { menuName: string; totalSold: number }[]>);
+      const groupedResults = result.reduce(
+        (acc, item) => {
+          if (!acc[item.category]) {
+            acc[item.category] = [];
+          }
+          acc[item.category].push(item);
+          return acc;
+        },
+        {} as Record<string, { menuName: string; totalSold: number }[]>,
+      );
 
       return Responses({
         code: 200,

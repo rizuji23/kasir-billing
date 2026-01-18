@@ -6,6 +6,7 @@ import { Select, SelectItem } from "@heroui/select";
 import { useState } from "react";
 import { Input } from "@heroui/input";
 import { IDateRange, IRekapModuleParams, PeriodeType, RekapType, TypePrint } from "../../../../electron/types";
+import toast from "react-hot-toast";
 
 interface Props {
     title: string,
@@ -21,22 +22,40 @@ export default function BoxRekap({ title, type_rekap }: Props) {
     const [selected_periode, setSelectedPeriode] = useState<PeriodeType>("");
     const [date, setDate] = useState<IDateRange>({ start_date: "", end_date: "" });
 
-    const handlePrintPdf = async () => {
+    const handleSave = async (type_save: TypePrint) => {
+        if (selected_periode.length < 0) {
+            toast.error("Periode wajib diisi.");
+            return;
+        }
+
+        if (selected_periode === "custom") {
+            if (date.start_date.length < 0) {
+                toast.error("Dari Tanggal wajib diisi");
+                return;
+            }
+
+            if (date.end_date.length < 0) {
+                toast.error("Sampai Tanggal wajib diisi");
+                return;
+            }
+        }
+
         const data_params: IBoxRekapPrintParams = {
             time: {
                 periode: selected_periode,
                 custom: date
             },
-            type_print: "PDF"
+            type_print: type_save
         };
 
         switch (type_rekap) {
             case "rekap_penjualan_cafe": {
-                const data = await window.api.rekap_penjualan_cafe(data_params);
-                console.log("data", data);
+                const res = await window.api.rekap_penjualan_cafe(data_params);
+                if (res) {
+                    toast.success("Rekap Penjualan Cafe Berhasil Disimpan");
+                }
                 break;
             }
-
             default:
                 return;
         }
@@ -52,6 +71,7 @@ export default function BoxRekap({ title, type_rekap }: Props) {
                         <Select label="Pilih Periode" size="sm" onSelectionChange={(e) => setSelectedPeriode(e.currentKey as unknown as PeriodeType)}>
                             <SelectItem key={"today"}>Hari Ini</SelectItem>
                             <SelectItem key={"yesterday"}>Kemarin</SelectItem>
+                            <SelectItem key={"weekly"}>Minggu Ini</SelectItem>
                             <SelectItem key={"monthly"}>Bulan Ini</SelectItem>
                             <SelectItem key={"annual"}>Tahun Ini</SelectItem>
                             <SelectItem key={"custom"}>Custom</SelectItem>
@@ -77,8 +97,8 @@ export default function BoxRekap({ title, type_rekap }: Props) {
                 </CardBody>
                 <Divider />
                 <CardFooter className="grid grid-cols-2 gap-5">
-                    <Button size="sm" startContent={<FileSpreadsheet className="w-4 h-4" />}>Simpan Sebagai Excel</Button>
-                    <Button size="sm" onPress={handlePrintPdf} startContent={<FileText className="w-4 h-4" />}>Simpan Sebagai PDF</Button>
+                    <Button size="sm" onPress={() => handleSave("EXCEL")} startContent={<FileSpreadsheet className="w-4 h-4" />}>Simpan Sebagai Excel</Button>
+                    <Button size="sm" onPress={() => handleSave("PDF")} startContent={<FileText className="w-4 h-4" />}>Simpan Sebagai PDF</Button>
                 </CardFooter>
             </Card>
         </>

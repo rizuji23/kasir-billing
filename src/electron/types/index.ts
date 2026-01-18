@@ -685,7 +685,9 @@ export type PeriodeType =
   | "yesterday"
   | "monthly"
   | "annual"
-  | "custom";
+  | "custom"
+  | "weekly"
+  | "";
 export interface IDateRange {
   start_date: string;
   end_date: string;
@@ -696,3 +698,4 @@ export interface IRekapModuleParams {
 }
 
 export type TypePrint = "PDF" | "EXCEL";
+export type GroupedData = Record<string, { name: string; total: number }[]>;

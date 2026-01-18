@@ -105,7 +105,6 @@ export const strukFilter = async (
   filter: { period: string; start_date?: string; end_date?: string },
   shift: string,
 ) => {
-  // Define the type for the whereClause object
   const whereClause: {
     status: StatusTransaction;
     updated_at?: {
@@ -114,16 +113,21 @@ export const strukFilter = async (
     };
     shift?: string;
   } = {
-    status: StatusTransaction.PAID, // Use the enum value
+    status: StatusTransaction.PAID,
   };
 
-  const today = new Date();
-  const startOfDay = new Date(today.setHours(0, 0, 0, 0)); // Today at 00:00
-  const endOfDay = new Date(today);
-  endOfDay.setDate(endOfDay.getDate() + 1); // Move to the next day
-  endOfDay.setHours(3, 0, 0, 0); // Set time to 03:00 AM
+  const now = new Date();
+  let gte: Date;
+  let lte: Date;
+  let period = "";
 
-  let period = ""; // Variable to store the period string
+  // Helper: Set Jam Operasional
+  // Start: 08:00 WIB (01:00 UTC)
+  // End: 05:00 WIB Besoknya (22:00 UTC di hari yang sama agar +7 jam jadi 05:00 besok)
+  const setOperationalHours = (startDate: Date, endDate: Date) => {
+    startDate.setUTCHours(1, 0, 0, 0);
+    endDate.setUTCHours(22, 0, 0, 0);
+  };
 
   if (shift && shift !== "all") {
     whereClause["shift"] = shift;
@@ -131,108 +135,121 @@ export const strukFilter = async (
 
   switch (filter.period) {
     case "today": {
-      whereClause["updated_at"] = {
-        gte: startOfDay, // Start of today at 00:00
-        lte: endOfDay, // End of today at 03:00 AM next day
-      };
-      period = `Hari Ini (${formatDate(today)})`; // e.g., "Hari Ini (15/02/2023)"
+      gte = new Date(now);
+      lte = new Date(now);
+      setOperationalHours(gte, lte);
+
+      period = `Hari Ini (${formatDate(now)})`;
       break;
     }
 
     case "yesterday": {
-      const yesterday = new Date(today);
-      yesterday.setDate(today.getDate() - 1); // Move to yesterday
+      const yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
 
-      const startOfYesterday = new Date(yesterday.setHours(0, 0, 0, 0)); // 00:00 yesterday
-      const endOfYesterday = new Date(today.setHours(3, 0, 0, 0)); // Today at 03:00 AM
+      gte = new Date(yesterday);
+      lte = new Date(yesterday);
+      setOperationalHours(gte, lte);
 
-      whereClause["updated_at"] = {
-        gte: startOfYesterday, // Start of yesterday at 00:00
-        lte: endOfYesterday, // End of yesterday at 03:00 AM today
-      };
-      period = `Kemarin (${formatDate(yesterday)})`; // e.g., "Kemarin (14/02/2023)"
+      period = `Kemarin (${formatDate(yesterday)})`;
+      break;
+    }
+
+    case "weekly": {
+      // Minggu Ini (Senin s/d Minggu)
+      const day = now.getDay(); // 0 (Minggu) - 6 (Sabtu)
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust ke Senin
+
+      gte = new Date(now);
+      gte.setDate(diff); // Set ke Senin
+
+      lte = new Date(gte);
+      lte.setDate(gte.getDate() + 6); // Set ke Minggu
+
+      setOperationalHours(gte, lte);
+
+      period = `Minggu Ini (${formatDate(gte)} - ${formatDate(lte)})`;
       break;
     }
 
     case "this_month": {
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const endOfMonth = new Date(
-        today.getFullYear(),
-        today.getMonth() + 1,
-        0,
-        23,
-        59,
-        59,
-        999,
-      );
-      whereClause["updated_at"] = {
-        gte: startOfMonth,
-        lte: endOfMonth,
-      };
-      period = getMonthName(today); // e.g., "Februari"
+      gte = new Date(now.getFullYear(), now.getMonth(), 1);
+      lte = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+      setOperationalHours(gte, lte);
+
+      period = getMonthName(now);
       break;
     }
 
     case "quarterly": {
-      const currentMonth = today.getMonth(); // April = 3
-      const startMonth = currentMonth - 2; // April (3) - 2 = January (1)
+      // Triwulan (3 Bulan terakhir termasuk bulan ini)
+      const currentMonth = now.getMonth();
+      // Mundur 2 bulan ke belakang
+      const startMonth = currentMonth - 2;
 
-      // Handle year wrap-around if needed (for Jan/Feb)
+      // Handle pergantian tahun jika mundur ke tahun lalu
       const adjustedYear =
-        startMonth < 0 ? today.getFullYear() - 1 : today.getFullYear();
+        startMonth < 0 ? now.getFullYear() - 1 : now.getFullYear();
       const adjustedStartMonth = startMonth < 0 ? 12 + startMonth : startMonth;
 
-      const startOfQuarter = new Date(adjustedYear, adjustedStartMonth, 1);
+      gte = new Date(adjustedYear, adjustedStartMonth, 1);
+      lte = new Date(now.getFullYear(), currentMonth + 1, 0); // Akhir bulan ini
 
-      const endOfQuarter = new Date(
-        today.getFullYear(),
-        currentMonth,
-        today.getDate(), // Use current day of month
-        23,
-        59,
-        59,
-        999,
-      );
+      setOperationalHours(gte, lte);
 
-      whereClause["updated_at"] = {
-        gte: startOfQuarter,
-        lte: endOfQuarter,
-      };
-
-      const startMonthName = getMonthName(startOfQuarter);
-      const endMonthName = getMonthName(endOfQuarter);
-      period = `${startMonthName} - ${endMonthName}`; // e.g., "Januari - April"
+      const startMonthName = getMonthName(gte);
+      const endMonthName = getMonthName(lte);
+      period = `${startMonthName} - ${endMonthName}`;
       break;
     }
 
     case "this_year": {
-      const startOfYear = new Date(today.getFullYear(), 0, 1);
-      const endOfYear = new Date(today.getFullYear(), 11, 31, 23, 59, 59, 999);
-      whereClause["updated_at"] = {
-        gte: startOfYear,
-        lte: endOfYear,
-      };
-      period = `Tahun ${today.getFullYear()}`; // e.g., "Tahun 2023"
+      gte = new Date(now.getFullYear(), 0, 1);
+      lte = new Date(now.getFullYear(), 11, 31);
+
+      setOperationalHours(gte, lte);
+
+      period = `Tahun ${now.getFullYear()}`;
       break;
     }
 
     case "custom": {
       if (filter.start_date && filter.end_date) {
-        const startDate = new Date(filter.start_date);
-        const endDate = new Date(filter.end_date);
-        whereClause["updated_at"] = {
-          gte: startDate,
-          lte: endDate,
-        };
-        period = `${formatDate(startDate)} - ${formatDate(endDate)}`; // e.g., "01/01/2023 - 31/12/2023"
+        gte = new Date(filter.start_date);
+        lte = new Date(filter.end_date);
+
+        setOperationalHours(gte, lte);
+
+        period = `${formatDate(gte)} - ${formatDate(lte)}`;
+      } else {
+        // Fallback jika user pilih custom tapi tanggal kosong, default ke hari ini
+        gte = new Date(now);
+        lte = new Date(now);
+        setOperationalHours(gte, lte);
+        period = `Hari Ini (${formatDate(now)})`;
       }
       break;
     }
 
     default:
-      period = "Semua Waktu"; // Default period if no filter is selected
+      // Default ke "Semua Waktu" atau "Hari Ini" tergantung kebutuhan
+      // Di sini saya set logic default mirip 'today' agar aman, tapi labelnya Semua Waktu
+      gte = new Date(now);
+      lte = new Date(now);
+      setOperationalHours(gte, lte);
+      period = "Hari Ini";
       break;
   }
+
+  // Assign gte dan lte ke whereClause jika sudah terdefinisi
+  if (gte && lte) {
+    whereClause["updated_at"] = {
+      gte: gte,
+      lte: lte,
+    };
+  }
+
   return {
     where: whereClause,
     period: period,

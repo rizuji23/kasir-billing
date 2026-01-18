@@ -9,6 +9,7 @@ import Responses from "../../lib/responses.js";
 import { prisma } from "../../database.js";
 import { TypeServer } from "../../types/index.js";
 import generateShortUUID from "../../lib/random.js";
+import { initSocket } from "../../socket.js";
 
 export default function NetworkModule() {
   ipcMain.handle("network_scan", async (_, port: number) => {
@@ -26,29 +27,45 @@ export default function NetworkModule() {
         });
       }
 
-      await prisma.localServers.upsert({
+      const existingServer = await prisma.localServers.findFirst({
         where: {
           type_server: "KITCHEN",
         },
-        update: {
-          status: "CONNECTED",
-          ip: `http://${socket}:4321`,
-        },
-        create: {
-          id_local_server: generateShortUUID(),
-          ip: `http://${socket}:4321`,
-          hostname: "KITCHEN HOST PC",
-          number: "01",
-          status: "CONNECTED",
-          type_server: "KITCHEN",
-        },
       });
+
+      let local;
+
+      if (existingServer) {
+        local = await prisma.localServers.update({
+          where: {
+            id: existingServer.id,
+          },
+          data: {
+            status: "CONNECTED",
+            ip: `http://${socket}:4321`,
+          },
+        });
+      } else {
+        local = await prisma.localServers.create({
+          data: {
+            id_local_server: generateShortUUID(),
+            ip: `http://${socket}:4321`,
+            hostname: "KITCHEN HOST PC",
+            number: "1",
+            status: "CONNECTED",
+            type_server: "KITCHEN",
+          },
+        });
+      }
+
+      initSocket(local.ip);
 
       return Responses({
         code: 201,
         detail_message: "Network berhasil disimpan",
       });
     } catch (err) {
+      console.error(err);
       return Responses({
         code: 500,
         detail_message: `Terjadi Kesalahan: ${

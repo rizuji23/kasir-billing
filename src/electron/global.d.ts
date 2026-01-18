@@ -354,7 +354,7 @@ interface ApiAPI {
   rekap_penjualan_cafe: (data: {
     time: IRekapModuleParams;
     type_print: TypePrint;
-  }) => Promise<void>;
+  }) => Promise<boolean>;
 }
 
 interface ISocket {

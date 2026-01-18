@@ -119,11 +119,11 @@ export default function NetworkSection() {
         setLoading(true)
         try {
             const res = await window.api.list_network();
-
+            console.log("res", res)
             setLoading(false);
 
             if (res.status && res.data) {
-                setSelectedKitchen(res.data.kitchen[0].ip);
+                setSelectedKitchen(res.data.kitchen.length === 0 ? "Tidak Ada Jaringan" : res.data.kitchen[0].ip);
                 setListNetwork(res.data);
             } else {
                 toast.error("Gagal mengambil data network");

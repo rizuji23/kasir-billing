@@ -286,8 +286,6 @@ if (!gotTheLock) {
     updateTimers(mainWindow, wss);
     setupAutoUpdater(mainWindow);
     // sockets = await initWebSockets(mainWindow!);
-
-    MenuModule(mainWindow);
   });
 }
 
@@ -306,6 +304,7 @@ app.on("window-all-closed", () => {
   }
 });
 
+MenuModule(mainWindow);
 AuthModule();
 TableModule();
 CategoryModule();

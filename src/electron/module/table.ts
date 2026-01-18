@@ -93,14 +93,17 @@ export const updateTimers = async (
           remainingTime = formatTime(secondsRemaining);
 
           if (secondsRemaining <= 0 && table.status !== "EXPIRE") {
-            setTimeout(async () => {
-              sendMessageToMachine(`off ${table.number}`).then(async () => {
-                await prisma.tableBilliard.update({
-                  where: { id: table.id },
-                  data: { status: "EXPIRE", timer: null, power: "OFF" },
+            setTimeout(
+              async () => {
+                sendMessageToMachine(`off ${table.number}`).then(async () => {
+                  await prisma.tableBilliard.update({
+                    where: { id: table.id },
+                    data: { status: "EXPIRE", timer: null, power: "OFF" },
+                  });
                 });
-              });
-            }, 100 * Number(table.number));
+              },
+              100 * Number(table.number),
+            );
           } else if (
             secondsRemaining <= 300 &&
             table.status !== "MOSTLYEXPIRE"
@@ -111,9 +114,12 @@ export const updateTimers = async (
             });
 
             if (table.blink) {
-              setTimeout(async () => {
-                await sendMessageToMachine(`blink ${table.number}`);
-              }, 100 * Number(table.number));
+              setTimeout(
+                async () => {
+                  await sendMessageToMachine(`blink ${table.number}`);
+                },
+                100 * Number(table.number),
+              );
             }
           }
         } else if (

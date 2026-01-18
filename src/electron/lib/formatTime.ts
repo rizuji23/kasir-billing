@@ -3,48 +3,73 @@ import { PeriodeType } from "../types/index.js";
 export interface CustomDateRange {
   startDate: Date;
   endDate: Date;
-  closeHour?: number;
 }
 
 export function formatPrismaDate(
-  type: PeriodeType,
+  type: PeriodeType, // Menambahkan support type 'weekly'
   customRange?: CustomDateRange,
-  closeHour: number = 3,
 ): { gte: Date; lte: Date } {
   const now = new Date();
   let gte: Date;
   let lte: Date;
 
+  // Helper untuk set jam operasional
+  // 08:00 WIB = 01:00 UTC
+  // 05:00 WIB (Besok) = 22:00 UTC (Hari yang sama)
+  const setOperationalHours = (startDate: Date, endDate: Date) => {
+    startDate.setUTCHours(1, 0, 0, 0); // 08:00 Pagi WIB
+    endDate.setUTCHours(22, 0, 0, 0); // 05:00 Pagi WIB (Besoknya)
+  };
+
   switch (type) {
     case "today": {
       gte = new Date(now);
-      gte.setHours(0, 0, 0, 0);
-
       lte = new Date(now);
-      lte.setDate(lte.getDate() + 1);
-      lte.setHours(closeHour, 0, 0, 0);
+      setOperationalHours(gte, lte);
       break;
     }
 
     case "yesterday": {
-      gte = new Date(now);
-      gte.setDate(gte.getDate() - 1);
-      gte.setHours(0, 0, 0, 0);
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
 
-      lte = new Date(now);
-      lte.setHours(closeHour, 0, 0, 0);
+      gte = new Date(yesterday);
+      lte = new Date(yesterday);
+      setOperationalHours(gte, lte);
+      break;
+    }
+
+    case "weekly": {
+      // Cari hari Senin minggu ini
+      const day = now.getDay(); // 0 (Minggu) - 6 (Sabtu)
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust ke Senin
+
+      gte = new Date(now);
+      gte.setDate(diff);
+
+      // Akhir minggu (Minggu)
+      lte = new Date(gte);
+      lte.setDate(gte.getDate() + 6);
+
+      setOperationalHours(gte, lte);
       break;
     }
 
     case "monthly": {
+      // Awal bulan
       gte = new Date(now.getFullYear(), now.getMonth(), 1);
-      lte = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      // Akhir bulan
+      lte = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+      setOperationalHours(gte, lte);
       break;
     }
 
     case "annual": {
       gte = new Date(now.getFullYear(), 0, 1);
-      lte = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+      lte = new Date(now.getFullYear(), 11, 31);
+
+      setOperationalHours(gte, lte);
       break;
     }
 
@@ -54,11 +79,9 @@ export function formatPrismaDate(
       }
 
       gte = new Date(customRange.startDate);
-      gte.setHours(0, 0, 0, 0);
-
       lte = new Date(customRange.endDate);
-      const endCloseHour = customRange.closeHour ?? closeHour;
-      lte.setHours(endCloseHour, 0, 0, 0);
+
+      setOperationalHours(gte, lte);
       break;
     }
 
