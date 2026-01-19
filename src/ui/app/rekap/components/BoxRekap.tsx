@@ -23,18 +23,18 @@ export default function BoxRekap({ title, type_rekap }: Props) {
     const [date, setDate] = useState<IDateRange>({ start_date: "", end_date: "" });
 
     const handleSave = async (type_save: TypePrint) => {
-        if (selected_periode.length < 0) {
+        if (selected_periode.length === 0) {
             toast.error("Periode wajib diisi.");
             return;
         }
 
         if (selected_periode === "custom") {
-            if (date.start_date.length < 0) {
+            if (date.start_date.length === 0) {
                 toast.error("Dari Tanggal wajib diisi");
                 return;
             }
 
-            if (date.end_date.length < 0) {
+            if (date.end_date.length === 0) {
                 toast.error("Sampai Tanggal wajib diisi");
                 return;
             }
