@@ -163,6 +163,7 @@ if (!gotTheLock) {
     }
 
     setMainWindow(mainWindow);
+    updateTimers(mainWindow, wss);
 
     const get_local = await prisma.localServers.findFirst({
       where: {
@@ -283,7 +284,6 @@ if (!gotTheLock) {
       );
     });
 
-    updateTimers(mainWindow, wss);
     setupAutoUpdater(mainWindow);
     // sockets = await initWebSockets(mainWindow!);
   });
@@ -526,6 +526,29 @@ ipcMain.handle(
     }
   },
 );
+
+ipcMain.handle("get_setting", async (_, id: string) => {
+  try {
+    const setting = await prisma.settings.findFirst({
+      where: {
+        id_settings: id,
+      },
+    });
+
+    return Responses({
+      code: 200,
+      data: setting,
+    });
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      return Responses({
+        code: 500,
+        detail_message: `Terjadi Kesalahan: ${err.message}`,
+      });
+    }
+    return Responses({ code: 500, detail_message: "Terjadi Kesalahan" });
+  }
+});
 
 ipcMain.handle("get_cashier_name", async () => {
   try {

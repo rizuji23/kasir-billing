@@ -301,6 +301,18 @@ export default function MenuModule(mainWindow: BrowserWindow | null) {
                 include: {
                   menucafe: true,
                 },
+                where: {
+                  status: {
+                    not: {
+                      in: ["RESET"],
+                    },
+                  },
+                  status_kitchen: {
+                    not: {
+                      in: ["CANCEL", "REJECT"],
+                    },
+                  },
+                },
               },
             },
           },

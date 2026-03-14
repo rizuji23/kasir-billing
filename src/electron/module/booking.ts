@@ -220,8 +220,14 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
         const timeZone = "Asia/Jakarta";
         const now = new Date(new Date().toLocaleString("en-US", { timeZone }));
         const startSlot = new Date(now.getTime());
+        
+        const incrementSetting = await prisma.settings.findFirst({
+          where: { id_settings: "LOSS_PLAY_INCREMENT" }
+        });
+        const incrementMinutes = incrementSetting ? parseInt(incrementSetting.content || "60") : 60;
+        
         const endSlot = new Date(
-          startSlot.getTime() + 1 * 60 * 60 * 1000 + 15 * 60 * 1000,
+          startSlot.getTime() + incrementMinutes * 60 * 1000,
         );
 
         if (!price) {
@@ -417,6 +423,18 @@ export default function BookingModule() {
             orderBy: {
               created_at: "desc",
             },
+            where: {
+              status: {
+                not: {
+                  in: ["RESET"],
+                },
+              },
+              status_kitchen: {
+                not: {
+                  in: ["CANCEL", "REJECT"],
+                },
+              },
+            },
           },
           paket: true,
         },
@@ -517,6 +535,16 @@ export default function BookingModule() {
           prisma.orderCafe.updateMany({
             where: {
               bookingId: booking.id,
+              status: {
+                not: {
+                  in: ["RESET"],
+                },
+              },
+              status_kitchen: {
+                not: {
+                  in: ["CANCEL", "REJECT"],
+                },
+              },
             },
             data: {
               payment_method:

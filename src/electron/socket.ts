@@ -21,10 +21,16 @@ export function getLastKitchenData() {
 }
 
 export function initSocket(serverUrl: string) {
-  if (socket) return socket;
+  if (socket) {
+    console.log("Disconnecting existing socket to reconnect to new URL...");
+    socket.disconnect();
+  }
 
   socket = io(serverUrl, {
     reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: Infinity,
     timeout: 5000,
   });
 
@@ -39,17 +45,22 @@ export function initSocket(serverUrl: string) {
   });
 
   socket.on("disconnect", (reason) => {
-    console.log("❌ Socket IO disconnected");
+    console.log("❌ Socket IO disconnected. Reason:", reason);
     sendStatus(false);
-    dialog.showErrorBox(
-      `Jaringan Dapur Terputus ${reason}`,
-      "Silahkan untuk refresh aplikasi ini dengan CTRL+SHIFT+R secara bersamaan",
-    );
   });
 
   socket.on("connect_error", (err) => {
     console.error("Socket IO error:", err.message);
     sendStatus(false);
+  });
+
+  socket.on("reconnect", (attempt) => {
+    console.log(`🔄 Socket IO reconnected after ${attempt} attempts`);
+    sendStatus(true);
+  });
+
+  socket.on("reconnect_attempt", (attempt) => {
+    console.log(`⚠️ Socket IO reconnect_attempt:`, attempt);
   });
 
   socket.on("kitchen:update", async (data: IKitchenIncoming[]) => {
@@ -71,6 +82,27 @@ ipcMain.on("renderer:ready", () => {
   if (lastKitchenData && mainWindow) {
     mainWindow.webContents.send("kitchen:update", lastKitchenData);
   }
+});
+
+ipcMain.handle("test_kitchen", async () => {
+  if (!socket?.connected) {
+    throw new Error("KITCHEN_NOT_CONNECTED");
+  }
+
+  const dummyData = {
+    message: "TEST_CONNECTION",
+    timestamp: new Date().toISOString(),
+    items: [
+      { name: "Dummy Item 1", qty: 2 },
+      { name: "Dummy Item 2", qty: 1 }
+    ]
+  };
+
+  socket.emit("kitchen:new_order", dummyData, (ack: any) => {
+    console.log("Kitchen test acknowledged:", ack);
+  });
+  
+  return { success: true };
 });
 
 export function isSocketConnected(): boolean {

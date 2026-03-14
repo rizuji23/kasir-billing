@@ -63,24 +63,22 @@ export const TableBilliardProvider = ({ children }: { children: React.ReactNode 
     }
 
     useEffect(() => {
-        (async () => {
-            setLoading(true)
-            await getTables();
-            await getStatusMachine();
-            await window.api.onTableUpdate((updatedTables) => {
-                setTableList(updatedTables);
-                getTotal();
-            });
+        setLoading(true)
+        getTables();
+        getStatusMachine();
+        window.api.onTableUpdate((updatedTables) => {
+            setTableList(updatedTables);
+            getTotal();
+        });
 
-            setInterval(() => {
-                getStatusMachine();
-            }, 5000);
+        setInterval(() => {
+            getStatusMachine();
+        }, 5000);
 
-            setLoading(false);
-            return () => {
-                window.api.removeTableUpdateListener();
-            }
-        })()
+        setLoading(false);
+        return () => {
+            window.api.removeTableUpdateListener();
+        }
     }, []);
 
     return (

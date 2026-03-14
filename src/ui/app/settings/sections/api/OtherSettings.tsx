@@ -27,6 +27,7 @@ export default function OtherSettings() {
                     <div className="flex gap-3">
                         <Button onPress={handleTestNotif} startContent={<Bell className="w-4 h-4" />}>Test Notifikasi Chat</Button>
                         <Button startContent={<Printer className="w-4 h-4" />} onPress={() => window.api.test_struk()}>Test Struk</Button>
+                        <Button startContent={<MessageCircleWarning className="w-4 h-4" />} onPress={() => window.api.test_kitchen()}>Test Kitchen</Button>
                     </div>
                 </CardBody>
             </Card>

@@ -54,7 +54,7 @@ export default function SidebarComponent() {
 
     return (
         <>
-            <div className="w-[200px] h-screen bg-[#18181B] fixed">
+            <div className="w-[200px] h-screen bg-[#18181B] fixed overflow-y-auto">
                 <div className="flex flex-col gap-4 px-3 pt-5 pb-4">
                     <div className="px-2">
                         <img src={logo} className="w-32" alt="" />

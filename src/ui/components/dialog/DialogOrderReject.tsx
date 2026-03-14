@@ -62,6 +62,9 @@ export default function DialogOrderReject({ open, setOpen, data }: { open: boole
             if (res.status) {
                 setOpen(false);
                 toast.success("Order berhasil direject");
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
             } else {
                 toast.error("Terjadi kesalahan, hubungi developer");
             }

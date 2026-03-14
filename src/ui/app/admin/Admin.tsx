@@ -6,6 +6,7 @@ import { Button } from "@heroui/button";
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router";
 import PaketAdmin from "./section/Paket";
+import GeneralSettings from "./section/GeneralSettings";
 
 export default function AdminPage() {
     const history = useNavigate();
@@ -31,6 +32,9 @@ export default function AdminPage() {
                         </Tab>
                         <Tab key={"paket"} title="Paket">
                             <PaketAdmin />
+                        </Tab>
+                        <Tab key="general" title="Pengaturan Umum">
+                            <GeneralSettings />
                         </Tab>
                     </Tabs>
                 </div>

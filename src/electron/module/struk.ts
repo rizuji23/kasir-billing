@@ -29,6 +29,18 @@ export async function StrukWindow(id_struk: string) {
               include: {
                 menucafe: true,
               },
+              where: {
+                status: {
+                  not: {
+                    in: ["RESET"],
+                  },
+                },
+                status_kitchen: {
+                  not: {
+                    in: ["CANCEL", "REJECT"],
+                  },
+                },
+              },
             },
             paket: true,
           },

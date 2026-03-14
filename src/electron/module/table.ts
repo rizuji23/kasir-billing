@@ -93,17 +93,11 @@ export const updateTimers = async (
           remainingTime = formatTime(secondsRemaining);
 
           if (secondsRemaining <= 0 && table.status !== "EXPIRE") {
-            setTimeout(
-              async () => {
-                sendMessageToMachine(`off ${table.number}`).then(async () => {
-                  await prisma.tableBilliard.update({
-                    where: { id: table.id },
-                    data: { status: "EXPIRE", timer: null, power: "OFF" },
-                  });
-                });
-              },
-              100 * Number(table.number),
-            );
+            await prisma.tableBilliard.update({
+              where: { id: table.id },
+              data: { status: "EXPIRE", timer: null, power: "OFF" },
+            });
+            await sendMessageToMachine(`off ${table.number}`);
           } else if (
             secondsRemaining <= 300 &&
             table.status !== "MOSTLYEXPIRE"
@@ -114,12 +108,7 @@ export const updateTimers = async (
             });
 
             if (table.blink) {
-              setTimeout(
-                async () => {
-                  await sendMessageToMachine(`blink ${table.number}`);
-                },
-                100 * Number(table.number),
-              );
+              await sendMessageToMachine(`blink ${table.number}`);
             }
           }
         } else if (
@@ -134,37 +123,63 @@ export const updateTimers = async (
           );
           remainingTime = formatTime(secondsElapsed);
 
-          // Check if 1 hour 15 minutes (4500 seconds) has passed since the last detailBilling entry
+          // Fetch increment setting
+          const incrementSetting = await prisma.settings.findFirst({
+            where: { id_settings: "LOSS_PLAY_INCREMENT" }
+          });
+          const incrementMinutes = incrementSetting ? parseInt(incrementSetting.content || "60") : 60;
+
           const lastBilling = table.bookings[0].detail_booking[0]; // Last detailBilling entry
           const lastBillingTime = lastBilling
             ? new Date(lastBilling.end_duration)
             : startTime;
 
-          if ((now.getTime() - lastBillingTime.getTime()) / 1000 >= 60) {
-            // const formattedTime = now
-            //   .toLocaleTimeString("id-ID", {
-            //     hour: "2-digit",
-            //     minute: "2-digit",
-            //     second: "2-digit",
-            //     hour12: false,
-            //   })
-            //   .replace(/\./g, ":"); // Replace dots with colons
-            // const price = await getPriceByShift(
-            //   table.bookings[0].price_type?.type_price || "",
-            //   formattedTime,
-            // );
+          // If current time has passed the end of the last billing slot
+          if (now.getTime() >= lastBillingTime.getTime()) {
+            const timeZone = "Asia/Jakarta";
+            const localizedNow = new Date(new Date().toLocaleString("en-US", { timeZone }));
+
+            const formattedTime = localizedNow
+              .toLocaleTimeString("id-ID", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              })
+              .replace(/\./g, ":"); // Replace dots with colons
+
+            const price = await getPriceByShift(
+              table.bookings[0].price_type?.type_price || "",
+              formattedTime,
+            );
+
             // Save a new billing entry
-            // if (price) {
-            //   await prisma.detailBooking.create({
-            //     data: {
-            //       bookingId: table.bookings[0].id,
-            //       start_duration: lastBillingTime,
-            //       end_duration: now,
-            //       duration: 1,
-            //       price: price.price,
-            //     },
-            //   });
-            // }
+            if (price) {
+              const startSlot = new Date(lastBillingTime.getTime());
+              const endSlot = new Date(
+                startSlot.getTime() + incrementMinutes * 60 * 1000,
+              );
+
+              await prisma.detailBooking.create({
+                data: {
+                  bookingId: table.bookings[0].id,
+                  start_duration: startSlot,
+                  end_duration: endSlot,
+                  duration: 1,
+                  status: "NOPAID",
+                  price: price.price,
+                },
+              });
+
+              // Update booking total price and duration
+              await prisma.booking.update({
+                where: { id: table.bookings[0].id },
+                data: {
+                  duration: { increment: 1 },
+                  total_price: { increment: price.price }
+                }
+              });
+            }
           }
         }
 

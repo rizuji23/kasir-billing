@@ -187,10 +187,14 @@ async function processQueue() {
 
           serialport!.drain(() => {
             console.log(`Message sent: ${message}`);
-            resolve();
+            setTimeout(() => {
+              resolve();
+            }, 100);
           });
         });
       });
+    } catch(err) {
+      console.error("Queue process error:", err);
     } finally {
       isWriting = false;
       processQueue();

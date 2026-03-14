@@ -130,7 +130,7 @@ export default function useCart(): UseCartResult {
                 confirmButtonText: "Iya",
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    await window.api.print_struk(res.data?.id_struk || "");
+                    await window.api.print_struk(res.data?.struk.id_struk || "");
                 }
             });
 

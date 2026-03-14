@@ -146,6 +146,7 @@ interface ApiAPI {
     data: IPaymentData,
   ) => Promise<IResponses<{ id_struk: string }>>;
   test_struk: () => Promise<void>;
+  test_kitchen: () => Promise<void>;
   network_scan: (port: number) => Promise<{ ip: string; hostname: string }[]>;
   save_socket: (socket: string) => Promise<IResponses<unknown>>;
   my_ip: () => Promise<string | null>;
@@ -307,6 +308,7 @@ interface ApiAPI {
     shift: string,
   ) => Promise<IResponses<unknown>>;
   middleware: () => Promise<IResponses<UserData>>;
+  get_setting: (id: string) => Promise<IResponses<Settings | null>>;
   save_url: (
     id: string,
     label_settings: string,

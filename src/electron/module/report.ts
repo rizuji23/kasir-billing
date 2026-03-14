@@ -93,6 +93,18 @@ export default function ReportModule() {
                 include: {
                   menucafe: true,
                 },
+                where: {
+                  status: {
+                    not: {
+                      in: ["RESET"],
+                    },
+                  },
+                  status_kitchen: {
+                    not: {
+                      in: ["CANCEL", "REJECT"],
+                    },
+                  },
+                },
               },
               paket: true,
             },

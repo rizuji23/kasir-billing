@@ -37,10 +37,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const newSockets: { [key: string]: Socket } = {};
 
             localServers.forEach((server) => {
-                const socket = io(`http://${server.ip}:5321`);
+                const socket = io(`http://${server.ip}:5321`, {
+                    reconnection: true,
+                    reconnectionDelay: 1000,
+                    reconnectionDelayMax: 5000,
+                    reconnectionAttempts: Infinity,
+                    timeout: 5000,
+                });
 
                 socket.on("connect", () => console.log(`Connected to ${server.ip}:5321`));
-                socket.on("disconnect", () => console.log(`Disconnected from ${server.ip}:5321`));
+                socket.on("disconnect", (reason) => console.log(`Disconnected from ${server.ip}:5321, reason:`, reason));
+
+                socket.on("connect_error", (error) => console.error(`Connection error to ${server.ip}:5321:`, error.message));
+                socket.on("reconnect", (attempt) => console.log(`Reconnected to ${server.ip}:5321 after ${attempt} attempts`));
+                socket.on("reconnect_attempt", (attempt) => console.log(`Attempting to reconnect to ${server.ip}:5321 (attempt ${attempt})`));
 
                 socket.on("message", (msg) => {
                     console.log("Received message from server:", msg);
