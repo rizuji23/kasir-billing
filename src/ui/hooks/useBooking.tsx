@@ -41,7 +41,8 @@ export interface UseBookingResult {
     selected_segment: string,
     selected_paket: string,
     paket_segment: PaketSegment[],
-    paket: PaketPrice[] | undefined
+    paket: PaketPrice[] | undefined,
+    loading: boolean
 }
 
 export default function useBooking({ open, setOpen, table, add_duration = false }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, table: TableBilliard, add_duration?: boolean }): UseBookingResult {
@@ -49,7 +50,7 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
         type_play: "REGULAR",
         name: "",
         type_price: "REGULAR",
-        duration: "0",
+        duration: "1",
         blink: "tidak",
         id_table: "",
         id_booking: "",
@@ -72,6 +73,7 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
     const [subtotal, setSubtotal] = useState<number>(0);
     const [voucher, setVoucher] = useState<string>("");
     const [duration_billing, setDurationBilling] = useState<number>(0);
+    const [loading, setLoading] = useState<boolean>(false);
 
     const getPaketSegment = async () => {
         try {
@@ -109,46 +111,109 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
         setSelectedDataPaket(null);
         setSelectedPaket("");
         setSelectedSegment("");
+        handleItemPrice("");
     }
 
-    const handleItemPrice = async (duration: string) => {
+    const handleItemPrice = async (duration: string, forcedType?: string) => {
+        const typePlay = forcedType || data_booking.type_play;
         const durations = Number(duration);
-        if (!durations || isNaN(durations) || durations <= 0) {
-            setItemPrice([]);
-            setSubtotal(0);
-            setDurationBilling(0);
-            return;
-        }
 
-        const startTime = moment().tz("Asia/Jakarta");
-        const newPrices = [];
+        // Immediate clear to avoid stale data during async fetches
+        setItemPrice([]);
+        setSubtotal(0);
 
-        for (let i = 0; i < durations; i++) {
-            const startSlot = startTime.clone().add(i, "hours");
-            const endSlot = startSlot.clone().add(1, "hours");
+        setLoading(true);
+        try {
+            if (typePlay === "LOSS") {
+                const durationsValue = Number(duration);
+                if (!durationsValue || isNaN(durationsValue) || durationsValue <= 0) {
+                    setItemPrice([]);
+                    setSubtotal(0);
+                    setDurationBilling(0);
+                    return;
+                }
 
-            const price = await getPrice(startSlot);
-            if (price) {
-                newPrices.push({
-                    price,
-                    duration: 1,
-                    start_duration: startSlot.toDate(),
-                    end_duration: endSlot.toDate(),
-                });
-            }
-        }
+                setLoading(true);
+                const currentTime = moment().tz("Asia/Jakarta");
+                const currentShiftStr = await window.api.get_current_shift();
+                const isSiang = currentShiftStr.data?.toLowerCase() === "siang" || currentShiftStr.data?.toLowerCase() === "pagi";
 
-        setItemPrice(newPrices);
-        setDurationBilling(durations);
+                const minutesKey = isSiang ? "LOSS_RATE_SIANG_MINUTES" : "LOSS_RATE_MALAM_MINUTES";
+                const priceKey = isSiang ? "LOSS_RATE_SIANG_PRICE" : "LOSS_RATE_MALAM_PRICE";
 
-        if (data_booking.type_customer !== "PAKET") {
-            setSubtotal(newPrices.reduce((sum, item) => sum + item.price, 0));
-        } else {
-            if (!selected_data_paket?.price) {
-                toast.error("Durasi paket tidak ditemukan");
+                const [rateSetting, priceSetting] = await Promise.all([
+                    window.api.get_setting(minutesKey),
+                    window.api.get_setting(priceKey)
+                ]);
+
+                // Fallback to 1 minute for LOSS unless specified
+                const incrementMinutes = rateSetting.data ? parseInt(rateSetting.data.content || "1") : 1;
+                const priceValue = priceSetting.data ? parseInt(priceSetting.data.content || "6000") : 6000;
+
+                console.log(`[LOSS_UI] Key=${minutesKey}, Value=${incrementMinutes}, Shift=${currentShiftStr.data}`);
+
+                const newPrices: IItemDuration[] = [];
+                let lastEndDuration = currentTime;
+
+                // @ts-ignore
+                if (add_duration && table.bookings?.[0]?.detail_booking?.[0]) {
+                    // @ts-ignore
+                    const rawLastEnd = moment(table.bookings[0].detail_booking[0].end_duration).tz("Asia/Jakarta");
+                    // KEY FIX: If Regular expired in the past, start LOSS from NOW (not from the past end time).
+                    // This ensures the timer always starts from 00:00:00 when adding LOSS.
+                    lastEndDuration = moment.max(currentTime, rawLastEnd);
+                }
+
+                for (let i = 0; i < durationsValue; i++) {
+                    const startSlot = lastEndDuration.clone().add(i * incrementMinutes, "minutes");
+                    const endSlot = startSlot.clone().add(incrementMinutes, "minutes");
+
+                    newPrices.push({
+                        price: priceValue,
+                        duration: 1,
+                        start_duration: startSlot.toDate(),
+                        end_duration: endSlot.toDate(),
+                    });
+                }
+
+                setItemPrice(newPrices);
+                setDurationBilling(durationsValue);
+                setSubtotal(newPrices.reduce((sum, item) => sum + item.price, 0));
                 return;
             }
-            setSubtotal(selected_data_paket.price)
+
+            const startTime = moment().tz("Asia/Jakarta");
+            const newPrices = [];
+
+            for (let i = 0; i < durations; i++) {
+                const startSlot = startTime.clone().add(i * 60, "minutes");
+                const endSlot = startSlot.clone().add(60, "minutes");
+
+                const price = await getPrice(startSlot);
+                if (price) {
+                    newPrices.push({
+                        price,
+                        duration: 1,
+                        start_duration: startSlot.toDate(),
+                        end_duration: endSlot.toDate(),
+                    });
+                }
+            }
+
+            setItemPrice(newPrices);
+            setDurationBilling(durations);
+
+            if (data_booking.type_customer !== "PAKET") {
+                setSubtotal(newPrices.reduce((sum, item) => sum + item.price, 0));
+            } else {
+                if (!selected_data_paket?.price) {
+                    toast.error("Durasi paket tidak ditemukan");
+                    return;
+                }
+                setSubtotal(selected_data_paket.price)
+            }
+        } finally {
+            setLoading(false);
         }
 
     };
@@ -169,15 +234,18 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
     };
 
     const checkOut = async () => {
+        if (loading) {
+            console.log("[CHECKOUT_UI] Already loading, ignoring click.");
+            return;
+        }
+
+        console.log(`[CHECKOUT_UI] Starting checkout. Type: ${data_booking.type_play}, Items: ${item_price.length}, Subtotal: ${subtotal}`);
+
+
+
+        setLoading(true);
         try {
             const durations = Number(duration_billing);
-
-            if (add_duration) {
-                if (item_price.length === 0) {
-                    toast.error("Silahkan untuk isi terlebih dahulu durasi.");
-                    return;
-                }
-            }
 
             if (data_booking.type_play === "REGULAR") {
                 if (item_price.length === 0) {
@@ -187,6 +255,7 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
 
                 if (!durations || isNaN(durations) || durations <= 0) {
                     toast.error("Durasi tidak boleh kosong atau minus.");
+                    setLoading(false);
                     return;
                 }
             }
@@ -203,8 +272,36 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
                 }
             }
 
+            // For LOSS mode: regenerate timestamps RIGHT NOW at submission time.
+            // This prevents the "stale timestamp" bug where the timer starts from N seconds
+            // elapsed because the user waited N seconds in the drawer before clicking submit.
+            let freshItemPrice = item_price;
+            if (data_booking.type_play === "LOSS" && add_duration) {
+                const now = moment().tz("Asia/Jakarta");
+                // @ts-ignore
+                const rawLastEnd = table.bookings?.[0]?.detail_booking?.[0]
+                    // @ts-ignore
+                    ? moment(table.bookings[0].detail_booking[0].end_duration).tz("Asia/Jakarta")
+                    : now;
+                // Use max(now, lastEnd): if Regular already expired, start from now
+                const lossStart = moment.max(now, rawLastEnd);
+
+                // Read increment from existing item_price (price/duration already correct from handleItemPrice)
+                const incrementMinutes = item_price.length > 0
+                    ? Math.round((new Date(item_price[0].end_duration).getTime() - new Date(item_price[0].start_duration).getTime()) / 60000)
+                    : 1;
+
+                freshItemPrice = item_price.map((el, i) => ({
+                    ...el,
+                    start_duration: lossStart.clone().add(i * incrementMinutes, "minutes").toDate(),
+                    end_duration: lossStart.clone().add((i + 1) * incrementMinutes, "minutes").toDate(),
+                }));
+
+                console.log(`[CHECKOUT_LOSS] Refreshed ${freshItemPrice.length} segment(s) start from: ${lossStart.toLocaleString()}`);
+            }
+
             const data = {
-                item_price: item_price,
+                item_price: freshItemPrice,
                 subtotal: subtotal,
                 data_booking: data_booking
             }
@@ -215,39 +312,29 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
                 data['data_booking'].duration = selected_data_paket?.duration.toString() || "0"
             }
 
-            console.log(data)
+            console.log("Submit Data:", data);
 
             const res = await window.api.booking_regular({ ...data, add_duration: add_duration });
-            console.log("res.status", res)
+            console.log("Checkout Response:", res);
             if (res.status) {
-                toast.success(`Booking pada ${table.name} berhasil dilakukan`)
+                toast.success(`Berhasil menambahkan durasi pada ${table.name}`)
                 setOpen(false);
                 tableList.getTables();
                 clearState();
             } else {
-                toast.error(`Booking pada ${table.name} gagal dilakukan`);
+                toast.error(`Gagal menambahkan durasi pada ${table.name}`);
             }
         } catch (err) {
             toast.error(`Kesalahan dalam pemeriksaan: ${err}`);
+        } finally {
+            setLoading(false);
         }
     }
 
     const lossChange = async () => {
-        const startTime = moment().tz("Asia/Jakarta");
-        const endSlot = startTime.clone().add(15, "minutes");
-
-        const price = await getPrice(endSlot);
-
-        if (price) {
-            setItemPrice([{
-                price,
-                duration: 1,
-                start_duration: startTime.toDate(),
-                end_duration: endSlot.toDate(),
-            }]);
-            setSubtotal(price);
-            setDurationBilling(1);
-        }
+        setDataBooking(prevState => ({ ...prevState, duration: "1" }));
+        setDurationBilling(1);
+        handleItemPrice("", "LOSS");
     }
 
     const getPaketDuration = async () => {
@@ -292,7 +379,7 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
         if (open) {
             handleItemPrice(duration_billing.toString());
         }
-    }, [open, data_booking.type_price, duration_billing]);
+    }, [open, data_booking.type_price, data_booking.type_play, duration_billing]);
 
     useEffect(() => {
         if (open === true) {
@@ -314,6 +401,7 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
             }
         } else {
             clearState();
+            setSubtotal(0);
         }
     }, [open, data_booking.type_play])
 
@@ -323,5 +411,5 @@ export default function useBooking({ open, setOpen, table, add_duration = false 
         }
     }, [data_booking.type_customer])
 
-    return { data_booking, setDataBooking, type_price, item_price, handleItemPrice, voucher, setVoucher, subtotal, checkOut, selected_paket, selected_segment, setSelectedDataPaket, setSelectedPaket, setSelectedSegment, paket, paket_segment }
+    return { data_booking, setDataBooking, type_price, item_price, handleItemPrice, voucher, setVoucher, subtotal, checkOut, selected_paket, selected_segment, setSelectedDataPaket, setSelectedPaket, setSelectedSegment, paket, paket_segment, loading }
 }

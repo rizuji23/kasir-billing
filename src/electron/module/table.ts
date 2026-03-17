@@ -3,6 +3,7 @@ import { prisma } from "../database.js";
 import Responses from "../lib/responses.js";
 import { sendMessageToMachine } from "./machine.js";
 import { PriceBilling } from "../types/index.js";
+import { getShift } from "../lib/utils.js";
 import WebSocket, { WebSocketServer } from "ws";
 import { getLocalIPAddress } from "./networks/network_scan.js";
 
@@ -40,6 +41,7 @@ export const updateTimers = async (
   wss: WebSocketServer,
 ) => {
   setInterval(async () => {
+    const now = new Date();
     const broadcast = (data: unknown) => {
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
@@ -67,7 +69,6 @@ export const updateTimers = async (
       },
     });
 
-    const now = new Date();
     const updatedTables = await Promise.all(
       tables.map(async (table) => {
         let remainingTime = "00:00:00";
@@ -90,6 +91,11 @@ export const updateTimers = async (
             Math.floor((table.timer.getTime() - now.getTime()) / 1000),
           );
 
+          // const secondsRemaining = Math.max(
+          //   0,
+          //   Math.floor(((now.getTime() + 100000) - now.getTime()) / 1000), 
+          // );
+
           remainingTime = formatTime(secondsRemaining);
 
           if (secondsRemaining <= 0 && table.status !== "EXPIRE") {
@@ -111,54 +117,73 @@ export const updateTimers = async (
               await sendMessageToMachine(`blink ${table.number}`);
             }
           }
-        } else if (
+       } else if (
           table.type_play === "LOSS" &&
           table.status === "USED" &&
           table.bookings.length > 0
         ) {
-          // Count forward mode for LOSS play (starting from created_at)
-          const startTime = new Date(table.bookings[0].created_at);
-          const secondsElapsed = Math.floor(
-            (now.getTime() - startTime.getTime()) / 1000,
-          );
+          const sortedDetails = [...table.bookings[0].detail_booking].sort((a, b) => b.end_duration.getTime() - a.end_duration.getTime());
+          
+          const lastRegular = sortedDetails.find(db => db.price >= 20000); 
+          const firstLoss = [...sortedDetails].reverse().find(db => db.price < 20000);
+          
+          // 1. Tentukan Titik Awal Timer (Anchor Time)
+          let anchorTime: Date;
+          if (table.timer) {
+            // Gunakan waktu persis saat tombol transisi ditekan
+            anchorTime = new Date(table.timer);
+          } else if (firstLoss) {
+            anchorTime = new Date(firstLoss.start_duration);
+          } else if (lastRegular) {
+            anchorTime = new Date(lastRegular.end_duration);
+          } else {
+            anchorTime = new Date(table.bookings[0].created_at);
+          }
+          
+          const secondsElapsed = Math.max(0, Math.floor(
+            (now.getTime() - anchorTime.getTime()) / 1000,
+          ));
           remainingTime = formatTime(secondsElapsed);
 
-          // Fetch increment setting
-          const incrementSetting = await prisma.settings.findFirst({
-            where: { id_settings: "LOSS_PLAY_INCREMENT" }
-          });
-          const incrementMinutes = incrementSetting ? parseInt(incrementSetting.content || "60") : 60;
+          // Automatic Billing for LOSS
+          const localizedNow = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+          const currentShiftStr = await getShift(localizedNow);
+          const isSiang = currentShiftStr?.toLowerCase() === "siang" || currentShiftStr?.toLowerCase() === "pagi";
 
-          const lastBilling = table.bookings[0].detail_booking[0]; // Last detailBilling entry
-          const lastBillingTime = lastBilling
-            ? new Date(lastBilling.end_duration)
-            : startTime;
+          const minutesKey = isSiang ? "LOSS_RATE_SIANG_MINUTES" : "LOSS_RATE_MALAM_MINUTES";
+          const priceKey = isSiang ? "LOSS_RATE_SIANG_PRICE" : "LOSS_RATE_MALAM_PRICE";
 
-          // If current time has passed the end of the last billing slot
+          const [rateSetting, priceSetting] = await Promise.all([
+            prisma.settings.findFirst({ where: { id_settings: minutesKey } }),
+            prisma.settings.findFirst({ where: { id_settings: priceKey } })
+          ]);
+
+          const incrementMinutes = Math.max(1, rateSetting ? parseInt(rateSetting.content || "2") : 2);
+          const priceValue = priceSetting ? parseInt(priceSetting.content || "6000") : 6000;
+
+          // 2. Tentukan Patokan Penagihan (Last Billing Time)
+          const lastBilling = table.bookings[0].detail_booking[0];
+          let lastBillingTime: Date;
+          
+          if (firstLoss && lastBilling) {
+            // Jika sudah masuk siklus LOSS, hitung dari akhir durasi billing terakhir
+            lastBillingTime = new Date(lastBilling.end_duration);
+          } else if (table.timer) {
+            // Jika baru pertama kali transisi ke LOSS, mulai siklus penagihan dari detik ini
+            lastBillingTime = new Date(table.timer);
+          } else {
+             // Fallback
+            lastBillingTime = lastBilling ? new Date(lastBilling.end_duration) : new Date(table.bookings[0].created_at);
+          }
+
           if (now.getTime() >= lastBillingTime.getTime()) {
-            const timeZone = "Asia/Jakarta";
-            const localizedNow = new Date(new Date().toLocaleString("en-US", { timeZone }));
+            const diffMs = now.getTime() - lastBillingTime.getTime();
+            const missingUnits = Math.floor(diffMs / (incrementMinutes * 60 * 1000)) + 1;
 
-            const formattedTime = localizedNow
-              .toLocaleTimeString("id-ID", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: false,
-              })
-              .replace(/\./g, ":"); // Replace dots with colons
-
-            const price = await getPriceByShift(
-              table.bookings[0].price_type?.type_price || "",
-              formattedTime,
-            );
-
-            // Save a new billing entry
-            if (price) {
-              const startSlot = new Date(lastBillingTime.getTime());
-              const endSlot = new Date(
-                startSlot.getTime() + incrementMinutes * 60 * 1000,
-              );
+            let currentLastEnd = lastBillingTime;
+            for (let i = 0; i < missingUnits; i++) {
+              const startSlot = new Date(currentLastEnd.getTime());
+              const endSlot = new Date(startSlot.getTime() + incrementMinutes * 60 * 1000);
 
               await prisma.detailBooking.create({
                 data: {
@@ -167,19 +192,21 @@ export const updateTimers = async (
                   end_duration: endSlot,
                   duration: 1,
                   status: "NOPAID",
-                  price: price.price,
+                  price: priceValue,
+                  shift: currentShiftStr || "Pagi"
                 },
               });
-
-              // Update booking total price and duration
-              await prisma.booking.update({
-                where: { id: table.bookings[0].id },
-                data: {
-                  duration: { increment: 1 },
-                  total_price: { increment: price.price }
-                }
-              });
+              currentLastEnd = endSlot;
             }
+
+            await prisma.booking.update({
+              where: { id: table.bookings[0].id },
+              data: {
+                total_price: { increment: priceValue * missingUnits }
+              }
+            });
+
+            table.bookings[0].total_price += (priceValue * missingUnits);
           }
         }
 
@@ -283,7 +310,9 @@ export const getPriceByShift = async (
 
 export default function TableModule() {
   async function getCurrentShift() {
-    const now = new Date();
+    const rawNow = new Date();
+    // Localize to Jakarta
+    const now = new Date(rawNow.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
     const currentTime = now.getHours() * 60 + now.getMinutes();
 
     const shifts = await prisma.shift.findMany();
@@ -334,6 +363,13 @@ export default function TableModule() {
           take: 1,
           orderBy: {
             created_at: "desc",
+          },
+          include: {
+            detail_booking: {
+              orderBy: {
+                end_duration: "desc",
+              },
+            },
           },
         },
       },

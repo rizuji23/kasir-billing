@@ -15,7 +15,6 @@ import {
 } from "../types/index.js";
 import { sendMessageToMachine } from "./machine.js";
 import { StrukWindow } from "./struk.js";
-import { getPriceByShift } from "./table.js";
 import { getShift } from "../lib/utils.js";
 
 export interface IItemPrice {
@@ -78,6 +77,7 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
     const currentDate = new Date();
     const shift = await getShift(currentDate);
 
+
     await prisma.tableBilliard.update({
       where: {
         id_table: tables.id_table,
@@ -88,9 +88,17 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
         duration: (Number(tables.duration) + data.item_price.length).toString(),
         power: "ON",
         blink: data.data_booking.blink === "iya" ? true : false,
-        timer: data.item_price[data.item_price.length - 1].end_duration,
-        // timer: new Date(currentDate.getTime() + 10000),
-        // timer: new Date(currentDate.getTime() + 5.5 * 60 * 1000),
+        // KODE LAMA:
+        // timer: data.item_price.length > 0 
+        //   ? data.item_price[data.item_price.length - 1].end_duration 
+        //   : null,
+        
+        // KODE BARU:
+        timer: data.data_booking.type_play === "LOSS" 
+          ? currentDate // Jika LOSS, simpan detik persis saat ini untuk titik 00:00:00
+          : (data.item_price.length > 0 
+            ? new Date(data.item_price[data.item_price.length - 1].end_duration)
+            : null),
       },
     });
 
@@ -101,13 +109,26 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
       type_customer: "BIASA" | "MEMBER" | "PAKET",
     ) => {
       try {
+        const isLoss = data.data_booking.type_play === "LOSS";
+        
         const data_booking_many = await Promise.all(
           data.item_price.map(async (el) => {
             const shift = await getShift(el.start_duration);
+            
+            // Backend Price Enforcement: If mode is LOSS, use shift-based price regardless of what frontend sent
+            let correctedPrice = el.price;
+            if (isLoss) {
+               const isSiang = shift?.toLowerCase() === "siang" || shift?.toLowerCase() === "pagi";
+               const priceSetting = await prisma.settings.findFirst({
+                 where: { id_settings: isSiang ? "LOSS_RATE_SIANG_PRICE" : "LOSS_RATE_MALAM_PRICE" }
+               });
+               correctedPrice = priceSetting ? parseInt(priceSetting.content || "6000") : 6000;
+               console.log(`[CHECKOUT_ENFORCE] Segment Price: ${el.price} -> ${correctedPrice} (LOSS)`);
+            }
 
             return {
               bookingId: booking_data.id,
-              price: el.price,
+              price: correctedPrice,
               duration: el.duration,
               start_duration: el.start_duration,
               end_duration: el.end_duration,
@@ -118,11 +139,36 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
           }),
         );
 
-        await prisma.detailBooking.createMany({
-          data: data_booking_many,
+        // Overlap Prevention: filter out segments that conflict with existing ones
+        const existingSegments = await prisma.detailBooking.findMany({
+          where: { bookingId: booking_data.id },
+          select: { start_duration: true, end_duration: true },
         });
 
-        console.log("Bookings created successfully");
+        const filtered = data_booking_many.filter(seg => {
+          const newStart = new Date(seg.start_duration).getTime();
+          const newEnd = new Date(seg.end_duration).getTime();
+          const hasOverlap = existingSegments.some(ex => {
+            const exStart = new Date(ex.start_duration).getTime();
+            const exEnd = new Date(ex.end_duration).getTime();
+            return newStart < exEnd && newEnd > exStart; // They overlap
+          });
+          if (hasOverlap) {
+            console.warn(`[OVERLAP_SKIP] Skipping segment ${new Date(seg.start_duration).toLocaleTimeString()} - ${new Date(seg.end_duration).toLocaleTimeString()} (overlap detected)`);
+          }
+          return !hasOverlap;
+        });
+
+        if (filtered.length === 0) {
+          console.warn("[OVERLAP_SKIP] All segments overlapped with existing ones. Nothing saved.");
+          return;
+        }
+
+        await prisma.detailBooking.createMany({
+          data: filtered,
+        });
+
+        console.log(`[SAVE_COMPLETE] ${filtered.length} segment(s) saved successfully.`);
       } catch (err) {
         console.error("Error saving bookings:", err);
         throw err;
@@ -137,28 +183,122 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
       });
 
       if (!data_booking) {
+        console.warn("[CHECKOUT_BACKEND] Data Booking not found");
         return Responses({
           code: 404,
           detail_message: "Data Booking tidak ditemukan",
         });
       }
-      console.log(
-        "data.subtotal + data_booking.total_price",
-        data.subtotal + data_booking.total_price,
-      );
-      const booking = await prisma.booking.update({
-        where: {
-          id_booking: data_booking.id_booking,
-        },
-        data: {
-          duration: Number(data.data_booking.duration) + data_booking.duration,
-          total_price: data.subtotal + data_booking.total_price,
-          type_play: data.data_booking.type_play as unknown as TypePlay,
-          idPriceType: type_price.id,
-        },
-      });
 
-      await saveManyBooking(booking as unknown as Booking, "BIASA");
+      console.log(`[CHECKOUT_BACKEND] ID: ${data_booking.id_booking}, Type: ${data.data_booking.type_play}, Frontend Subtotal: ${data.subtotal}`);
+        // Determine price for LOSS unit even if frontend sends 0
+        let lossPriceIncrement = 0;
+        let isLoss = data.data_booking.type_play === "LOSS";
+
+        if (isLoss) {
+           // Localize to Jakarta for shift detection
+           const localizedDate = new Date(currentDate.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+           const currentShiftStr = await getShift(localizedDate);
+           const isSiang = currentShiftStr?.toLowerCase() === "siang" || currentShiftStr?.toLowerCase() === "pagi";
+           const priceSetting = await prisma.settings.findFirst({
+             where: { id_settings: isSiang ? "LOSS_RATE_SIANG_PRICE" : "LOSS_RATE_MALAM_PRICE" }
+           });
+           lossPriceIncrement = priceSetting ? parseInt(priceSetting.content || "6000") : 6000;
+           console.log(`[LOSS_ACTION] Update Shift: ${currentShiftStr}, isSiang: ${isSiang}, Price: ${lossPriceIncrement}`);
+        }
+
+        // Step 1: Save the segments first (overlap check filters duplicates)
+        // We compute the actual saved count so we can accurately update total_price.
+        let actualSavedCount = 0;
+        {
+          const isLoss = data.data_booking.type_play === "LOSS";
+          const existingSegments = await prisma.detailBooking.findMany({
+            where: { bookingId: data_booking.id },
+            select: { start_duration: true, end_duration: true },
+          });
+
+          const filtered = data.item_price.filter(seg => {
+            const newStart = new Date(seg.start_duration).getTime();
+            const newEnd = new Date(seg.end_duration).getTime();
+            const hasOverlap = existingSegments.some(ex => {
+              const exStart = new Date(ex.start_duration).getTime();
+              const exEnd = new Date(ex.end_duration).getTime();
+              return newStart < exEnd && newEnd > exStart;
+            });
+            if (hasOverlap) {
+              console.warn(`[OVERLAP_SKIP] Skipping segment ${new Date(seg.start_duration).toLocaleTimeString()}`);
+            }
+            return !hasOverlap;
+          });
+
+          actualSavedCount = filtered.length;
+          console.log(`[SAVE_PREP] Total: ${data.item_price.length}, Filtered (to save): ${actualSavedCount}`);
+
+          if (actualSavedCount > 0) {
+            // Enforce LOSS price at save time
+            const segmentsToSave = await Promise.all(filtered.map(async (el) => {
+              const segShift = await getShift(el.start_duration);
+              let correctedPrice = el.price;
+              if (isLoss) {
+                const isSiang = segShift?.toLowerCase() === "siang" || segShift?.toLowerCase() === "pagi";
+                const priceSetting = await prisma.settings.findFirst({
+                  where: { id_settings: isSiang ? "LOSS_RATE_SIANG_PRICE" : "LOSS_RATE_MALAM_PRICE" }
+                });
+                correctedPrice = priceSetting ? parseInt(priceSetting.content || "6000") : 6000;
+              }
+              return {
+                bookingId: data_booking.id,
+                price: correctedPrice,
+                duration: el.duration,
+                start_duration: el.start_duration,
+                end_duration: el.end_duration,
+                shift: segShift || "Pagi",
+                idPaketPrice: null,
+              };
+            }));
+
+            await prisma.detailBooking.createMany({ data: segmentsToSave });
+            console.log(`[SAVE_COMPLETE] ${actualSavedCount} segment(s) created.`);
+          }
+        }
+
+        if (actualSavedCount === 0) {
+          console.warn("[SKIP_UPDATE] No segments saved, skipping Booking update.");
+          return Responses({ code: 200, detail_message: "No new segments to add (all overlapped)." });
+        }
+
+        // Step 2: Update Booking after segments are confirmed
+        // For LOSS, price increment = lossPriceIncrement * actualSavedCount
+        // For REGULAR, use data.subtotal (sum of all hour prices)
+        const effectivePriceAdd = isLoss 
+          ? lossPriceIncrement * actualSavedCount 
+          : data.subtotal;
+
+        const booking = await prisma.booking.update({
+          where: {
+            id_booking: data_booking.id_booking,
+          },
+          data: {
+            // LOSS: duration stays as-is (hours, not minutes)
+            duration: isLoss ? data_booking.duration : Number(data.data_booking.duration) + data_booking.duration,
+            total_price: effectivePriceAdd + data_booking.total_price,
+            type_play: data.data_booking.type_play as unknown as TypePlay,
+            idPriceType: type_price.id,
+          },
+          include: {
+            detail_booking: {
+              orderBy: {
+                end_duration: "desc",
+              },
+              take: 1,
+            },
+          },
+        });
+
+        console.log(`[BOOKING_UPDATE] total_price: ${data_booking.total_price} + ${effectivePriceAdd} = ${booking.total_price}`);
+
+        return Responses({ code: 200, data: booking, detail_message: "Berhasil menambahkan durasi" });
+
     } else {
       const booking_data = {
         id_booking: generateShortUUID(),
@@ -172,6 +312,7 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
         type_customer: data.data_booking
           .type_customer as unknown as TypeCustomer,
         idPaketPrice: null as unknown as number | null,
+        created_at: currentDate,
       };
 
       if (data.data_booking.type_customer === "PAKET") {
@@ -201,51 +342,34 @@ async function checkoutBookingLossRegular(data: IBookingCheckout) {
           data.data_booking.type_customer as unknown as TypeCustomer,
         );
       } else {
-        const time = new Date();
-        const formattedTime = time
-          .toLocaleTimeString("id-ID", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: false,
-          })
-          .replace(/\./g, ":"); // Replace dots with colons
-
-        console.log("formattedTime", formattedTime);
-        const price = await getPriceByShift(
-          type_price.type_price,
-          formattedTime,
-        );
-
-        const timeZone = "Asia/Jakarta";
-        const now = new Date(new Date().toLocaleString("en-US", { timeZone }));
-        const startSlot = new Date(now.getTime());
+        const startSlot = new Date(currentDate.getTime());
+        
+        const currentShiftStr = await getShift(startSlot);
+        const isSiang = currentShiftStr?.toLowerCase() === "siang" || currentShiftStr?.toLowerCase() === "pagi";
         
         const incrementSetting = await prisma.settings.findFirst({
-          where: { id_settings: "LOSS_PLAY_INCREMENT" }
+          where: { id_settings: isSiang ? "LOSS_RATE_SIANG_MINUTES" : "LOSS_RATE_MALAM_MINUTES" }
         });
-        const incrementMinutes = incrementSetting ? parseInt(incrementSetting.content || "60") : 60;
+        const incrementMinutes = incrementSetting ? parseInt(incrementSetting.content || "2") : 2;
+
+        const priceSetting = await prisma.settings.findFirst({
+          where: { id_settings: isSiang ? "LOSS_RATE_SIANG_PRICE" : "LOSS_RATE_MALAM_PRICE" }
+        });
+        const priceValue = priceSetting ? parseInt(priceSetting.content || "6000") : 6000;
         
         const endSlot = new Date(
           startSlot.getTime() + incrementMinutes * 60 * 1000,
         );
 
-        if (!price) {
-          return Responses({
-            code: 404,
-            detail_message: "Harga billing tidak ditemukan",
-          });
-        }
-
         await prisma.detailBooking.create({
           data: {
             bookingId: booking.id,
-            price: price.price,
+            price: priceValue,
             duration: 1,
             status: "NOPAID",
             start_duration: startSlot,
             end_duration: endSlot,
-            shift: shift || "Pagi",
+            shift: currentShiftStr || shift || "Pagi",
           },
         });
       }

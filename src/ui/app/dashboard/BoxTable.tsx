@@ -59,7 +59,7 @@ export default function BoxTable({ is_remote = false, ...props }: BoxTableProps)
                         props.status !== "AVAILABLE" ? (props?.bookings || []).length !== 0 && (
                             <div className="flex gap-3 p-2">
                                 {
-                                    props.status === "EXPIRE" || props.status === "MOSTLYEXPIRE" ? <Button onPress={() => setOpenDuration(true)} className="flex-1" size="sm">Durasi</Button> : <></>
+                                    props.status === "EXPIRE" ? <Button onPress={() => setOpenDuration(true)} className="flex-1" size="sm">Durasi</Button> : <></>
                                 }
                                 <Button onPress={() => setOpenCafe(true)} className="flex-1" color="warning" size="sm">Cafe</Button>
                             </div>

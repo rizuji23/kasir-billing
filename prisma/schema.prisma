@@ -1,392 +1,259 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native"]
 }
 
-// ======== DATABASE CONFIGURATION ========
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-// ======== ENUMS ========
-enum TableStatus {
-  ACTIVE
-  USED
-  AVAILABLE
-  MOSTLYEXPIRE
-  EXPIRE
-}
-
-enum TypeMember {
-  PREMIUM
-  GOLD
-  PLATINUM
-}
-
-enum StatusMember {
-  ACTIVE
-  NOTACTIVE
-}
-
-enum TypeBooking {
-  REGULAR
-  LOSS
-}
-
-enum StatusBooking {
-  ACTIVE
-  PAID
-  RESET
-  NOPAID
-}
-
-enum TypeCustomer {
-  BIASA
-  MEMBER
-  PAKET
-}
-
-enum TypeBill {
-  ALL
-  SPLITBILL
-}
-
-enum StatusTransaction {
-  PAID
-  NOPAID
-  RESET
-}
-
-
-enum SendType {
-  KASIR1
-  KASIR2
-}
-
-enum TypeActivity {
-  BOOKING
-  ADDDURATION
-  ORDERCAFE
-  MANUALLAMP
-  PAYMENT
-  PAYMENTSPLITBILL
-  ADDMEMBER
-}
-
-enum PaymentMethod {
-  CASH
-  QRIS
-  GOPAY
-  SHOPEEPAY
-  DANA
-}
-
-enum StatusOrder {
-  PENDING
-  ONGOING
-  DONE
-}
-
-enum TypePlay {
-  LOSS
-  REGULAR
-  NONE
-}
-
-enum TypeStruk {
-  CAFEONLY
-  TABLE
-  CAFEQR
-}
-
-enum PowerLamp {
-  ON
-  OFF
-}
-
-enum StatusMachine {
-  CONNECTED
-  RECONNECTED
-  DISCONNECTED
-}
-
-enum LoggingStatus {
-  ERROR
-  WARNING
-  LOG
-}
-
-enum PaymentMethodCasier {
-  CASH
-  TRANSFER
-  QRIS
-}
-
-enum TypeServer {
-  CASHIER
-  KITCHEN
-}
-
-enum StatusKitchen {
-  DONE
-  PENDING
-  REJECT
-  CANCEL
-}
-
-enum StatusServer {
-  CONNECTED
-  DISCONNECTED
-}
-
-// ======== MODELS ========
 model User {
-  id         Int      @id @default(autoincrement())
+  id         Int         @id @default(autoincrement())
   name       String
-  username   String   @unique
+  username   String      @unique
   password   String
-  role String @default("cashier")
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  role       String      @default("cashier")
+  created_at DateTime    @default(now())
+  updated_at DateTime    @updatedAt
+  activities Activity[]
   order_cafe OrderCafe[]
   split_bill SplitBill[]
-  activities Activity[]
 }
 
 model TableBilliard {
-  id         Int      @id @default(autoincrement())
-  id_table   String   @unique
+  id         Int       @id @default(autoincrement())
+  id_table   String    @unique
   name       String
   duration   String
-  status     TableStatus @default(AVAILABLE)
-  type_play  TypePlay @default(NONE)
+  status     String    @default("AVAILABLE")
+  type_play  String    @default("NONE")
   timer      DateTime?
   number     String?
-  power       PowerLamp @default(OFF)
-  blink       Boolean @default(false)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  power      String    @default("OFF")
+  blink      Boolean   @default(false)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
   bookings   Booking[]
 }
 
 model PaketSegment {
-  id Int @id @default(autoincrement())
-  id_paket_segment String @unique
-  name String
-  start_hours String
-  end_hours String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  paketPrice PaketPrice[]
+  id               Int          @id @default(autoincrement())
+  id_paket_segment String       @unique
+  name             String
+  start_hours      String
+  end_hours        String
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+  paketPrice       PaketPrice[]
 }
 
 model PaketPrice {
-  id Int @id @default(autoincrement())
-  id_paket_price String @unique
+  id               Int             @id @default(autoincrement())
+  id_paket_price   String          @unique
   paket_segment_id Int
-  paket_segment PaketSegment @relation(fields: [paket_segment_id], references: [id], onDelete: Cascade)
-  name String
-  duration Int
-  price Int
-  is_last_call Boolean @default(false)
-  last_call_hours String? @default("")
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  booking Booking[]
-  detailBooking DetailBooking[]
+  name             String
+  duration         Int
+  price            Int
+  is_last_call     Boolean         @default(false)
+  last_call_hours  String?         @default("")
+  created_at       DateTime        @default(now())
+  updated_at       DateTime        @updatedAt
+  booking          Booking[]
+  detailBooking    DetailBooking[]
+  paket_segment    PaketSegment    @relation(fields: [paket_segment_id], references: [id], onDelete: Cascade)
 }
 
 model Machine {
-  id Int @id @default(autoincrement())
-  id_machine String @unique
-  status StatusMachine @default(DISCONNECTED)
+  id         Int      @id @default(autoincrement())
+  id_machine String   @unique
+  status     String   @default("DISCONNECTED")
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
 
 model PriceBilling {
-  id               Int    @id @default(autoincrement())
-  id_price_billing String @unique
+  id               Int              @id @default(autoincrement())
+  id_price_billing String           @unique
   type_price_id    Int
-  type_price       PriceBillingType @relation(fields: [type_price_id], references: [id], onDelete: Cascade)
   season           String
   price            Int
-  start_from String?
-  end_from String?
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @updatedAt
+  end_from         String?
+  start_from       String?
+  type_price       PriceBillingType @relation(fields: [type_price_id], references: [id], onDelete: Cascade)
 }
 
 model PriceBillingType {
-  id Int @id @default(autoincrement())
-  id_price_billing_type String @unique
-  type_price String @unique
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-  typePricing PriceBilling[]
-  bookingId Booking[]
+  id                    Int            @id @default(autoincrement())
+  id_price_billing_type String         @unique
+  type_price            String         @unique
+  created_at            DateTime       @default(now())
+  updated_at            DateTime       @updatedAt
+  bookingId             Booking[]
+  typePricing           PriceBilling[]
 }
 
 model Members {
-  id          Int       @id @default(autoincrement())
-  id_member   String    @unique
-  kode_member String    @unique
-  name        String
-  no_telp     String    @unique
-  email       String    @unique
-  type_member TypeMember @default(PREMIUM)
-  start_date  DateTime
-  end_date    DateTime
-  playing     Int       @default(0)
-  status      StatusMember @default(ACTIVE)
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
-  bookings    Booking[]
+  id              Int         @id @default(autoincrement())
+  id_member       String      @unique
+  kode_member     String      @unique
+  name            String
+  no_telp         String      @unique
+  email           String      @unique
+  type_member     String      @default("PREMIUM")
+  start_date      DateTime
+  end_date        DateTime
+  playing         Int         @default(0)
+  status          String      @default("ACTIVE")
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @updatedAt
   id_price_member Int
-  price_member PriceMember @relation(fields: [id_price_member], references: [id])
+  bookings        Booking[]
+  price_member    PriceMember @relation(fields: [id_price_member], references: [id])
 }
 
 model Booking {
-  id           Int         @id @default(autoincrement())
-  id_booking   String      @unique
-  memberId     Int?
-  member       Members?     @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  name         String
-  tableId      Int
-  table        TableBilliard @relation(fields: [tableId], references: [id], onDelete: Cascade)
-  duration     Int
-  total_price  Int
-  payment_method PaymentMethodCasier @default(CASH)
-  status       StatusBooking @default(NOPAID)
-  type_play  TypePlay @default(REGULAR)
-  idPriceType Int?
-  price_type   PriceBillingType? @relation(fields: [idPriceType], references: [id], onDelete: Cascade)
-  shift String @default("Pagi")
-  idPaketPrice Int?
-  paket PaketPrice? @relation(fields: [idPaketPrice], references: [id], onDelete: Cascade)
-  type_customer TypeCustomer @default(BIASA)
-  created_at   DateTime    @default(now())
-  updated_at   DateTime    @updatedAt
+  id             Int               @id @default(autoincrement())
+  id_booking     String            @unique
+  memberId       Int?
+  name           String
+  tableId        Int
+  duration       Int
+  total_price    Int
+  payment_method String            @default("CASH")
+  status         String            @default("NOPAID")
+  type_play      String            @default("REGULAR")
+  idPriceType    Int?
+  shift          String            @default("Pagi")
+  idPaketPrice   Int?
+  type_customer  String            @default("BIASA")
+  created_at     DateTime          @default(now())
+  updated_at     DateTime          @updatedAt
+  paket          PaketPrice?       @relation(fields: [idPaketPrice], references: [id], onDelete: Cascade)
+  price_type     PriceBillingType? @relation(fields: [idPriceType], references: [id], onDelete: Cascade)
+  table          TableBilliard     @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  member         Members?          @relation(fields: [memberId], references: [id], onDelete: Cascade)
   detail_booking DetailBooking[]
-  order_cafe   OrderCafe[]
-  split_bill   SplitBill[]
-  struk        Struk[]
+  order_cafe     OrderCafe[]
+  split_bill     SplitBill[]
+  struk          Struk[]
 }
 
 model DetailBooking {
-  id             Int            @id @default(autoincrement())
-  bookingId      Int
-  booking        Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  price          Int
-  duration       Int
-  status         StatusBooking  @default(NOPAID)
-  start_duration DateTime
-  end_duration   DateTime
-  type_bill      TypeBill       @default(ALL)
-  idPaketPrice Int?
-  paket PaketPrice? @relation(fields: [idPaketPrice], references: [id], onDelete: Cascade)
-  shift String @default("Pagi")
-  created_at     DateTime       @default(now())
-  updated_at     DateTime       @updatedAt
+  id                Int               @id @default(autoincrement())
+  bookingId         Int
+  price             Int
+  duration          Int
+  status            String            @default("NOPAID")
+  start_duration    DateTime
+  end_duration      DateTime
+  type_bill         String            @default("ALL")
+  idPaketPrice      Int?
+  shift             String            @default("Pagi")
+  created_at        DateTime          @default(now())
+  updated_at        DateTime          @updatedAt
+  paket             PaketPrice?       @relation(fields: [idPaketPrice], references: [id], onDelete: Cascade)
+  booking           Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   split_bill_detail SplitBillDetail[]
 }
 
 model SplitBillDetail {
-  id                Int            @id @default(autoincrement())
+  id                Int           @id @default(autoincrement())
   splitBillId       Int
-  split_bill        SplitBill      @relation(fields: [splitBillId], references: [id], onDelete: Cascade)
   menu_cafe         Int?
-  menucafe          MenuCafe?      @relation(fields: [menu_cafe], references: [id], onDelete: SetNull)
   detail_booking_id Int
-  detail_booking    DetailBooking  @relation(fields: [detail_booking_id], references: [id], onDelete: Cascade)
   sub_total         Int
-  status_bill       StatusTransaction @default(NOPAID)
-  created_at        DateTime       @default(now())
-  updated_at        DateTime       @updatedAt
+  status_bill       String        @default("NOPAID")
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+  detail_booking    DetailBooking @relation(fields: [detail_booking_id], references: [id], onDelete: Cascade)
+  menucafe          MenuCafe?     @relation(fields: [menu_cafe], references: [id])
+  split_bill        SplitBill     @relation(fields: [splitBillId], references: [id], onDelete: Cascade)
 }
 
 model PriceMember {
-  id          Int   @id @default(autoincrement())
-  price       Int
-  discount    Int
-  playing     Int
-  type_member String
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id           Int       @id @default(autoincrement())
+  price        Int
+  discount     Int
+  playing      Int
+  type_member  String
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
   price_member Members[]
 }
 
 model CategoryMenu {
-  id         Int     @id @default(autoincrement())
+  id         Int        @id @default(autoincrement())
   name       String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
   menucafe   MenuCafe[]
 }
 
 model MenuCafe {
-  id                Int            @id @default(autoincrement())
+  id                Int               @id @default(autoincrement())
   name              String
   price             Int
   categoryMenuId    Int?
-  category_menu     CategoryMenu?  @relation(fields: [categoryMenuId], references: [id], onDelete: SetNull)
   price_modal       Int
-  price_profit Int
-  send_to_kitchen Boolean? @default(false)
-  created_at        DateTime       @default(now())
-  updated_at        DateTime       @updatedAt
+  price_profit      Int
+  created_at        DateTime          @default(now())
+  updated_at        DateTime          @updatedAt
+  send_to_kitchen   Boolean?          @default(false)
+  category_menu     CategoryMenu?     @relation(fields: [categoryMenuId], references: [id])
   ordercafe         OrderCafe[]
-  split_bill_detail SplitBillDetail[]
+  order_cafe_item   OrderCafeItem[]
   orderinmenu       OrderInMenu[]
-  order_cafe_item OrderCafeItem[]
+  split_bill_detail SplitBillDetail[]
 }
 
 model OrderCafe {
-  id          Int                 @id @default(autoincrement())
-  id_order   String @default("")
-  id_order_cafe String
-  menu_cafe   Int
-  menucafe    MenuCafe             @relation(fields: [menu_cafe], references: [id], onDelete: Cascade)
-  id_struk    Int?
-  name String?
-  strukId Struk? @relation(fields: [id_struk], references: [id])
-  subtotal    Int
-  qty         Int
-  total       Int
-  cash        Int
-  change      Int
-  bookingId   Int?                 // Make bookingId nullable
-  booking     Booking?             @relation(fields: [bookingId], references: [id], onDelete: Cascade) // Make relation optional
-  payment_method PaymentMethodCasier @default(CASH)
-  no_meja Int?
-  keterangan String?
-  status      StatusTransaction    @default(NOPAID)
-  status_kitchen StatusKitchen @default(PENDING)
-  userId      Int?
-  user_in     User?                 @relation(fields: [userId], references: [id])
-  shift String @default("Pagi")
-  created_at  DateTime             @default(now())
-  updated_at  DateTime             @updatedAt
-  orderCafeItem OrderCafeItem[]
+  id             Int             @id @default(autoincrement())
+  id_order       String          @default("")
+  id_order_cafe  String
+  menu_cafe      Int
+  id_struk       Int?
+  name           String?
+  subtotal       Int
+  qty            Int
+  total          Int
+  cash           Int
+  change         Int
+  bookingId      Int?
+  payment_method String          @default("CASH")
+  status         String          @default("NOPAID")
+  status_kitchen String          @default("PENDING")
+  userId         Int?
+  shift          String          @default("Pagi")
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+  no_meja        Int?
+  keterangan     String?
+  user_in        User?           @relation(fields: [userId], references: [id])
+  booking        Booking?        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  strukId        Struk?          @relation(fields: [id_struk], references: [id])
+  menucafe       MenuCafe        @relation(fields: [menu_cafe], references: [id], onDelete: Cascade)
+  orderCafeItem  OrderCafeItem[]
 }
 
 model OrderCafeItem {
-  id Int @id @default(autoincrement())
-  id_order_cafe_item String @unique
-  orderId Int
-  orderCafe OrderCafe @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menu_cafe   Int
-  menucafe    MenuCafe             @relation(fields: [menu_cafe], references: [id], onDelete: Cascade)
-  price Int @default(0)
-  shift String @default("Pagi")
-  created_at  DateTime             @default(now())
-  updated_at  DateTime             @updatedAt
+  id                 Int       @id @default(autoincrement())
+  id_order_cafe_item String    @unique
+  orderId            Int
+  menu_cafe          Int
+  price              Int       @default(0)
+  shift              String    @default("Pagi")
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  menucafe           MenuCafe  @relation(fields: [menu_cafe], references: [id], onDelete: Cascade)
+  orderCafe          OrderCafe @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 model Settings {
-  id             Int   @id @default(autoincrement())
-  id_settings    String @unique
+  id             Int      @id @default(autoincrement())
+  id_settings    String   @unique
   label_settings String
   url            String?
   content        String?
@@ -395,7 +262,7 @@ model Settings {
 }
 
 model Shift {
-  id          Int   @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   shift       String
   start_hours DateTime
   end_hours   DateTime
@@ -404,136 +271,136 @@ model Shift {
 }
 
 model SplitBill {
-  id                Int            @id @default(autoincrement())
+  id                Int               @id @default(autoincrement())
   id_split_bill     String
   bookingId         Int
-  booking           Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   name              String
   total             Int
-  type_bill         TypeBill       @default(SPLITBILL)
-  payment_method PaymentMethodCasier @default(CASH)
+  type_bill         String            @default("SPLITBILL")
+  payment_method    String            @default("CASH")
   userId            Int
-  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  created_at        DateTime       @default(now())
-  updated_at        DateTime       @updatedAt
+  created_at        DateTime          @default(now())
+  updated_at        DateTime          @updatedAt
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking           Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   split_bill_detail SplitBillDetail[]
 }
 
 model Chat {
-  id         Int   @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   text       String
-  send_by    SendType
+  send_by    String
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
 
 model Activity {
-  id Int @id @default(autoincrement())
-  activity String
-  userId Int 
-  user User @relation(fields: [userId], references: [id])
-  type_activity TypeActivity
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  activity      String
+  userId        Int
+  type_activity String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id])
 }
 
 model TableNumber {
-  id Int @id @default(autoincrement())
-  id_table String @unique
-  number Int
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  orderin OrderIn[]
+  id         Int       @id @default(autoincrement())
+  id_table   String    @unique
+  number     Int
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  orderin    OrderIn[]
 }
 
 model OrderIn {
-  id Int @id @default(autoincrement())
-  id_order_in String
-  token_qr String
-  name String
-  noTableId Int
-  table TableNumber @relation(fields: [noTableId], references: [id])
-  payment_method PaymentMethod @default(CASH) 
-  sub_total Int
-  total Int
-  nominal Int
-  change Int
-  status StatusTransaction @default(NOPAID)
-  status_order StatusOrder @default(PENDING)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  orderinmenu OrderInMenu[]
-  orderId Struk[]
+  id             Int           @id @default(autoincrement())
+  id_order_in    String
+  token_qr       String
+  name           String
+  noTableId      Int
+  payment_method String        @default("CASH")
+  sub_total      Int
+  total          Int
+  nominal        Int
+  change         Int
+  status         String        @default("NOPAID")
+  status_order   String        @default("PENDING")
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
+  table          TableNumber   @relation(fields: [noTableId], references: [id])
+  orderinmenu    OrderInMenu[]
+  orderId        Struk[]
 }
 
 model OrderInMenu {
-  id Int @id @default(autoincrement())
+  id               Int      @id @default(autoincrement())
   id_order_in_menu String
-  orderInId Int
-  orderIdIn OrderIn @relation(fields: [orderInId], references: [id])
-  menuId Int
-  menu MenuCafe @relation(fields: [menuId], references: [id])
-  qty Int
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  orderInId        Int
+  menuId           Int
+  qty              Int
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  menu             MenuCafe @relation(fields: [menuId], references: [id])
+  orderIdIn        OrderIn  @relation(fields: [orderInId], references: [id])
 }
 
 model LogsData {
-  id Int @id @default(autoincrement())
-  activity String
-  status LoggingStatus @default(LOG)
+  id         Int      @id @default(autoincrement())
+  activity   String
+  status     String   @default("LOG")
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
 
 model Struk {
-  id Int @id @default(autoincrement())
-  id_struk String
-  id_order_in Int?
-  orderInId OrderIn? @relation(fields: [id_order_in], references: [id])
-  id_booking Int?
-  bookingId Booking? @relation(fields: [id_booking], references: [id])
-  name String
-  total Int
-  subtotal Int? @default(0)
-  total_cafe Int?
-  total_billing Int?
-  cash Int
-  change Int
-  discount_billing String? @default("0")
-  discount_cafe String? @default("0")
-  subtotal_cafe Int? @default(0)
-  subtotal_billing Int? @default(0)
-  payment_method PaymentMethodCasier @default(CASH)
-  is_split_bill Boolean @default(false)
-  type_struk TypeStruk
-  shift String @default("Pagi")
-  status StatusTransaction @default(NOPAID)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  orderId OrderCafe[]
+  id               Int         @id @default(autoincrement())
+  id_struk         String
+  id_order_in      Int?
+  id_booking       Int?
+  name             String
+  total            Int
+  subtotal         Int?        @default(0)
+  total_cafe       Int?
+  total_billing    Int?
+  cash             Int
+  change           Int
+  discount_billing String?     @default("0")
+  discount_cafe    String?     @default("0")
+  subtotal_cafe    Int?        @default(0)
+  subtotal_billing Int?        @default(0)
+  payment_method   String      @default("CASH")
+  is_split_bill    Boolean     @default(false)
+  type_struk       String
+  shift            String      @default("Pagi")
+  status           String      @default("NOPAID")
+  created_at       DateTime    @default(now())
+  updated_at       DateTime    @updatedAt
+  orderId          OrderCafe[]
+  bookingId        Booking?    @relation(fields: [id_booking], references: [id])
+  orderInId        OrderIn?    @relation(fields: [id_order_in], references: [id])
 }
 
 model Voucher {
-  id Int @id @default(autoincrement())
-  id_voucher String @unique
-  kode_voucher String @unique
-  discount Float
-  start_date DateTime
-  end_date DateTime
-  status StatusMember @default(ACTIVE)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  id_voucher   String   @unique
+  kode_voucher String   @unique
+  discount     Float
+  start_date   DateTime
+  end_date     DateTime
+  status       String   @default("ACTIVE")
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 }
 
 model LocalServers {
-  id Int @id @default(autoincrement())
-  id_local_server String @unique
-  ip String
-  hostname String
-  number String
-  status StatusServer @default(DISCONNECTED)
-  type_server TypeServer @default(CASHIER) @unique
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id              Int      @id @default(autoincrement())
+  id_local_server String   @unique
+  ip              String
+  hostname        String
+  number          String
+  status          String   @default("DISCONNECTED")
+  type_server     String   @unique @default("CASHIER")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
 }

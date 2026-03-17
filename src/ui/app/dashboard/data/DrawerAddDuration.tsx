@@ -32,6 +32,7 @@ export default function DrawerAddDuration({ open, setOpen, table }: { open: bool
                     name: data.name,
                     id_table: table.id_table,
                     id_booking: data.id_booking,
+                    type_play: data.type_play,
                 }))
             }
         }
@@ -66,35 +67,53 @@ export default function DrawerAddDuration({ open, setOpen, table }: { open: bool
                             </div>
                             <div className="flex flex-col gap-3">
                                 <div className="grid gap-4">
-                                    <SelectCustom label="Pilih Tipe Harga" value={booking.data_booking.type_price} onChange={(e) => booking.setDataBooking((prevState) => ({
-                                        ...prevState,
-                                        type_price: e.target.value
-                                    }))}>
-                                        {
-                                            booking.type_price.map((el) => {
-                                                return <SelectCustom.Option value={el.type_price} key={el.type_price}>{el.type_price}</SelectCustom.Option>
-                                            })
-                                        }
-
+                                    <SelectCustom
+                                        label="Pilih Tipe Permainan"
+                                        value={booking.data_booking.type_play}
+                                        onChange={(e) => booking.setDataBooking((prevState) => ({
+                                            ...prevState,
+                                            type_play: e.target.value
+                                        }))}
+                                    >
+                                        <SelectCustom.Option value="REGULAR">REGULAR</SelectCustom.Option>
+                                        <SelectCustom.Option value="LOSS">LOSS</SelectCustom.Option>
                                     </SelectCustom>
-                                    <Input
-                                        isRequired
-                                        label="Durasi (Per Jam)"
-                                        name="username"
-                                        errorMessage={"Silakan isi kolom ini."}
-                                        placeholder="Masukan durasi disini"
-                                        type="text"
-                                        value={booking.data_booking.duration}
-                                        isDisabled={booking.data_booking.type_play === "LOSS"}
-                                        onChange={(e) => {
-                                            booking.setDataBooking((prevState) => ({
-                                                ...prevState,
-                                                duration: e.target.value
-                                            }));
 
-                                            booking.handleItemPrice(e.target.value);
-                                        }}
-                                    />
+                                    {booking.data_booking.type_play === "REGULAR" && (
+                                        <>
+                                            <SelectCustom label="Pilih Tipe Harga" value={booking.data_booking.type_price} onChange={(e) => booking.setDataBooking((prevState) => ({
+                                                ...prevState,
+                                                type_price: e.target.value
+                                            }))}>
+                                                {
+                                                    booking.type_price.map((el) => {
+                                                        return <SelectCustom.Option value={el.type_price} key={el.type_price}>{el.type_price}</SelectCustom.Option>
+                                                    })
+                                                }
+
+                                            </SelectCustom>
+                                            <Input
+                                                isRequired
+                                                label={"Durasi (Per Jam)"}
+                                                labelPlacement="outside"
+                                                name="duration"
+                                                errorMessage={"Silakan isi kolom ini."}
+                                                placeholder="Masukan durasi disini"
+                                                type="text"
+                                                value={booking.data_booking.duration}
+                                                onChange={(e) => {
+                                                    booking.setDataBooking((prevState) => ({
+                                                        ...prevState,
+                                                        duration: e.target.value
+                                                    }));
+
+                                                    booking.handleItemPrice(e.target.value);
+                                                }}
+                                            />
+                                        </>
+                                    )}
+
+
                                     {
                                         booking.data_booking.type_play !== "LOSS" && (
                                             <div className="grid gap-2">
@@ -160,8 +179,8 @@ export default function DrawerAddDuration({ open, setOpen, table }: { open: bool
                                     </div>
                                 </div>
                                 <div className="flex justify-end">
-                                    <Button color="primary" type="submit">
-                                        Tambah Durasi
+                                    <Button color="primary" type="submit" isLoading={booking.loading} isDisabled={booking.loading}>
+                                        {booking.loading ? "Menghitung..." : "Tambah Durasi"}
                                     </Button>
                                 </div>
                             </div>

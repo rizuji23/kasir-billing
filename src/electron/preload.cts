@@ -286,6 +286,7 @@ contextBridge.exposeInMainWorld("api", {
   save_url: (id: string | null, label_settings: string, content: string) =>
     ipcRenderer.invoke("save_url", id, label_settings, content),
   get_paket: () => ipcRenderer.invoke("get_paket"),
+  get_setting: (id: string) => ipcRenderer.invoke("get_setting", id),
   save_paket_segment: (data: any) =>
     ipcRenderer.invoke("save_paket_segment", data),
   update_paket_segment: (data: any) =>

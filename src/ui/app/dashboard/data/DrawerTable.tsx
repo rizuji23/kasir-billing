@@ -40,7 +40,6 @@ export default function DrawerTable({ open, setOpen, table }: { open: boolean, s
                                         type_play: e
                                     }))}>
                                         <Radio value="REGULAR">Regular</Radio>
-                                        <Radio value="LOSS">Loss</Radio>
                                     </RadioGroup>
                                     <RadioGroup orientation="horizontal" size="sm" label="Pilih Pelanggan" classNames={{
                                         label: "text-sm"
