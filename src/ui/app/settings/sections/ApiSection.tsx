@@ -1,5 +1,6 @@
 import CashierName from "./api/CashierName";
 import HardwareApi from "./api/HardwareApi";
+import Logs from "./api/Logs";
 import OtherSettings from "./api/OtherSettings";
 import PrinterApi from "./api/PrinterApi";
 import ServerApi from "./api/ServerApi";
@@ -13,6 +14,7 @@ export default function ApiSection() {
                 <PrinterApi />
                 <HardwareApi />
                 <OtherSettings />
+                <Logs />
             </div>
         </>
     )

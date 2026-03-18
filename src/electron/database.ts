@@ -30,3 +30,4 @@ prisma
   });
 
 export { prisma };
+export { databasePath };

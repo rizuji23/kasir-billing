@@ -16,6 +16,17 @@ export function saveLogging(
       log.warn(message);
     }
 
+    void prisma.logsData
+      .create({
+        data: {
+          activity: message,
+          status,
+        },
+      })
+      .catch((err: unknown) => {
+        log.error(`Failed to persist log data: ${err}`);
+      });
+
     return;
   } catch (err) {
     console.log(err);

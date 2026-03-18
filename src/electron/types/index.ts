@@ -679,6 +679,26 @@ export interface IRejectIncoming {
   order: IKitchenIncoming;
 }
 
+export interface IBackupProgress {
+  runId: string;
+  status:
+    | "idle"
+    | "started"
+    | "collecting"
+    | "serializing"
+    | "sending"
+    | "success"
+    | "error";
+  step: number;
+  totalSteps: number;
+  message: string;
+  endpoint?: string;
+  payloadSizeKb?: number;
+  durationMs?: number;
+  error?: string;
+  at: string;
+}
+
 export type RekapType = "rekap_penjualan_cafe";
 export type PeriodeType =
   | "today"

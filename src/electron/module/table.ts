@@ -6,6 +6,7 @@ import { PriceBilling } from "../types/index.js";
 import { getShift } from "../lib/utils.js";
 import WebSocket, { WebSocketServer } from "ws";
 import { getLocalIPAddress } from "./networks/network_scan.js";
+import { sendTableStatusToExternalWss } from "./table_status_wss.js";
 
 export async function initialStartLamp() {
   try {
@@ -93,7 +94,7 @@ export const updateTimers = async (
 
           // const secondsRemaining = Math.max(
           //   0,
-          //   Math.floor(((now.getTime() + 100000) - now.getTime()) / 1000), 
+          //   Math.floor(((now.getTime() + 100000) - now.getTime()) / 1000),
           // );
 
           remainingTime = formatTime(secondsRemaining);
@@ -117,16 +118,20 @@ export const updateTimers = async (
               await sendMessageToMachine(`blink ${table.number}`);
             }
           }
-       } else if (
+        } else if (
           table.type_play === "LOSS" &&
           table.status === "USED" &&
           table.bookings.length > 0
         ) {
-          const sortedDetails = [...table.bookings[0].detail_booking].sort((a, b) => b.end_duration.getTime() - a.end_duration.getTime());
-          
-          const lastRegular = sortedDetails.find(db => db.price >= 20000); 
-          const firstLoss = [...sortedDetails].reverse().find(db => db.price < 20000);
-          
+          const sortedDetails = [...table.bookings[0].detail_booking].sort(
+            (a, b) => b.end_duration.getTime() - a.end_duration.getTime(),
+          );
+
+          const lastRegular = sortedDetails.find((db) => db.price >= 20000);
+          const firstLoss = [...sortedDetails]
+            .reverse()
+            .find((db) => db.price < 20000);
+
           // 1. Tentukan Titik Awal Timer (Anchor Time)
           let anchorTime: Date;
           if (table.timer) {
@@ -139,32 +144,46 @@ export const updateTimers = async (
           } else {
             anchorTime = new Date(table.bookings[0].created_at);
           }
-          
-          const secondsElapsed = Math.max(0, Math.floor(
-            (now.getTime() - anchorTime.getTime()) / 1000,
-          ));
+
+          const secondsElapsed = Math.max(
+            0,
+            Math.floor((now.getTime() - anchorTime.getTime()) / 1000),
+          );
           remainingTime = formatTime(secondsElapsed);
 
           // Automatic Billing for LOSS
-          const localizedNow = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+          const localizedNow = new Date(
+            now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }),
+          );
           const currentShiftStr = await getShift(localizedNow);
-          const isSiang = currentShiftStr?.toLowerCase() === "siang" || currentShiftStr?.toLowerCase() === "pagi";
+          const isSiang =
+            currentShiftStr?.toLowerCase() === "siang" ||
+            currentShiftStr?.toLowerCase() === "pagi";
 
-          const minutesKey = isSiang ? "LOSS_RATE_SIANG_MINUTES" : "LOSS_RATE_MALAM_MINUTES";
-          const priceKey = isSiang ? "LOSS_RATE_SIANG_PRICE" : "LOSS_RATE_MALAM_PRICE";
+          const minutesKey = isSiang
+            ? "LOSS_RATE_SIANG_MINUTES"
+            : "LOSS_RATE_MALAM_MINUTES";
+          const priceKey = isSiang
+            ? "LOSS_RATE_SIANG_PRICE"
+            : "LOSS_RATE_MALAM_PRICE";
 
           const [rateSetting, priceSetting] = await Promise.all([
             prisma.settings.findFirst({ where: { id_settings: minutesKey } }),
-            prisma.settings.findFirst({ where: { id_settings: priceKey } })
+            prisma.settings.findFirst({ where: { id_settings: priceKey } }),
           ]);
 
-          const incrementMinutes = Math.max(1, rateSetting ? parseInt(rateSetting.content || "2") : 2);
-          const priceValue = priceSetting ? parseInt(priceSetting.content || "6000") : 6000;
+          const incrementMinutes = Math.max(
+            1,
+            rateSetting ? parseInt(rateSetting.content || "2") : 2,
+          );
+          const priceValue = priceSetting
+            ? parseInt(priceSetting.content || "6000")
+            : 6000;
 
           // 2. Tentukan Patokan Penagihan (Last Billing Time)
           const lastBilling = table.bookings[0].detail_booking[0];
           let lastBillingTime: Date;
-          
+
           if (firstLoss && lastBilling) {
             // Jika sudah masuk siklus LOSS, hitung dari akhir durasi billing terakhir
             lastBillingTime = new Date(lastBilling.end_duration);
@@ -172,18 +191,23 @@ export const updateTimers = async (
             // Jika baru pertama kali transisi ke LOSS, mulai siklus penagihan dari detik ini
             lastBillingTime = new Date(table.timer);
           } else {
-             // Fallback
-            lastBillingTime = lastBilling ? new Date(lastBilling.end_duration) : new Date(table.bookings[0].created_at);
+            // Fallback
+            lastBillingTime = lastBilling
+              ? new Date(lastBilling.end_duration)
+              : new Date(table.bookings[0].created_at);
           }
 
           if (now.getTime() >= lastBillingTime.getTime()) {
             const diffMs = now.getTime() - lastBillingTime.getTime();
-            const missingUnits = Math.floor(diffMs / (incrementMinutes * 60 * 1000)) + 1;
+            const missingUnits =
+              Math.floor(diffMs / (incrementMinutes * 60 * 1000)) + 1;
 
             let currentLastEnd = lastBillingTime;
             for (let i = 0; i < missingUnits; i++) {
               const startSlot = new Date(currentLastEnd.getTime());
-              const endSlot = new Date(startSlot.getTime() + incrementMinutes * 60 * 1000);
+              const endSlot = new Date(
+                startSlot.getTime() + incrementMinutes * 60 * 1000,
+              );
 
               await prisma.detailBooking.create({
                 data: {
@@ -193,7 +217,7 @@ export const updateTimers = async (
                   duration: 1,
                   status: "NOPAID",
                   price: priceValue,
-                  shift: currentShiftStr || "Pagi"
+                  shift: currentShiftStr || "Pagi",
                 },
               });
               currentLastEnd = endSlot;
@@ -202,11 +226,11 @@ export const updateTimers = async (
             await prisma.booking.update({
               where: { id: table.bookings[0].id },
               data: {
-                total_price: { increment: priceValue * missingUnits }
-              }
+                total_price: { increment: priceValue * missingUnits },
+              },
             });
 
-            table.bookings[0].total_price += (priceValue * missingUnits);
+            table.bookings[0].total_price += priceValue * missingUnits;
           }
         }
 
@@ -221,6 +245,12 @@ export const updateTimers = async (
     });
 
     broadcast({
+      type: "table_status",
+      ip: getLocalIPAddress(),
+      data: updatedTables,
+      name: cashier_name?.content || "Uknown",
+    });
+    await sendTableStatusToExternalWss({
       type: "table_status",
       ip: getLocalIPAddress(),
       data: updatedTables,
@@ -312,7 +342,9 @@ export default function TableModule() {
   async function getCurrentShift() {
     const rawNow = new Date();
     // Localize to Jakarta
-    const now = new Date(rawNow.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+    const now = new Date(
+      rawNow.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }),
+    );
     const currentTime = now.getHours() * 60 + now.getMinutes();
 
     const shifts = await prisma.shift.findMany();

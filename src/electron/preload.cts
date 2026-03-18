@@ -57,6 +57,26 @@ export interface IRejectIncoming {
   order: IKitchenIncoming;
 }
 
+export interface IBackupProgress {
+  runId: string;
+  status:
+    | "idle"
+    | "started"
+    | "collecting"
+    | "serializing"
+    | "sending"
+    | "success"
+    | "error";
+  step: number;
+  totalSteps: number;
+  message: string;
+  endpoint?: string;
+  payloadSizeKb?: number;
+  durationMs?: number;
+  error?: string;
+  at: string;
+}
+
 contextBridge.exposeInMainWorld("update", {
   checkForUpdates: () => ipcRenderer.send("check-for-updates"),
   downloadUpdate: () => ipcRenderer.send("download-update"),
@@ -304,6 +324,23 @@ contextBridge.exposeInMainWorld("api", {
     };
     type_print: "PDF" | "EXCEL";
   }) => ipcRenderer.invoke("rekap_penjualan_cafe", data),
+  test_backup_server: (endpoint?: string) =>
+    ipcRenderer.invoke("test_backup_server", endpoint),
+  backup_now: () => ipcRenderer.invoke("backup_now"),
+  backup_auto_status: () => ipcRenderer.invoke("backup_auto_status"),
+  backup_auto_stop: () => ipcRenderer.invoke("backup_auto_stop"),
+  backup_auto_start: () => ipcRenderer.invoke("backup_auto_start"),
+  test_table_status_wss: (url?: string) =>
+    ipcRenderer.invoke("test_table_status_wss", url),
+  onBackupProgress: (cb: (data: IBackupProgress) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, data: IBackupProgress) =>
+      cb(data);
+    ipcRenderer.on("backup:progress", listener);
+
+    return () => {
+      ipcRenderer.removeListener("backup:progress", listener);
+    };
+  },
 });
 
 contextBridge.exposeInMainWorld("socket", {

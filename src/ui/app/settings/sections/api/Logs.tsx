@@ -27,6 +27,14 @@ export default function Logs() {
 
     useEffect(() => {
         getLogs();
+
+        const timer = setInterval(() => {
+            getLogs();
+        }, 5000);
+
+        return () => {
+            clearInterval(timer);
+        };
     }, [])
 
     return (

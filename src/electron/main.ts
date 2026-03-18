@@ -54,6 +54,21 @@ import PaketModule from "./module/paket.js";
 import { initSocket, isSocketConnected, setMainWindow } from "./socket.js";
 import { rejectOrder } from "./module/kitchen.js";
 import RekapModule from "./module/rekap.js";
+import {
+  getAutoBackupStatus,
+  startAutoBackup,
+  setBackupProgressWindow,
+  startBackupScheduler,
+  stopAutoBackup,
+  triggerBackupNow,
+  testBackupConnection,
+} from "./module/backup.js";
+import {
+  connectTableStatusWss,
+  ensureTableStatusWssSetting,
+  TABLE_STATUS_WSS_ID,
+  testTableStatusWssConnection,
+} from "./module/table_status_wss.js";
 
 let mainWindow: BrowserWindow | null = null;
 let serialport: SerialPort | null = null;
@@ -163,6 +178,10 @@ if (!gotTheLock) {
     }
 
     setMainWindow(mainWindow);
+    setBackupProgressWindow(mainWindow);
+    await startBackupScheduler();
+    await ensureTableStatusWssSetting();
+    await connectTableStatusWss();
     updateTimers(mainWindow, wss);
 
     const get_local = await prisma.localServers.findFirst({
@@ -429,6 +448,10 @@ ipcMain.handle(
         });
       }
 
+      if (id === TABLE_STATUS_WSS_ID) {
+        await connectTableStatusWss(content);
+      }
+
       return Responses({
         code: 200,
         data: res,
@@ -649,4 +672,28 @@ ipcMain.handle("run_migration", async (_, migrationName: string) => {
   } catch (err) {
     return err;
   }
+});
+
+ipcMain.handle("test_backup_server", async (_, endpoint?: string) => {
+  return await testBackupConnection(endpoint);
+});
+
+ipcMain.handle("backup_now", async () => {
+  return await triggerBackupNow();
+});
+
+ipcMain.handle("backup_auto_status", async () => {
+  return await getAutoBackupStatus();
+});
+
+ipcMain.handle("backup_auto_stop", async () => {
+  return await stopAutoBackup();
+});
+
+ipcMain.handle("backup_auto_start", async () => {
+  return await startAutoBackup();
+});
+
+ipcMain.handle("test_table_status_wss", async (_, url?: string) => {
+  return await testTableStatusWssConnection(url);
 });

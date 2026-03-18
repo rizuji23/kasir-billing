@@ -1,6 +1,7 @@
 import { IResponses } from "./lib/responses";
 import {
   Booking,
+  IBackupProgress,
   CategoryMenu,
   IKitchenIncoming,
   ILogs,
@@ -357,6 +358,15 @@ interface ApiAPI {
     time: IRekapModuleParams;
     type_print: TypePrint;
   }) => Promise<boolean>;
+  test_backup_server: (endpoint?: string) => Promise<IResponses<unknown>>;
+  backup_now: () => Promise<IResponses<unknown>>;
+  backup_auto_status: () => Promise<
+    IResponses<{ enabled: boolean; running: boolean; interval_minutes: number }>
+  >;
+  backup_auto_stop: () => Promise<IResponses<unknown>>;
+  backup_auto_start: () => Promise<IResponses<unknown>>;
+  test_table_status_wss: (url?: string) => Promise<IResponses<unknown>>;
+  onBackupProgress: (cb: (data: IBackupProgress) => void) => () => void;
 }
 
 interface ISocket {
