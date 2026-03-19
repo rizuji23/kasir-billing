@@ -17,6 +17,7 @@ function getUserDataPath() {
 
 // Set database path
 const databasePath = `file:${path.join(getUserDataPath(), "kasir.sqlite")}`;
+console.log("databasePath", databasePath);
 
 // Get migration name from command-line arguments
 const migrationName = process.argv[2] || "default_migration";

@@ -3,9 +3,11 @@ import { Chip } from "@heroui/chip";
 import { Popover, PopoverContent, PopoverTrigger } from "@heroui/popover";
 import { GitGraph } from "lucide-react";
 import { useWebsocketData } from "./context/WebsocketContext";
+import { useSocket } from "./context/SocketContext";
 
 export default function ConnectedSocket() {
     const socket = useWebsocketData();
+    const socket_kitchen = useSocket();
 
     return (
         <>
@@ -30,7 +32,19 @@ export default function ConnectedSocket() {
                                 </div>
                             )
                         }
+
                         {
+                            socket_kitchen.connected && (
+                                <Card className="w-full">
+                                    <CardBody>
+                                        <div className="flex justify-between">
+                                            <p className="self-center font-bold">Terhubung <br />(Dapur)</p>
+                                        </div>
+                                    </CardBody>
+                                </Card>
+                            )
+                        }
+                        {/* {
                             socket.connectedKitchens.map((el, i) => {
                                 return <Card className="w-full" key={i}>
                                     <CardBody>
@@ -41,7 +55,7 @@ export default function ConnectedSocket() {
                                     </CardBody>
                                 </Card>
                             })
-                        }
+                        } */}
 
                         {
                             socket.connectedCashiers.map((el, i) => {

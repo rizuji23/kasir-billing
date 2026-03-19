@@ -1,6 +1,6 @@
 {
     "appId": "com.rlstudio.kasir-billing",
-    "productName": "Kasir Billing Billiard",
+    "productName": "Kasir-Billing-Billiard",
     "files": [
         "dist-electron/**", 
         "dist-react/**", 
@@ -30,11 +30,7 @@
     "win": {
         "target": ["nsis"],
         "artifactName": "${productName}-${version}.${ext}",
-        "publisherName": "RL Studio",
-        "icon": "icon-desktop@512.png",
-        "signtoolOptions": {
-            "publisherName": "Kasir Billing Billiard"
-        }
+        "icon": "icon-desktop@512.png"
     },
     "nsis": {
         "oneClick": false,

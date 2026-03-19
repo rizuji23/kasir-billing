@@ -61,7 +61,7 @@ const getArpTable = (): Promise<{ ip: string; hostname: string }[]> => {
  */
 export const scanNetwork = async (subnet: string, port: number) => {
   const results: { ip: string; hostname: string }[] = [];
-  const scanPromises = [];
+  const scanPromises: Promise<void>[] = [];
   const arpTable = await getArpTable();
 
   for (let i = 1; i <= 254; i++) {

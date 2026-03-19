@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
 import path from "path";
-import { app } from "electron";
+// import { app } from "electron";
 
 // Get userData path manually
 function getUserDataPath(): string {
@@ -25,18 +25,18 @@ export interface IMigrateNowResult {
   output: string;
 }
 
-function getSchemaPath(): string {
-  return path.join(app.getAppPath(), "prisma", "schema.prisma");
-}
+// function getSchemaPath(): string {
+//   return path.join(app.getAppPath(), "prisma", "schema.prisma");
+// }
 
 export function migrateDatabaseNow(): Promise<IMigrateNowResult> {
   return new Promise((resolve, reject) => {
     const databasePath = `file:${path.join(getUserDataPath(), "kasir.sqlite")}`;
     const env = { ...process.env, DATABASE_URL: databasePath };
-    const schemaPath = getSchemaPath();
+    // const schemaPath = getSchemaPath();
 
     try {
-      const output = execSync(`npx prisma migrate deploy --schema "${schemaPath}"`, {
+      const output = execSync(`npm run migrate`, {
         stdio: "pipe",
         shell: process.platform === "win32" ? "cmd.exe" : "/bin/sh",
         env,

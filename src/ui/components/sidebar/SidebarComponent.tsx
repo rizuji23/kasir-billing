@@ -87,9 +87,11 @@ export default function SidebarComponent() {
                 <div className="flex flex-col gap-4 px-3 pt-5 pb-4">
                     <div className="px-2 flex flex-col gap-2">
                         <img src={logo} className="w-32" alt="" />
-                        <Chip size="sm" color={updateColor}>
-                            {updateLabel}
-                        </Chip>
+                        <div className="w-full flex justify-center">
+                            <Chip size="sm" color={updateColor} className="w-fit">
+                                {updateLabel}
+                            </Chip>
+                        </div>
                     </div>
                     <div className="grid gap-3 mt-5">
                         {

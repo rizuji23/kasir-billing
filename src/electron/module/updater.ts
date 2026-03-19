@@ -76,6 +76,7 @@ async function configureGitHubFeed(mainWindow: BrowserWindow) {
 }
 
 export function setupAutoUpdater(mainWindow: BrowserWindow) {
+  (autoUpdater as any).verifyUpdateCodeSignature = false;
   autoUpdater.autoDownload = false; // Disable auto-download
 
   void ensureUpdateRepoSetting();
