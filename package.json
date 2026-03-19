@@ -97,6 +97,7 @@
     "@eslint/js": "^9.19.0",
     "@types/bcrypt": "^5.0.2",
     "@types/howler": "^2.2.12",
+    "@types/lodash": "^4.17.24",
     "@types/node": "^22.13.4",
     "@types/pdfkit": "^0.13.9",
     "@types/pdfmake": "^0.2.11",

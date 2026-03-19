@@ -83,14 +83,29 @@ contextBridge.exposeInMainWorld("update", {
   quitAndInstall: () => ipcRenderer.send("quit-and-install"),
   onUpdateAvailable: (
     callback: (info: { version: string; releaseNotes: string }) => void,
-  ) =>
-    ipcRenderer.on("update-available", (_: any, info: any) => callback(info)),
+  ) => {
+    const handler = (_: any, info: any) => callback(info);
+    ipcRenderer.on("update-available", handler);
+    return () => ipcRenderer.removeListener("update-available", handler);
+  },
   onUpdateNotAvailable: (callback: () => void) =>
-    ipcRenderer.on("update-not-available", () => callback()),
+    {
+      const handler = () => callback();
+      ipcRenderer.on("update-not-available", handler);
+      return () => ipcRenderer.removeListener("update-not-available", handler);
+    },
   onUpdateDownloaded: (callback: () => void) =>
-    ipcRenderer.on("update-downloaded", () => callback()),
+    {
+      const handler = () => callback();
+      ipcRenderer.on("update-downloaded", handler);
+      return () => ipcRenderer.removeListener("update-downloaded", handler);
+    },
   onUpdateError: (callback: (error: Error) => void) =>
-    ipcRenderer.on("update-error", (_: any, error: any) => callback(error)),
+    {
+      const handler = (_: any, error: any) => callback(error);
+      ipcRenderer.on("update-error", handler);
+      return () => ipcRenderer.removeListener("update-error", handler);
+    },
   onDownloadProgress: (
     callback: (progress: {
       percent: number;
@@ -98,10 +113,11 @@ contextBridge.exposeInMainWorld("update", {
       transferred: number;
       total: number;
     }) => void,
-  ) =>
-    ipcRenderer.on("download-progress", (_: any, progress: any) =>
-      callback(progress),
-    ),
+  ) => {
+    const handler = (_: any, progress: any) => callback(progress);
+    ipcRenderer.on("download-progress", handler);
+    return () => ipcRenderer.removeListener("download-progress", handler);
+  },
   get_version: () => ipcRenderer.invoke("get_version"),
 });
 
@@ -279,6 +295,7 @@ contextBridge.exposeInMainWorld("api", {
   ) => ipcRenderer.invoke("show_message_box", type, message),
   run_migration: (migrationName: string) =>
     ipcRenderer.invoke("run_migration", migrationName),
+  migrate_now: () => ipcRenderer.invoke("migrate_now"),
   top_sale_cafe: () => ipcRenderer.invoke("top_sale_cafe"),
   print_struk: (id_struk: string) =>
     ipcRenderer.invoke("print_struk", id_struk),

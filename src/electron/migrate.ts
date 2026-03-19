@@ -1,5 +1,6 @@
 import { execSync } from "child_process";
 import path from "path";
+import { app } from "electron";
 
 // Get userData path manually
 function getUserDataPath(): string {
@@ -17,6 +18,44 @@ function getUserDataPath(): string {
   } else {
     return path.join(process.env.HOME || "", ".config", appName);
   }
+}
+
+export interface IMigrateNowResult {
+  applied: boolean;
+  output: string;
+}
+
+function getSchemaPath(): string {
+  return path.join(app.getAppPath(), "prisma", "schema.prisma");
+}
+
+export function migrateDatabaseNow(): Promise<IMigrateNowResult> {
+  return new Promise((resolve, reject) => {
+    const databasePath = `file:${path.join(getUserDataPath(), "kasir.sqlite")}`;
+    const env = { ...process.env, DATABASE_URL: databasePath };
+    const schemaPath = getSchemaPath();
+
+    try {
+      const output = execSync(`npx prisma migrate deploy --schema "${schemaPath}"`, {
+        stdio: "pipe",
+        shell: process.platform === "win32" ? "cmd.exe" : "/bin/sh",
+        env,
+        encoding: "utf8",
+      });
+
+      const normalizedOutput = String(output || "");
+      const applied =
+        !normalizedOutput.includes("No pending migrations to apply.") &&
+        !normalizedOutput.includes("No migration found");
+
+      resolve({
+        applied,
+        output: normalizedOutput.trim(),
+      });
+    } catch (error) {
+      reject(`Migration failed: ${error}`);
+    }
+  });
 }
 
 // Function to run Prisma migration

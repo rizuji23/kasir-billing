@@ -3,6 +3,8 @@ import logo from "../../assets/logo-login.png";
 import { Link, useLocation } from "react-router";
 import { cn } from "../../lib/utils";
 import HoursShift from "../../app/dashboard/HoursShift";
+import { Chip } from "@heroui/chip";
+import { useEffect, useState } from "react";
 
 const sidebar: { title: string, icon: React.ReactNode, href: string }[] = [
     {
@@ -51,13 +53,43 @@ const sidebar: { title: string, icon: React.ReactNode, href: string }[] = [
 
 export default function SidebarComponent() {
     const pathname = useLocation()
+    const [updateLabel, setUpdateLabel] = useState<string>("Cek Update...");
+    const [updateColor, setUpdateColor] = useState<"success" | "warning" | "danger" | "default">("default");
+
+    useEffect(() => {
+        const offAvailable = window.update.onUpdateAvailable((info) => {
+            setUpdateLabel(`Update v${info.version}`);
+            setUpdateColor("warning");
+        });
+
+        const offNotAvailable = window.update.onUpdateNotAvailable(() => {
+            setUpdateLabel("Versi Terbaru");
+            setUpdateColor("success");
+        });
+
+        const offError = window.update.onUpdateError(() => {
+            setUpdateLabel("Update Error");
+            setUpdateColor("danger");
+        });
+
+        window.update.checkForUpdates();
+
+        return () => {
+            offAvailable();
+            offNotAvailable();
+            offError();
+        };
+    }, []);
 
     return (
         <>
             <div className="w-[200px] h-screen bg-[#18181B] fixed overflow-y-auto">
                 <div className="flex flex-col gap-4 px-3 pt-5 pb-4">
-                    <div className="px-2">
+                    <div className="px-2 flex flex-col gap-2">
                         <img src={logo} className="w-32" alt="" />
+                        <Chip size="sm" color={updateColor}>
+                            {updateLabel}
+                        </Chip>
                     </div>
                     <div className="grid gap-3 mt-5">
                         {

@@ -48,7 +48,7 @@ import { setupAutoUpdater } from "./module/updater.js";
 import UserModule from "./module/user.js";
 import PriceModule from "./module/price.js";
 import ShiftModule from "./module/shift.js";
-import { runMigration } from "./migrate.js";
+import { migrateDatabaseNow, runMigration } from "./migrate.js";
 import { Server } from "socket.io";
 import PaketModule from "./module/paket.js";
 import { initSocket, isSocketConnected, setMainWindow } from "./socket.js";
@@ -182,6 +182,7 @@ if (!gotTheLock) {
     await startBackupScheduler();
     await ensureTableStatusWssSetting();
     await connectTableStatusWss();
+    setupAutoUpdater(mainWindow);
     updateTimers(mainWindow, wss);
 
     const get_local = await prisma.localServers.findFirst({
@@ -192,10 +193,9 @@ if (!gotTheLock) {
 
     if (!get_local) {
       console.warn("⚠️ Kitchen server not found");
-      return;
+    } else {
+      initSocket(get_local.ip);
     }
-
-    initSocket(get_local.ip);
 
     const template: Electron.MenuItemConstructorOptions[] = [
       {
@@ -303,7 +303,6 @@ if (!gotTheLock) {
       );
     });
 
-    setupAutoUpdater(mainWindow);
     // sockets = await initWebSockets(mainWindow!);
   });
 }
@@ -671,6 +670,26 @@ ipcMain.handle("run_migration", async (_, migrationName: string) => {
     return await runMigration(migrationName);
   } catch (err) {
     return err;
+  }
+});
+
+ipcMain.handle("migrate_now", async () => {
+  try {
+    const result = await migrateDatabaseNow();
+
+    return Responses({
+      code: 200,
+      data: result,
+      detail_message: result.applied
+        ? "Migration berhasil dijalankan"
+        : "Tidak ada migration baru (database sudah up-to-date)",
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return Responses({
+      code: 500,
+      detail_message: `Migration gagal: ${message}`,
+    });
   }
 });
 

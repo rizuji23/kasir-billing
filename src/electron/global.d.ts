@@ -36,10 +36,10 @@ interface UpdateAPI {
   quitAndInstall: () => void;
   onUpdateAvailable: (
     callback: (info: { version: string; releaseNotes: string }) => void,
-  ) => void;
-  onUpdateNotAvailable: (callback: () => void) => void;
-  onUpdateDownloaded: (callback: () => void) => void;
-  onUpdateError: (callback: (error: Error) => void) => void;
+  ) => () => void;
+  onUpdateNotAvailable: (callback: () => void) => () => void;
+  onUpdateDownloaded: (callback: () => void) => () => void;
+  onUpdateError: (callback: (error: Error) => void) => () => void;
   onDownloadProgress: (
     callback: (progress: {
       percent: number;
@@ -47,7 +47,7 @@ interface UpdateAPI {
       transferred: number;
       total: number;
     }) => void,
-  ) => void;
+  ) => () => void;
   get_version: () => string;
 }
 
@@ -297,6 +297,9 @@ interface ApiAPI {
     message: string,
   ) => void;
   run_migration: (migrationName: string) => Promise<string>;
+  migrate_now: () => Promise<
+    IResponses<{ applied: boolean; output: string }>
+  >;
   top_sale_cafe: () => Promise<IResponses<SalesByCategory>>;
   print_struk: (id_struk: string) => Promise<IResponses<unknown>>;
   onMessage: (callback: (msg: string) => void) => void;

@@ -100,13 +100,13 @@ export default function KitchenPage() {
                         {filteredData.map((el, i) => (
                             <TableRow key={i}>
                                 <TableCell>
-                                    {moment(el.created_at).format("HH:mm A")}
+                                    {moment(el?.created_at).format("HH:mm A")}
                                 </TableCell>
 
-                                <TableCell>{el.order[0].name}</TableCell>
+                                <TableCell>{el.order[0]?.name}</TableCell>
 
                                 <TableCell>
-                                    {el.order_type === "CAFE" ? (
+                                    {el?.order_type === "CAFE" ? (
                                         <Chip color="success">CAFE</Chip>
                                     ) : (
                                         <Chip color="warning">TABLE</Chip>
@@ -114,11 +114,11 @@ export default function KitchenPage() {
                                 </TableCell>
 
                                 <TableCell className="text-center">
-                                    {el.no_meja || "-"}
+                                    {el?.no_meja || "-"}
                                 </TableCell>
 
                                 <TableCell>
-                                    {el.order[0].keterangan || "-"}
+                                    {el.order[0]?.keterangan || "-"}
                                 </TableCell>
 
                                 <TableCell>
