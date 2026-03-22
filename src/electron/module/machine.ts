@@ -223,6 +223,7 @@ export async function sendMessageToMachine(message: string): Promise<unknown> {
   }
 
   messageQueue.push(message);
+  saveLogging(`[MACHINE] Queue command: ${message}`);
   processQueue();
 
   return { code: 200, detail_message: "Message queued successfully" };
@@ -249,6 +250,11 @@ export default function MachineModule() {
     async (_, data: { id_table: string; number: string }) => {
       try {
         await sendMessageToMachine(`on ${data.number}`);
+        await prisma.tableBilliard.update({
+          where: { id_table: data.id_table },
+          data: { power: "ON" },
+        });
+        saveLogging(`[MACHINE] Manual ON table ${data.number}`);
         const tables = await prisma.tableBilliard.findMany();
         return Responses({
           code: 201,
@@ -269,6 +275,11 @@ export default function MachineModule() {
     async (_, data: { id_table: string; number: string }) => {
       try {
         await sendMessageToMachine(`off ${data.number}`);
+        await prisma.tableBilliard.update({
+          where: { id_table: data.id_table },
+          data: { power: "OFF" },
+        });
+        saveLogging(`[MACHINE] Manual OFF table ${data.number}`);
         const tables = await prisma.tableBilliard.findMany();
         return Responses({
           code: 201,
@@ -287,6 +298,7 @@ export default function MachineModule() {
   ipcMain.handle("send_blink", async (_, number: string) => {
     try {
       await sendMessageToMachine(`blink ${number}`);
+      saveLogging(`[MACHINE] Manual BLINK table ${number}`);
       return Responses({
         code: 201,
         detail_message: `Table ${number} blink`,
@@ -302,6 +314,11 @@ export default function MachineModule() {
   ipcMain.handle("on_off_all", async (_, status: string) => {
     try {
       await sendMessageToMachine(`${status === "ON_ALL" ? "on" : "off"} all`);
+      const power = status === "ON_ALL" ? "ON" : "OFF";
+      await prisma.tableBilliard.updateMany({
+        data: { power },
+      });
+      saveLogging(`[MACHINE] Manual ${status === "ON_ALL" ? "ON" : "OFF"} all tables`);
       const tables = await prisma.tableBilliard.findMany();
       return Responses({
         code: 201,

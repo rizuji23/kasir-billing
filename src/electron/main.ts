@@ -56,6 +56,7 @@ import { rejectOrder } from "./module/kitchen.js";
 import RekapModule from "./module/rekap.js";
 import {
   getAutoBackupStatus,
+  reloadAutoBackupScheduler,
   startAutoBackup,
   setBackupProgressWindow,
   startBackupScheduler,
@@ -66,6 +67,7 @@ import {
 import {
   connectTableStatusWss,
   ensureTableStatusWssSetting,
+  setTableStatusRendererWindow,
   TABLE_STATUS_WSS_ID,
   testTableStatusWssConnection,
 } from "./module/table_status_wss.js";
@@ -179,6 +181,7 @@ if (!gotTheLock) {
 
     setMainWindow(mainWindow);
     setBackupProgressWindow(mainWindow);
+    setTableStatusRendererWindow(mainWindow);
     await startBackupScheduler();
     await ensureTableStatusWssSetting();
     await connectTableStatusWss();
@@ -711,6 +714,10 @@ ipcMain.handle("backup_auto_stop", async () => {
 
 ipcMain.handle("backup_auto_start", async () => {
   return await startAutoBackup();
+});
+
+ipcMain.handle("backup_auto_reload", async () => {
+  return await reloadAutoBackupScheduler();
 });
 
 ipcMain.handle("test_table_status_wss", async (_, url?: string) => {

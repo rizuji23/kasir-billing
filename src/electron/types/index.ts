@@ -699,6 +699,26 @@ export interface IBackupProgress {
   at: string;
 }
 
+export interface IManualLampWsResponse {
+  type?: string;
+  request_id?: string;
+  command?: string;
+  action?: string;
+  target?: string;
+  floorCode?: string;
+  status?: string;
+  note?: string;
+  data?: {
+    command?: string;
+    action?: string;
+    number?: string;
+    target?: string;
+    floorCode?: string;
+    delivered?: number;
+    websocket?: string;
+  };
+}
+
 export type RekapType = "rekap_penjualan_cafe";
 export type PeriodeType =
   | "today"

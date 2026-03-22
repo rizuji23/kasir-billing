@@ -1,0 +1,27 @@
+{
+  "models": [
+    {
+      "title": "LM Studio",
+      "provider": "lmstudio",
+      "model": "qwen/qwen3.5-9b",
+      "apiBase": "http://127.0.0.1:1234/v1/"
+    },
+  ],
+  "customCommands": [
+    {
+      "name": "test",
+      "prompt": "{{{ input }}}\n\nWrite a comprehensive set of unit tests for the selected code. It should setup, run tests that check for correctness including important edge cases, and teardown. Ensure that the tests are complete and sophisticated. Give the tests just as chat output, don't edit any file.",
+      "description": "Write unit tests for highlighted code"
+    }
+  ],
+  "tabAutocompleteModel": {
+    "title": "qwen/qwen3.5-9b",
+    "provider": "lmstudio",
+    "model": "qwen/qwen3.5-9b",
+    "apiBase": "http://127.0.0.1:1234/v1/"
+  },
+  "allowAnonymousTelemetry": false,
+  "embeddingsProvider": {
+    "provider": "transformers.js"
+  }
+}

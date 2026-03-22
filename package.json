@@ -23,7 +23,8 @@
     "seed:price_billing": "node prisma/seed_price_billing.js",
     "seed:machine": "node prisma/seed_machine.js",
     "db:reset": "npx prisma migrate reset",
-    "db:generate": "npx prisma generate"
+    "db:generate": "npx prisma generate",
+    "test:table-wss": "tsx --test src/electron/module/table_status_wss.integration.test.ts"
   },
   "dependencies": {
     "@heroui/alert": "^2.2.10",

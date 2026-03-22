@@ -8,7 +8,10 @@ const { autoUpdater } = pkg;
 const UPDATE_GITHUB_REPO_KEY = "UPDATE_GITHUB_REPO";
 const UPDATE_GITHUB_REPO_LABEL = "GitHub Update Repository";
 
-function logUpdate(message: string, status: "LOG" | "WARNING" | "ERROR" = "LOG") {
+function logUpdate(
+  message: string,
+  status: "LOG" | "WARNING" | "ERROR" = "LOG",
+) {
   const text = `[UPDATER] ${message}`;
   console.log(text);
   saveLogging(text, status);
@@ -53,7 +56,10 @@ async function configureGitHubFeed(mainWindow: BrowserWindow) {
   const repoParsed = parseGitHubRepo(repoRaw);
 
   if (!repoParsed) {
-    logUpdate("Repository update belum diset di Settings (UPDATE_GITHUB_REPO)", "WARNING");
+    logUpdate(
+      "Repository update belum diset di Settings (UPDATE_GITHUB_REPO)",
+      "WARNING",
+    );
     mainWindow.webContents.send(
       "update-error",
       new Error(
@@ -68,16 +74,16 @@ async function configureGitHubFeed(mainWindow: BrowserWindow) {
     owner: repoParsed.owner,
     repo: repoParsed.repo,
   });
-  logUpdate(
-    `Feed GitHub diset ke ${repoParsed.owner}/${repoParsed.repo}`,
-  );
+  logUpdate(`Feed GitHub diset ke ${repoParsed.owner}/${repoParsed.repo}`);
 
   return true;
 }
 
 export function setupAutoUpdater(mainWindow: BrowserWindow) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (autoUpdater as any).verifyUpdateCodeSignature = false;
-  autoUpdater.autoDownload = false; // Disable auto-download
+  autoUpdater.autoDownload = true; // Silent mode: auto download in background
+  autoUpdater.autoInstallOnAppQuit = true; // Install silently on next app quit
 
   void ensureUpdateRepoSetting();
 
@@ -106,6 +112,9 @@ export function setupAutoUpdater(mainWindow: BrowserWindow) {
     logUpdate(
       `Update tersedia v${info.version} (current v${app.getVersion()})`,
     );
+    logUpdate(
+      "Silent mode aktif: update akan di-download otomatis di background",
+    );
     mainWindow.webContents.send("update-available", info);
   });
 
@@ -116,6 +125,7 @@ export function setupAutoUpdater(mainWindow: BrowserWindow) {
 
   autoUpdater.on("update-downloaded", (info) => {
     logUpdate(`Update v${info.version} selesai didownload, siap install`);
+    logUpdate("Update akan di-install otomatis saat aplikasi ditutup");
     mainWindow.webContents.send("update-downloaded", info);
   });
 
@@ -134,7 +144,10 @@ export function setupAutoUpdater(mainWindow: BrowserWindow) {
     logUpdate("Request check-for-updates diterima");
     const ok = await configureGitHubFeed(mainWindow);
     if (!ok) {
-      logUpdate("Check update dibatalkan karena konfigurasi feed invalid", "WARNING");
+      logUpdate(
+        "Check update dibatalkan karena konfigurasi feed invalid",
+        "WARNING",
+      );
       return;
     }
     logUpdate("Menjalankan checkForUpdates()");
@@ -147,7 +160,32 @@ export function setupAutoUpdater(mainWindow: BrowserWindow) {
   });
 
   ipcMain.on("quit-and-install", () => {
-    logUpdate("Request quit-and-install diterima, aplikasi akan restart untuk install update");
+    logUpdate(
+      "Request quit-and-install diterima, aplikasi akan restart untuk install update",
+    );
     autoUpdater.quitAndInstall();
   });
+
+  const silentCheckUpdates = async (reason: string) => {
+    logUpdate(`Silent check update: ${reason}`);
+    const ok = await configureGitHubFeed(mainWindow);
+    if (!ok) return;
+
+    autoUpdater.checkForUpdates().catch((error) => {
+      logUpdate(`Silent check error: ${error?.message || error}`, "ERROR");
+    });
+  };
+
+  // Silent initial check on app startup
+  setTimeout(() => {
+    void silentCheckUpdates("app-start");
+  }, 8000);
+
+  // Silent periodic checks every 30 minutes
+  setInterval(
+    () => {
+      void silentCheckUpdates("interval-30m");
+    },
+    30 * 60 * 1000,
+  );
 }

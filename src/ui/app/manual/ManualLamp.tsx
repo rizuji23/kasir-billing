@@ -3,9 +3,10 @@ import MainLayout from "../../components/MainLayout";
 import { Button } from "@heroui/button";
 import { Divider } from "@heroui/divider";
 import { useEffect, useState } from "react";
-import { TableBilliard } from "../../../electron/types";
+import { IManualLampWsResponse, TableBilliard } from "../../../electron/types";
 import { IResponses } from "../../../electron/lib/responses";
 import toast from 'react-hot-toast';
+import { Chip } from "@heroui/chip";
 
 interface ExtendsTableBilliard extends TableBilliard {
     getTables: () => Promise<void>,
@@ -67,6 +68,11 @@ function BoxLamp(props: ExtendsTableBilliard) {
             <div className="grid gap-2">
                 <div>
                     <h3 className="font-bold text-lg">{props.name}</h3>
+                    <div className="mt-1">
+                        <Chip size="sm" color={props.power === "ON" ? "success" : "danger"}>
+                            Power {props.power === "ON" ? "ON" : "OFF"}
+                        </Chip>
+                    </div>
                 </div>
                 <div className="grid gap-3 grid-cols-2">
                     <Button onPress={handleOn} size="sm">Turn On</Button>
@@ -80,6 +86,8 @@ function BoxLamp(props: ExtendsTableBilliard) {
 
 export default function ManualLamp() {
     const [table_list, setTableList] = useState<TableBilliard[]>([]);
+    const [lastRequest, setLastRequest] = useState<IManualLampWsResponse | null>(null);
+    const [lastResponse, setLastResponse] = useState<IManualLampWsResponse | null>(null);
 
     const getTables = async () => {
         try {
@@ -114,6 +122,37 @@ export default function ManualLamp() {
 
     useEffect(() => {
         getTables();
+
+        const cleanup = window.api.onManualLampResponse((payload) => {
+            setLastResponse(payload);
+
+            const action = payload.action || payload.data?.action || "-";
+            const target = payload.target || payload.data?.target || "-";
+            const delivered = payload.data?.delivered ?? 0;
+            const floorCode = payload.floorCode || payload.data?.floorCode || "-";
+            const ws = payload.data?.websocket || "-";
+            const note = payload.note || "-";
+
+            if (payload.status === "ok") {
+                getTables();
+                toast.success(
+                    `Manual Lamp OK: ${action} ${target} (delivered ${delivered}) [${floorCode}] ${note} via ${ws}`,
+                );
+            } else {
+                toast.error(
+                    `Manual Lamp Response: ${payload.status || "-"} (${action} ${target}) ${note}`,
+                );
+            }
+        });
+
+        const cleanupRequest = window.api.onManualLampRequest((payload) => {
+            setLastRequest(payload);
+        });
+
+        return () => {
+            cleanup();
+            cleanupRequest();
+        };
     }, [])
 
     return (
@@ -131,6 +170,28 @@ export default function ManualLamp() {
                             })
                         }
                     </div>
+                    <Divider />
+                    {
+                        lastRequest && (
+                            <div className="p-3 rounded-md border bg-content1">
+                                <p className="text-sm font-semibold">Last WS Manual Lamp Request</p>
+                                <pre className="text-xs mt-2 whitespace-pre-wrap break-all">
+                                    {JSON.stringify(lastRequest, null, 2)}
+                                </pre>
+                            </div>
+                        )
+                    }
+                    <Divider />
+                    {
+                        lastResponse && (
+                            <div className="p-3 rounded-md border bg-content1">
+                                <p className="text-sm font-semibold">Last WS Manual Lamp Response</p>
+                                <pre className="text-xs mt-2 whitespace-pre-wrap break-all">
+                                    {JSON.stringify(lastResponse, null, 2)}
+                                </pre>
+                            </div>
+                        )
+                    }
                     <Divider />
                     <div className="max-w-[300px]">
                         <Card>

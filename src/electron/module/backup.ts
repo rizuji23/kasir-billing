@@ -6,13 +6,15 @@ import generateShortUUID from "../lib/random.js";
 import { getLocalIPAddress } from "./networks/network_scan.js";
 import Responses from "../lib/responses.js";
 
-const BACKUP_INTERVAL_MS = 2 * 60 * 1000;
 const BACKUP_TIMEOUT_MS = 180_000;
 const BACKUP_TEST_TIMEOUT_MS = 30_000;
 const BACKUP_ENDPOINT_ID = "BACKUP_SERVER_ENDPOINT";
 const BACKUP_LABEL = "Server Backup Endpoint";
 const AUTO_BACKUP_ENABLED_ID = "AUTO_BACKUP_ENABLED";
 const AUTO_BACKUP_LABEL = "Auto Backup Enabled";
+const AUTO_BACKUP_INTERVAL_MINUTES_ID = "AUTO_BACKUP_INTERVAL_MINUTES";
+const AUTO_BACKUP_INTERVAL_MINUTES_LABEL = "Auto Backup Interval Minutes";
+const DEFAULT_AUTO_BACKUP_INTERVAL_MINUTES = 2;
 
 type BackupPayloadData = {
   User: unknown[];
@@ -141,6 +143,33 @@ async function getAutoBackupEnabled(): Promise<boolean> {
   }
 
   return setting.content?.toLowerCase() !== "false";
+}
+
+async function getAutoBackupIntervalMinutes(): Promise<number> {
+  const setting = await prisma.settings.findFirst({
+    where: { id_settings: AUTO_BACKUP_INTERVAL_MINUTES_ID },
+  });
+
+  if (!setting) {
+    await setSettingsValue(
+      AUTO_BACKUP_INTERVAL_MINUTES_ID,
+      AUTO_BACKUP_INTERVAL_MINUTES_LABEL,
+      String(DEFAULT_AUTO_BACKUP_INTERVAL_MINUTES),
+    );
+    return DEFAULT_AUTO_BACKUP_INTERVAL_MINUTES;
+  }
+
+  const parsed = Number.parseInt(setting.content || "", 10);
+  if (Number.isNaN(parsed)) {
+    await setSettingsValue(
+      AUTO_BACKUP_INTERVAL_MINUTES_ID,
+      AUTO_BACKUP_INTERVAL_MINUTES_LABEL,
+      String(DEFAULT_AUTO_BACKUP_INTERVAL_MINUTES),
+    );
+    return DEFAULT_AUTO_BACKUP_INTERVAL_MINUTES;
+  }
+
+  return Math.min(1440, Math.max(1, parsed));
 }
 
 function clearBackupTimer() {
@@ -498,13 +527,14 @@ export async function triggerBackupNow() {
 export async function startBackupScheduler() {
   if (backupTimer) return;
 
-  const [currentEndpoint, autoEnabled] = await Promise.all([
+  const [currentEndpoint, autoEnabled, intervalMinutes] = await Promise.all([
     prisma.settings.findFirst({
       where: {
         id_settings: BACKUP_ENDPOINT_ID,
       },
     }),
     getAutoBackupEnabled(),
+    getAutoBackupIntervalMinutes(),
   ]);
 
   if (!currentEndpoint) {
@@ -523,6 +553,7 @@ export async function startBackupScheduler() {
     return;
   }
 
+  const intervalMs = intervalMinutes * 60 * 1000;
   backupTimer = setInterval(async () => {
     try {
       const endpoint = await getBackupEndpoint();
@@ -550,9 +581,31 @@ export async function startBackupScheduler() {
       const message = err instanceof Error ? err.message : String(err);
       saveLogging(`[BACKUP] Scheduler error: ${message}`, "ERROR");
     }
-  }, BACKUP_INTERVAL_MS);
+  }, intervalMs);
 
-  saveLogging("[BACKUP] Scheduler started (interval 2 menit)");
+  saveLogging(
+    `[BACKUP] Scheduler started (interval ${intervalMinutes} menit)`,
+  );
+}
+
+export async function reloadAutoBackupScheduler() {
+  try {
+    clearBackupTimer();
+    await startBackupScheduler();
+    const intervalMinutes = await getAutoBackupIntervalMinutes();
+
+    return Responses({
+      code: 200,
+      data: { interval_minutes: intervalMinutes },
+      detail_message: `Scheduler auto backup berhasil dimuat ulang (${intervalMinutes} menit)`,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return Responses({
+      code: 500,
+      detail_message: `Gagal memuat ulang scheduler auto backup: ${message}`,
+    });
+  }
 }
 
 export async function stopAutoBackup() {
@@ -577,6 +630,7 @@ export async function stopAutoBackup() {
 export async function startAutoBackup() {
   try {
     await setSettingsValue(AUTO_BACKUP_ENABLED_ID, AUTO_BACKUP_LABEL, "true");
+    clearBackupTimer();
     await startBackupScheduler();
     saveLogging("[BACKUP] Auto backup started by user");
 
@@ -595,14 +649,17 @@ export async function startAutoBackup() {
 
 export async function getAutoBackupStatus() {
   try {
-    const enabled = await getAutoBackupEnabled();
+    const [enabled, intervalMinutes] = await Promise.all([
+      getAutoBackupEnabled(),
+      getAutoBackupIntervalMinutes(),
+    ]);
 
     return Responses({
       code: 200,
       data: {
         enabled,
         running: backupTimer !== null,
-        interval_minutes: 2,
+        interval_minutes: intervalMinutes,
       },
     });
   } catch (err) {

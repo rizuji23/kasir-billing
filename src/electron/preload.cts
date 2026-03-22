@@ -77,6 +77,26 @@ export interface IBackupProgress {
   at: string;
 }
 
+export interface IManualLampWsResponse {
+  type?: string;
+  request_id?: string;
+  command?: string;
+  action?: string;
+  target?: string;
+  floorCode?: string;
+  status?: string;
+  note?: string;
+  data?: {
+    command?: string;
+    action?: string;
+    number?: string;
+    target?: string;
+    floorCode?: string;
+    delivered?: number;
+    websocket?: string;
+  };
+}
+
 contextBridge.exposeInMainWorld("update", {
   checkForUpdates: () => ipcRenderer.send("check-for-updates"),
   downloadUpdate: () => ipcRenderer.send("download-update"),
@@ -347,8 +367,31 @@ contextBridge.exposeInMainWorld("api", {
   backup_auto_status: () => ipcRenderer.invoke("backup_auto_status"),
   backup_auto_stop: () => ipcRenderer.invoke("backup_auto_stop"),
   backup_auto_start: () => ipcRenderer.invoke("backup_auto_start"),
+  backup_auto_reload: () => ipcRenderer.invoke("backup_auto_reload"),
   test_table_status_wss: (url?: string) =>
     ipcRenderer.invoke("test_table_status_wss", url),
+  onManualLampResponse: (cb: (data: IManualLampWsResponse) => void) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      data: IManualLampWsResponse,
+    ) => cb(data);
+    ipcRenderer.on("manual-lamp:response", listener);
+
+    return () => {
+      ipcRenderer.removeListener("manual-lamp:response", listener);
+    };
+  },
+  onManualLampRequest: (cb: (data: IManualLampWsResponse) => void) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      data: IManualLampWsResponse,
+    ) => cb(data);
+    ipcRenderer.on("manual-lamp:request", listener);
+
+    return () => {
+      ipcRenderer.removeListener("manual-lamp:request", listener);
+    };
+  },
   onBackupProgress: (cb: (data: IBackupProgress) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, data: IBackupProgress) =>
       cb(data);

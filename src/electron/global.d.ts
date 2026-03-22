@@ -2,6 +2,7 @@ import { IResponses } from "./lib/responses";
 import {
   Booking,
   IBackupProgress,
+  IManualLampWsResponse,
   CategoryMenu,
   IKitchenIncoming,
   ILogs,
@@ -368,7 +369,12 @@ interface ApiAPI {
   >;
   backup_auto_stop: () => Promise<IResponses<unknown>>;
   backup_auto_start: () => Promise<IResponses<unknown>>;
+  backup_auto_reload: () => Promise<
+    IResponses<{ interval_minutes: number }>
+  >;
   test_table_status_wss: (url?: string) => Promise<IResponses<unknown>>;
+  onManualLampRequest: (cb: (data: IManualLampWsResponse) => void) => () => void;
+  onManualLampResponse: (cb: (data: IManualLampWsResponse) => void) => () => void;
   onBackupProgress: (cb: (data: IBackupProgress) => void) => () => void;
 }
 

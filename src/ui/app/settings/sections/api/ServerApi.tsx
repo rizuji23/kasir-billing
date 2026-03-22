@@ -9,6 +9,7 @@ import { IBackupProgress } from "../../../../../electron/types";
 export default function ServerApi() {
     const [serverBackup, setServerBackup] = useState("");
     const [tableStatusWss, setTableStatusWss] = useState("wss://cozy.saintekrekacipta.com");
+    const [autoBackupIntervalMinutes, setAutoBackupIntervalMinutes] = useState("2");
     const [saving, setSaving] = useState(false);
     const [testing, setTesting] = useState(false);
     const [testingWss, setTestingWss] = useState(false);
@@ -44,6 +45,7 @@ export default function ServerApi() {
 
             if (backupStatus.status && backupStatus.data) {
                 setAutoBackupEnabled(backupStatus.data.enabled);
+                setAutoBackupIntervalMinutes(String(backupStatus.data.interval_minutes || 2));
             }
         } catch (err) {
             toast.error(`Gagal memuat endpoint backup: ${err}`);
@@ -65,12 +67,24 @@ export default function ServerApi() {
                 "Table Status WebSocket URL",
                 tableStatusWss.trim(),
             );
+            const normalizedInterval = Math.max(1, Number.parseInt(autoBackupIntervalMinutes || "2", 10) || 2);
+            const resInterval = await window.api.save_url(
+                "AUTO_BACKUP_INTERVAL_MINUTES",
+                "Auto Backup Interval Minutes",
+                String(normalizedInterval),
+            );
+            const resReload = await window.api.backup_auto_reload();
+            setAutoBackupIntervalMinutes(String(normalizedInterval));
 
-            if (res.status && resWss.status) {
+            if (res.status && resWss.status && resInterval.status && resReload.status) {
                 toast.success("Pengaturan server berhasil disimpan");
             } else {
                 toast.error(
-                    res.detail_message || resWss.detail_message || "Gagal menyimpan pengaturan server",
+                    res.detail_message ||
+                    resWss.detail_message ||
+                    resInterval.detail_message ||
+                    resReload.detail_message ||
+                    "Gagal menyimpan pengaturan server",
                 );
             }
         } catch (err) {
@@ -226,6 +240,19 @@ export default function ServerApi() {
                                 </Button>
                             }
                         />
+                        <Input
+                            isRequired
+                            label="Interval Auto-Backup (Menit)"
+                            name="auto_backup_interval_minutes"
+                            errorMessage={"Silakan isi kolom ini."}
+                            placeholder="Contoh: 2"
+                            type="number"
+                            min={1}
+                            value={autoBackupIntervalMinutes}
+                            onChange={(e) => setAutoBackupIntervalMinutes(e.target.value)}
+                            isDisabled={loading || saving}
+                            description="Scheduler auto-backup akan memakai interval ini setelah Simpan Perubahan."
+                        />
                         <div className="rounded-md border p-3">
                             <div className="flex items-center justify-between gap-2">
                                 <p className="text-sm font-semibold">Progress Backup</p>
@@ -240,7 +267,7 @@ export default function ServerApi() {
                                 Step: {progress ? `${progress.step}/${progress.totalSteps}` : "-"}
                             </p>
                             <p className="mt-1 text-xs text-default-500">
-                                Auto Backup: {autoBackupEnabled ? "Aktif (2 menit)" : "Nonaktif"}
+                                Auto Backup: {autoBackupEnabled ? `Aktif (${autoBackupIntervalMinutes || "2"} menit)` : "Nonaktif"}
                             </p>
                             {progress?.payloadSizeKb !== undefined ? (
                                 <p className="mt-1 text-xs text-default-500">
