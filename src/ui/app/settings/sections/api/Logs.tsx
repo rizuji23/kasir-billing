@@ -39,16 +39,16 @@ export default function Logs() {
 
     return (
         <>
-            <div className="bg-slate-500/50 rounded-md p-3">
+            <div className="bg-slate-500/50 rounded-md p-3 max-w-screen overflow-x-auto">
                 <div className="flex flex-col gap-3">
                     <div>
                         <h3 className="font-bold text-lg">Log ({logs.length})</h3>
                     </div>
 
-                    <div className="w-full bg-black text-white p-3 rounded-md max-h-[300px] min-h-[300px] flex flex-col gap-3 overflow-auto">
+                    <div className="w-full bg-black text-white p-3 rounded-md max-h-[300px] min-h-[300px] flex flex-col gap-3 overflow-y-auto">
                         {
                             loading ? <LoadingComponent /> : logs.map((el, i) => {
-                                return <p key={i}><b>({moment(el.created_at).format("DD/MM/YYYY HH:mm:ss")})</b> - <Chip color={el.status === "LOG" ? "default" : el.status === "WARNING" ? "warning" : "danger"}>{el.status}</Chip>  {el.activity}</p>
+                                return <p key={i} className="text-wrap max-w-screen"><b>({moment(el.created_at).format("DD/MM/YYYY HH:mm:ss")})</b> - <Chip color={el.status === "LOG" ? "default" : el.status === "WARNING" ? "warning" : "danger"}>{el.status}</Chip>  {el.activity}</p>
                             })
                         }
                     </div>
