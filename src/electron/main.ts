@@ -65,6 +65,12 @@ import {
   testBackupConnection,
 } from "./module/backup.js";
 import {
+  getMasterSyncStatus,
+  reloadMasterSyncScheduler,
+  runMasterSyncNow,
+  startMasterSyncScheduler,
+} from "./module/sync_master.js";
+import {
   connectTableStatusWss,
   ensureTableStatusWssSetting,
   setTableStatusRendererWindow,
@@ -183,6 +189,7 @@ if (!gotTheLock) {
     setBackupProgressWindow(mainWindow);
     setTableStatusRendererWindow(mainWindow);
     await startBackupScheduler();
+    await startMasterSyncScheduler();
     await ensureTableStatusWssSetting();
     await connectTableStatusWss();
     setupAutoUpdater(mainWindow);
@@ -453,6 +460,9 @@ ipcMain.handle(
       if (id === TABLE_STATUS_WSS_ID) {
         await connectTableStatusWss(content);
       }
+      if (id === "SYNC_MASTER_ENDPOINT" || id === "BACKUP_API_KEY") {
+        await reloadMasterSyncScheduler();
+      }
 
       return Responses({
         code: 200,
@@ -718,6 +728,22 @@ ipcMain.handle("backup_auto_start", async () => {
 
 ipcMain.handle("backup_auto_reload", async () => {
   return await reloadAutoBackupScheduler();
+});
+
+ipcMain.handle("sync_master_now", async () => {
+  const ok = await runMasterSyncNow();
+  return Responses({
+    code: ok ? 200 : 500,
+    detail_message: ok ? "Sync master berhasil dijalankan" : "Sync master gagal",
+  });
+});
+
+ipcMain.handle("sync_master_status", async () => {
+  return await getMasterSyncStatus();
+});
+
+ipcMain.handle("sync_master_reload", async () => {
+  return await reloadMasterSyncScheduler();
 });
 
 ipcMain.handle("test_table_status_wss", async (_, url?: string) => {

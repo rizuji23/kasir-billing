@@ -8,6 +8,8 @@ import { IBackupProgress } from "../../../../../electron/types";
 
 export default function ServerApi() {
     const [serverBackup, setServerBackup] = useState("");
+    const [syncMasterEndpoint, setSyncMasterEndpoint] = useState("");
+    const [backupApiKey, setBackupApiKey] = useState("");
     const [tableStatusWss, setTableStatusWss] = useState("wss://cozy.saintekrekacipta.com");
     const [autoBackupIntervalMinutes, setAutoBackupIntervalMinutes] = useState("2");
     const [saving, setSaving] = useState(false);
@@ -18,6 +20,7 @@ export default function ServerApi() {
     const [progress, setProgress] = useState<IBackupProgress | null>(null);
     const [autoBackupEnabled, setAutoBackupEnabled] = useState<boolean>(true);
     const [autoBackupLoading, setAutoBackupLoading] = useState<boolean>(false);
+    const [syncingMaster, setSyncingMaster] = useState<boolean>(false);
 
     const progressColor = progress?.status === "success"
         ? "success"
@@ -32,7 +35,11 @@ export default function ServerApi() {
                 window.api.get_setting("BACKUP_SERVER_ENDPOINT"),
                 window.api.backup_auto_status(),
             ]);
-            const wssRes = await window.api.get_setting("TABLE_STATUS_WSS_URL");
+            const [wssRes, syncEndpointRes, backupApiKeyRes] = await Promise.all([
+                window.api.get_setting("TABLE_STATUS_WSS_URL"),
+                window.api.get_setting("SYNC_MASTER_ENDPOINT"),
+                window.api.get_setting("BACKUP_API_KEY"),
+            ]);
 
             if (res.status && res.data) {
                 setServerBackup(res.data.content || "");
@@ -41,6 +48,16 @@ export default function ServerApi() {
             }
             if (wssRes.status && wssRes.data?.content) {
                 setTableStatusWss(wssRes.data.content);
+            }
+            if (syncEndpointRes.status && syncEndpointRes.data?.content) {
+                setSyncMasterEndpoint(syncEndpointRes.data.content);
+            } else {
+                setSyncMasterEndpoint("");
+            }
+            if (backupApiKeyRes.status && backupApiKeyRes.data?.content) {
+                setBackupApiKey(backupApiKeyRes.data.content);
+            } else {
+                setBackupApiKey("");
             }
 
             if (backupStatus.status && backupStatus.data) {
@@ -73,17 +90,39 @@ export default function ServerApi() {
                 "Auto Backup Interval Minutes",
                 String(normalizedInterval),
             );
+            const resSyncEndpoint = await window.api.save_url(
+                "SYNC_MASTER_ENDPOINT",
+                "Sync Master Endpoint",
+                syncMasterEndpoint.trim(),
+            );
+            const resBackupApiKey = await window.api.save_url(
+                "BACKUP_API_KEY",
+                "Backup API Key",
+                backupApiKey.trim(),
+            );
             const resReload = await window.api.backup_auto_reload();
+            const resSyncReload = await window.api.sync_master_reload();
             setAutoBackupIntervalMinutes(String(normalizedInterval));
 
-            if (res.status && resWss.status && resInterval.status && resReload.status) {
+            if (
+                res.status &&
+                resWss.status &&
+                resInterval.status &&
+                resSyncEndpoint.status &&
+                resBackupApiKey.status &&
+                resReload.status &&
+                resSyncReload.status
+            ) {
                 toast.success("Pengaturan server berhasil disimpan");
             } else {
                 toast.error(
                     res.detail_message ||
                     resWss.detail_message ||
                     resInterval.detail_message ||
+                    resSyncEndpoint.detail_message ||
+                    resBackupApiKey.detail_message ||
                     resReload.detail_message ||
+                    resSyncReload.detail_message ||
                     "Gagal menyimpan pengaturan server",
                 );
             }
@@ -91,6 +130,22 @@ export default function ServerApi() {
             toast.error(`Terjadi kesalahan: ${err}`);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleSyncMasterNow = async () => {
+        setSyncingMaster(true);
+        try {
+            const res = await window.api.sync_master_now();
+            if (res.status) {
+                toast.success("Sync master berhasil dijalankan");
+            } else {
+                toast.error(res.detail_message || "Sync master gagal");
+            }
+        } catch (err) {
+            toast.error(`Terjadi kesalahan saat sync master: ${err}`);
+        } finally {
+            setSyncingMaster(false);
         }
     };
 
@@ -253,6 +308,28 @@ export default function ServerApi() {
                             isDisabled={loading || saving}
                             description="Scheduler auto-backup akan memakai interval ini setelah Simpan Perubahan."
                         />
+                        <Input
+                            isRequired
+                            label="Sync Master Endpoint"
+                            name="sync_master_endpoint"
+                            errorMessage={"Silakan isi kolom ini."}
+                            placeholder="https://your-domain.com/api/sync/master"
+                            type="text"
+                            value={syncMasterEndpoint}
+                            onChange={(e) => setSyncMasterEndpoint(e.target.value)}
+                            isDisabled={loading || saving}
+                            description="Scheduler sync master otomatis tiap 1 menit ke endpoint ini."
+                        />
+                        <Input
+                            label="Backup API Key"
+                            name="backup_api_key"
+                            placeholder="Masukkan x-backup-api-key"
+                            type="text"
+                            value={backupApiKey}
+                            onChange={(e) => setBackupApiKey(e.target.value)}
+                            isDisabled={loading || saving}
+                            description="Header x-backup-api-key untuk request sync master."
+                        />
                         <div className="rounded-md border p-3">
                             <div className="flex items-center justify-between gap-2">
                                 <p className="text-sm font-semibold">Progress Backup</p>
@@ -317,6 +394,15 @@ export default function ServerApi() {
                         isDisabled={loading || saving || backingUp || autoBackupLoading}
                     >
                         Backup Data
+                    </Button>
+                    <Button
+                        color="secondary"
+                        variant="flat"
+                        onPress={handleSyncMasterNow}
+                        isLoading={syncingMaster}
+                        isDisabled={loading || saving || backingUp || autoBackupLoading || syncingMaster}
+                    >
+                        Sync Master Now
                     </Button>
                     <Button
                         onPress={handleSave}

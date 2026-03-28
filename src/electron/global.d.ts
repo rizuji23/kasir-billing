@@ -372,6 +372,16 @@ interface ApiAPI {
   backup_auto_reload: () => Promise<
     IResponses<{ interval_minutes: number }>
   >;
+  sync_master_now: () => Promise<IResponses<unknown>>;
+  sync_master_status: () => Promise<
+    IResponses<{
+      running: boolean;
+      endpoint: string;
+      api_key_set: boolean;
+      last_run_at: string | null;
+    }>
+  >;
+  sync_master_reload: () => Promise<IResponses<unknown>>;
   test_table_status_wss: (url?: string) => Promise<IResponses<unknown>>;
   onManualLampRequest: (cb: (data: IManualLampWsResponse) => void) => () => void;
   onManualLampResponse: (cb: (data: IManualLampWsResponse) => void) => () => void;

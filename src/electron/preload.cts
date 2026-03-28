@@ -368,6 +368,9 @@ contextBridge.exposeInMainWorld("api", {
   backup_auto_stop: () => ipcRenderer.invoke("backup_auto_stop"),
   backup_auto_start: () => ipcRenderer.invoke("backup_auto_start"),
   backup_auto_reload: () => ipcRenderer.invoke("backup_auto_reload"),
+  sync_master_now: () => ipcRenderer.invoke("sync_master_now"),
+  sync_master_status: () => ipcRenderer.invoke("sync_master_status"),
+  sync_master_reload: () => ipcRenderer.invoke("sync_master_reload"),
   test_table_status_wss: (url?: string) =>
     ipcRenderer.invoke("test_table_status_wss", url),
   onManualLampResponse: (cb: (data: IManualLampWsResponse) => void) => {
