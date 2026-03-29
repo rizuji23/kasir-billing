@@ -84,17 +84,40 @@ export async function StrukWindow(id_struk: string) {
             if (result) {
               printWindow.webContents.send("print_struk", struk);
               setTimeout(() => {
-                printWindow.webContents.print({
-                  silent: true,
+                const configuredPrinter = (result.content || "").trim();
+                const normalizedPrinter = configuredPrinter.toLowerCase();
+                const isPdfDestination =
+                  normalizedPrinter.includes("pdf") ||
+                  normalizedPrinter.includes("print_to_pdf") ||
+                  normalizedPrinter.includes("save as pdf");
+
+                const printOptions: Electron.WebContentsPrintOptions = {
+                  silent: !isPdfDestination,
                   printBackground: true,
-                  deviceName: result.content || "Microsoft Print to PDF",
-                  copies: 0,
+                  copies: 1,
                   margins: {
                     marginType: "none",
                   },
                   scaleFactor: 84,
+                  pageSize: "A4",
+                };
+
+                if (configuredPrinter && !isPdfDestination) {
+                  printOptions.deviceName = configuredPrinter;
+                }
+
+                printWindow.webContents.print(printOptions, (success, failureReason) => {
+                  if (!success) {
+                    dialog.showErrorBox(
+                      "Terjadi Kesalahan",
+                      `Print gagal: ${failureReason || "Unknown error"}`,
+                    );
+                  }
+                  if (!printWindow.isDestroyed()) {
+                    printWindow.close();
+                  }
                 });
-              }, 2000);
+              }, 2500);
               return true;
             } else {
               dialog.showErrorBox(
